@@ -64,7 +64,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 500,
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
-    tierImages: ["coffee-t1", "coffee-t2", "coffee-t3", "coffee-t4"],
+    tierImages: ["coffee-t1", "coffee-t1", "coffee-t4", "coffee-t4"],
   },
   {
     id: "restaurant",
@@ -76,7 +76,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 5000,
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Bistro", "Fine Dining", "Culinary Empire"],
-    tierImages: ["restaurant-t1", "restaurant-t2", "restaurant-t3", "restaurant-t4"],
+    tierImages: ["restaurant-t1", "restaurant-t1", "restaurant-t4", "restaurant-t4"],
   },
   {
     id: "tech",
@@ -88,7 +88,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 50000,
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Small Office", "Tech Campus", "Tech Giant HQ"],
-    tierImages: ["tech-t1", "tech-t2", "tech-t3", "tech-t4"],
+    tierImages: ["tech-t1", "tech-t1", "tech-t4", "tech-t4"],
   },
   {
     id: "hotel",
@@ -100,7 +100,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 500000,
     description: "Luxury accommodations worldwide.",
     tierNames: ["Roadside Motel", "Boutique Hotel", "Luxury Resort", "Grand Hotel Empire"],
-    tierImages: ["hotel-t1", "hotel-t2", "hotel-t3", "hotel-t4"],
+    tierImages: ["hotel-t1", "hotel-t1", "hotel-t4", "hotel-t4"],
   },
   {
     id: "fashion",
@@ -112,7 +112,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 5000000,
     description: "Define style itself.",
     tierNames: ["Market Stall", "Boutique", "Department Store", "Fashion House"],
-    tierImages: ["fashion-t1", "fashion-t2", "fashion-t3", "fashion-t4"],
+    tierImages: ["fashion-t1", "fashion-t1", "fashion-t4", "fashion-t4"],
   },
   {
     id: "themepark",
@@ -124,7 +124,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 50000000,
     description: "Create worlds of wonder.",
     tierNames: ["Carnival Rides", "Fun Park", "Theme Park", "Entertainment Empire"],
-    tierImages: ["themepark-t1", "themepark-t2", "themepark-t3", "themepark-t4"],
+    tierImages: ["themepark-t1", "themepark-t1", "themepark-t4", "themepark-t4"],
   },
 ];
 
