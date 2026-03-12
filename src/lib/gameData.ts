@@ -88,7 +88,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 50000,
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Small Office", "Tech Campus", "Tech Giant HQ"],
-    tierImages: ["tech-t1", "tech-t2", "tech-t3", "tech-t4"],
+    tierImages: ["tech-t1", "tech-t1", "tech-t4", "tech-t4"],
   },
   {
     id: "hotel",
