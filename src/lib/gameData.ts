@@ -124,7 +124,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 50000000,
     description: "Create worlds of wonder.",
     tierNames: ["Carnival Rides", "Fun Park", "Theme Park", "Entertainment Empire"],
-    tierImages: ["themepark-t1", "themepark-t2", "themepark-t3", "themepark-t4"],
+    tierImages: ["themepark-t1", "themepark-t1", "themepark-t4", "themepark-t4"],
   },
 ];
 
