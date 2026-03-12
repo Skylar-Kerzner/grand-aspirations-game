@@ -100,7 +100,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 500000,
     description: "Luxury accommodations worldwide.",
     tierNames: ["Roadside Motel", "Boutique Hotel", "Luxury Resort", "Grand Hotel Empire"],
-    tierImages: ["hotel-t1", "hotel-t2", "hotel-t3", "hotel-t4"],
+    tierImages: ["hotel-t1", "hotel-t1", "hotel-t4", "hotel-t4"],
   },
   {
     id: "fashion",
