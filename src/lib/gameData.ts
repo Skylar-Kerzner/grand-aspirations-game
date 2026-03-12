@@ -76,7 +76,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 5000,
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Bistro", "Fine Dining", "Culinary Empire"],
-    tierImages: ["restaurant-t1", "restaurant-t2", "restaurant-t3", "restaurant-t4"],
+    tierImages: ["restaurant-t1", "restaurant-t1", "restaurant-t4", "restaurant-t4"],
   },
   {
     id: "tech",
