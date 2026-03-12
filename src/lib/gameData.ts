@@ -112,7 +112,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 5000000,
     description: "Define style itself.",
     tierNames: ["Market Stall", "Boutique", "Department Store", "Fashion House"],
-    tierImages: ["fashion-t1", "fashion-t2", "fashion-t3", "fashion-t4"],
+    tierImages: ["fashion-t1", "fashion-t1", "fashion-t4", "fashion-t4"],
   },
   {
     id: "themepark",
