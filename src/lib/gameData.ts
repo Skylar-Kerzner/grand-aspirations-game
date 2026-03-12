@@ -64,7 +64,7 @@ export const BUSINESSES: BusinessDef[] = [
     managerCost: 500,
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
-    tierImages: ["coffee-t1", "coffee-t2", "coffee-t3", "coffee-t4"],
+    tierImages: ["coffee-t1", "coffee-t1", "coffee-t4", "coffee-t4"],
   },
   {
     id: "restaurant",
