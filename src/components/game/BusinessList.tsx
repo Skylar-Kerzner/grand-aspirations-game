@@ -194,14 +194,18 @@ export default function BusinessList() {
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={() => dispatch({ type: "HIRE_MANAGER", id: selectedDef.id })}
-                    disabled={state.cash < selectedDef.managerCost}
+                    disabled={selectedBiz.level < 3}
                     className="w-full h-11 rounded-lg surface-button font-semibold text-sm transition-game disabled:opacity-40"
                   >
-                    Hire Manager · <span className="font-mono-nums">{formatCompact(selectedDef.managerCost)}</span>
+                    {selectedBiz.level < 3
+                      ? "Manager available at level 3"
+                      : `Hire manager · ${(selectedDef.managerShare * 100).toFixed(0)}% of revenue`}
                   </motion.button>
                 )}
                 {selectedBiz.hasManager && (
-                  <p className="text-center text-xs text-muted-foreground mt-1">Manager auto-collects income</p>
+                  <p className="text-center text-xs text-muted-foreground mt-1">
+                    Manager runs it for {formatMoney(selectedDef.baseIncome * selectedBiz.level * selectedDef.managerShare)}/day
+                  </p>
                 )}
               </div>
             </div>
