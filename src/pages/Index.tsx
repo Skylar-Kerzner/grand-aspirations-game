@@ -49,6 +49,9 @@ export default function Index() {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="career">
+              <CareerPanel />
+            </TabsContent>
             <TabsContent value="businesses">
               <BusinessList />
             </TabsContent>
