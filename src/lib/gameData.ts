@@ -153,7 +153,7 @@ export const BUSINESSES: BusinessDef[] = [
 ];
 
 // Uncollected revenue spoils after this many days without a manager
-export const UNMANAGED_CAP_DAYS = 5;
+export const UNMANAGED_CAP_DAYS = 20;
 // A business is worth this multiple of its annual profit
 export const BUSINESS_VALUATION_MULTIPLE = 2.5;
 

@@ -5,6 +5,7 @@ import BusinessList from "@/components/game/BusinessList";
 import AssetGallery from "@/components/game/AssetGallery";
 import InvestmentPanel from "@/components/game/InvestmentPanel";
 import FinancePanel from "@/components/game/FinancePanel";
+import CareerPanel from "@/components/game/CareerPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Index() {
@@ -14,8 +15,14 @@ export default function Index() {
         <Dashboard />
 
         <div className="px-4 pt-4 pb-28 max-w-lg mx-auto">
-          <Tabs defaultValue="businesses" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 bg-secondary h-10 rounded-lg p-1 mb-4">
+          <Tabs defaultValue="career" className="w-full">
+            <TabsList className="w-full grid grid-cols-5 bg-secondary h-10 rounded-lg p-1 mb-4">
+              <TabsTrigger
+                value="career"
+                className="rounded-md text-xs data-[state=active]:bg-surface data-[state=active]:shadow-sm"
+              >
+                Career
+              </TabsTrigger>
               <TabsTrigger
                 value="businesses"
                 className="rounded-md text-xs data-[state=active]:bg-surface data-[state=active]:shadow-sm"
@@ -42,6 +49,9 @@ export default function Index() {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="career">
+              <CareerPanel />
+            </TabsContent>
             <TabsContent value="businesses">
               <BusinessList />
             </TabsContent>
