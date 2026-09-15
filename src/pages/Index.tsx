@@ -5,6 +5,7 @@ import BusinessList from "@/components/game/BusinessList";
 import AssetGallery from "@/components/game/AssetGallery";
 import InvestmentPanel from "@/components/game/InvestmentPanel";
 import FinancePanel from "@/components/game/FinancePanel";
+import CareerPanel from "@/components/game/CareerPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Index() {

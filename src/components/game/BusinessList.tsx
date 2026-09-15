@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
-import { formatMoney, formatCompact } from "@/lib/formatters";
-import { BUSINESSES, getBusinessCost, getBusinessTierIndex, BUSINESS_TIER_THRESHOLDS } from "@/lib/gameData";
+import { isBusinessUnlocked } from "@/lib/GameContext";
+import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
+import {
+  BUSINESSES,
+  getBusinessCost,
+  getBusinessTierIndex,
+  BUSINESS_TIER_THRESHOLDS,
+  UNMANAGED_CAP_DAYS,
+  TAX_RATE,
+} from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 export default function BusinessList() {
@@ -10,30 +18,36 @@ export default function BusinessList() {
   const [selected, setSelected] = useState<string | null>(null);
 
   const selectedDef = BUSINESSES.find((b) => b.id === selected);
-  const selectedBiz = selected ? (state.businesses[selected] || { level: 0, hasManager: false, accumulated: 0 }) : null;
+  const selectedBiz = selected
+    ? state.businesses[selected] || { level: 0, hasManager: false, accumulated: 0 }
+    : null;
 
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
-        {BUSINESSES.map((def) => {
+        {BUSINESSES.map((def, idx) => {
           const biz = state.businesses[def.id] || { level: 0, hasManager: false, accumulated: 0 };
+          const unlocked = isBusinessUnlocked(state, def.id);
           const tierIdx = getBusinessTierIndex(biz.level);
           const tierName = def.tierNames[tierIdx];
           const tierImage = getImage(def.tierImages[tierIdx]);
           const income = def.baseIncome * biz.level;
+          const ready = biz.accumulated > 0.01 && !biz.hasManager;
 
           return (
             <motion.div
               key={def.id}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setSelected(def.id)}
-              className="surface-card rounded-xl overflow-hidden cursor-pointer transition-game"
+              whileTap={unlocked ? { scale: 0.98 } : undefined}
+              onClick={() => unlocked && setSelected(def.id)}
+              className={`surface-card rounded-xl overflow-hidden transition-game ${
+                unlocked ? "cursor-pointer" : "opacity-50"
+              }`}
             >
               <div className="aspect-[4/3] bg-secondary relative">
                 {tierImage && biz.level > 0 ? (
                   <img src={tierImage} alt={tierName} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs px-2 text-center">
                     {def.name}
                   </div>
                 )}
@@ -51,17 +65,35 @@ export default function BusinessList() {
               <div className="p-3">
                 <h3 className="font-semibold text-sm">{def.name}</h3>
                 <p className="text-[11px] text-muted-foreground">
-                  {biz.level > 0 ? tierName : def.sector}
+                  {!unlocked
+                    ? `Needs ${def.name === BUSINESSES[idx].name ? BUSINESSES[idx - 1]?.name : ""} at level ${def.unlockLevelOfPrev}`
+                    : biz.level > 0
+                      ? tierName
+                      : def.sector}
                 </p>
-                {biz.level > 0 && (
-                  <p className="font-mono-nums text-[11px] text-primary mt-1">
-                    +{formatMoney(income)}/s
-                  </p>
+                {unlocked && biz.level > 0 && (
+                  <p className="font-mono-nums text-[11px] text-primary mt-1">{formatRate(income)}</p>
                 )}
-                {biz.level === 0 && (
+                {unlocked && biz.level === 0 && (
                   <p className="font-mono-nums text-[11px] text-muted-foreground mt-1">
                     {formatMoney(def.baseCost)}
                   </p>
+                )}
+
+                {ready && (
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dispatch({ type: "COLLECT_BUSINESS", id: def.id });
+                    }}
+                    className="mt-2 w-full h-8 rounded-lg bg-primary/10 text-primary font-semibold text-[11px] transition-game"
+                  >
+                    Collect{" "}
+                    <span className="font-mono-nums">
+                      {formatCompact(biz.accumulated * (1 - TAX_RATE))}
+                    </span>
+                  </motion.button>
                 )}
               </div>
             </motion.div>
@@ -80,13 +112,28 @@ export default function BusinessList() {
             className="fixed inset-0 z-50 bg-background/95 backdrop-blur-lg flex flex-col"
             onClick={() => setSelected(null)}
           >
-            <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="w-full max-w-lg">
-                {/* Close */}
-                <button onClick={() => setSelected(null)} className="mb-4 text-muted-foreground text-sm hover:text-foreground transition-colors">
-                  Close
-                </button>
+            {/* Cash bar */}
+            <div
+              className="flex items-center justify-between px-5 py-4 border-b border-border"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Cash</p>
+                <p className="font-mono-nums text-lg font-bold">{formatMoney(state.cash)}</p>
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-muted-foreground text-sm hover:text-foreground transition-colors"
+              >
+                Close
+              </button>
+            </div>
 
+            <div
+              className="flex-1 flex items-start justify-center p-6 overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-full max-w-lg">
                 {/* Business Image */}
                 {(() => {
                   const tierIdx = getBusinessTierIndex(selectedBiz.level);
@@ -122,8 +169,14 @@ export default function BusinessList() {
                 </p>
                 {selectedBiz.level > 0 && (
                   <p className="text-xs text-primary mb-1">
-                    +{formatMoney(selectedDef.baseIncome * selectedBiz.level)}/s
-                    {selectedBiz.hasManager && <span className="text-muted-foreground ml-1">(auto-collected)</span>}
+                    {formatRate(selectedDef.baseIncome * selectedBiz.level)}
+                    {selectedBiz.hasManager ? (
+                      <span className="text-muted-foreground ml-1">(auto-collected)</span>
+                    ) : (
+                      <span className="text-muted-foreground ml-1">
+                        (holds up to {UNMANAGED_CAP_DAYS} days of takings)
+                      </span>
+                    )}
                   </p>
                 )}
 
@@ -134,7 +187,12 @@ export default function BusinessList() {
                     const reached = selectedBiz.level >= threshold;
                     const tierImg = getImage(selectedDef.tierImages[i]);
                     return (
-                      <div key={i} className={`flex items-center gap-3 py-2 ${i < selectedDef.tierNames.length - 1 ? "border-b border-border" : ""}`}>
+                      <div
+                        key={i}
+                        className={`flex items-center gap-3 py-2 ${
+                          i < selectedDef.tierNames.length - 1 ? "border-b border-border" : ""
+                        }`}
+                      >
                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
                           {tierImg ? (
                             <img src={tierImg} alt={name} className="w-full h-full object-cover" />
@@ -169,13 +227,20 @@ export default function BusinessList() {
                     onClick={() => dispatch({ type: "COLLECT_BUSINESS", id: selectedDef.id })}
                     className="w-full h-11 rounded-lg bg-primary/10 text-primary font-semibold text-sm mb-2 transition-game"
                   >
-                    Collect <span className="font-mono-nums">{formatCompact(selectedBiz.accumulated)}</span>
+                    Collect{" "}
+                    <span className="font-mono-nums">
+                      {formatCompact(selectedBiz.accumulated * (1 - TAX_RATE))}
+                    </span>
                   </motion.button>
                 )}
 
                 {/* Buy / Upgrade */}
                 {(() => {
-                  const cost = getBusinessCost(selectedDef.baseCost, selectedDef.costMultiplier, selectedBiz.level);
+                  const cost = getBusinessCost(
+                    selectedDef.baseCost,
+                    selectedDef.costMultiplier,
+                    selectedBiz.level,
+                  );
                   const canAfford = state.cash >= cost;
                   return (
                     <motion.button
@@ -184,7 +249,8 @@ export default function BusinessList() {
                       disabled={!canAfford}
                       className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40 mb-2"
                     >
-                      {selectedBiz.level === 0 ? "Buy" : "Upgrade"} · <span className="font-mono-nums">{formatCompact(cost)}</span>
+                      {selectedBiz.level === 0 ? "Buy" : "Upgrade"} ·{" "}
+                      <span className="font-mono-nums">{formatCompact(cost)}</span>
                     </motion.button>
                   );
                 })()}
@@ -204,7 +270,11 @@ export default function BusinessList() {
                 )}
                 {selectedBiz.hasManager && (
                   <p className="text-center text-xs text-muted-foreground mt-1">
-                    Manager runs it for {formatMoney(selectedDef.baseIncome * selectedBiz.level * selectedDef.managerShare)}/day
+                    Manager runs it for{" "}
+                    {formatMoney(
+                      selectedDef.baseIncome * selectedBiz.level * selectedDef.managerShare,
+                    )}
+                    /day
                   </p>
                 )}
               </div>
