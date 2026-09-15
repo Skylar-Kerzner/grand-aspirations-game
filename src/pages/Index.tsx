@@ -15,8 +15,14 @@ export default function Index() {
         <Dashboard />
 
         <div className="px-4 pt-4 pb-28 max-w-lg mx-auto">
-          <Tabs defaultValue="businesses" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 bg-secondary h-10 rounded-lg p-1 mb-4">
+          <Tabs defaultValue="career" className="w-full">
+            <TabsList className="w-full grid grid-cols-5 bg-secondary h-10 rounded-lg p-1 mb-4">
+              <TabsTrigger
+                value="career"
+                className="rounded-md text-xs data-[state=active]:bg-surface data-[state=active]:shadow-sm"
+              >
+                Career
+              </TabsTrigger>
               <TabsTrigger
                 value="businesses"
                 className="rounded-md text-xs data-[state=active]:bg-surface data-[state=active]:shadow-sm"
