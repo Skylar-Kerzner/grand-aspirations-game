@@ -22,7 +22,7 @@ const TABS = [
 export default function Index() {
   return (
     <GameProvider>
-      <div className="min-h-screen bg-background font-sans relative">
+      <div className="min-h-screen font-sans relative">
         <BackgroundScene />
         <div className="relative z-10">
           <Dashboard />
