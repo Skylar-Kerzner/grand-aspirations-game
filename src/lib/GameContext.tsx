@@ -83,8 +83,6 @@ export type GameAction =
   | { type: "ACCEPT_JOB_OFFER"; index: number }
   | { type: "STUDY"; level: number }
   | { type: "BUY_BUSINESS"; id: string }
-  | { type: "COLLECT_BUSINESS"; id: string }
-  | { type: "HIRE_MANAGER"; id: string }
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
   | { type: "TAKE_LOAN"; id: string; amount: number }
@@ -577,7 +575,7 @@ function advance(state: GameState, days: number, now: number): GameState {
 
   // Over the limit: you get cut off and forced down to the cheapest life
   let assets = s.assets;
-  let events = s.events;
+  let events = shockEvents.length ? [...shockEvents.reverse(), ...s.events].slice(0, 30) : s.events;
   if (ccDebt > getCreditLimit(s) && Object.values(assets).some((tier) => tier > 1)) {
     assets = Object.fromEntries(ASSETS.map((def) => [def.id, 1]));
     const cutoff: GameEvent = { day: Math.floor(s.day), title: "Cut off", text: "Your card was declined. You have moved down to the cheapest possible life until the balance clears.", tone: "bad" };
@@ -706,29 +704,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         businesses: { ...state.businesses, [action.id]: { ...cur, level: cur.level + 1 } },
         stats: { ...state.stats, businessSpent: state.stats.businessSpent + cost },
       };
-    }
-
-    case "COLLECT_BUSINESS": {
-      const biz = state.businesses[action.id];
-      if (!biz || biz.accumulated <= 0) return state;
-      const taxRate = getTaxRate(state);
-      const net = biz.accumulated * (1 - taxRate);
-      const stats = { ...state.stats, businessEarnedById: { ...state.stats.businessEarnedById } };
-      stats.businessEarned += net;
-      stats.taxesPaid += biz.accumulated - net;
-      stats.businessEarnedById[action.id] = (stats.businessEarnedById[action.id] || 0) + net;
-      return {
-        ...state, cash: state.cash + net,
-        businesses: { ...state.businesses, [action.id]: { ...biz, accumulated: 0 } },
-        stats,
-      };
-    }
-
-    case "HIRE_MANAGER": {
-      const def = BUSINESSES.find((b) => b.id === action.id);
-      const biz = state.businesses[action.id];
-      if (!def || !biz || biz.hasManager || biz.level < 3) return state;
-      return { ...state, businesses: { ...state.businesses, [action.id]: { ...biz, hasManager: true } } };
     }
 
     case "INVEST": {
