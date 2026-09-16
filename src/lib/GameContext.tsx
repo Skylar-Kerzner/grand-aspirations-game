@@ -882,13 +882,7 @@ function calculateDerived(state: GameState): DerivedState {
   };
 }
 
-interface GameContextType {
-  state: GameState;
-  derived: DerivedState;
-  dispatch: React.Dispatch<GameAction>;
-}
-
-const GameContext = createContext<GameContextType | null>(null);
+import { GameContext } from "./gameContextObject";
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialState);
