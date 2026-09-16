@@ -366,7 +366,9 @@ export default function BusinessList() {
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       {selectedBiz.level > 0 ? "You'd run it as:" : "You'd open:"}{" "}
-                      <span className="text-foreground font-medium">{ventureName(selectedDef.id, choices)}</span>
+                      <span className="text-foreground font-medium">
+                        {ventureNameAtTier(selectedDef.id, getBusinessTierIndex(selectedBiz.level + 1), choices)}
+                      </span>
                     </p>
                   </div>
                 )}
