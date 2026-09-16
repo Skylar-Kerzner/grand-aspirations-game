@@ -807,10 +807,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               ...cur,
               level: cur.level + 1,
               choices: tierUp ? action.choices || cur.choices : cur.choices,
-              fortune: tierUp
-                ? (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
-                  rollBusinessFortune() * BUSINESS_UPGRADE_REROLL
-                : cur.fortune,
+              fortune: Math.min(
+                6,
+                Math.max(
+                  0.15,
+                  (tierUp
+                    ? (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
+                      rollBusinessFortune() * BUSINESS_UPGRADE_REROLL
+                    : (cur.fortune ?? 1)) *
+                    // every level nudges success a little, up or down
+                    (0.9 + Math.random() * 0.2),
+                ),
+              ),
             };
           })();
       return {
