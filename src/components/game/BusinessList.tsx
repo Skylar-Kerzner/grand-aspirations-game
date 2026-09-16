@@ -227,6 +227,19 @@ export default function BusinessList() {
                     ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
                     : " · 30% base return"}
                 </p>
+                {(() => {
+                  const k = getIndustryKnowledge(state, selectedDef.id);
+                  return (
+                    <p className={`text-[11px] mb-1 ${k.returnBonus > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                      {k.track?.name}
+                      {k.returnBonus > 0
+                        ? ` — ${[k.hasMajor ? "your degree" : null, k.years >= 0.5 ? `${k.years.toFixed(0)} years in the industry` : null]
+                            .filter(Boolean)
+                            .join(" and ")}: +${(k.returnBonus * 100).toFixed(0)}% return, steadier trade`
+                        : " — you have no experience in this industry yet"}
+                    </p>
+                  );
+                })()}
                 <p className="text-[11px] text-muted-foreground mb-1">
                   {riskLabel(selectedDef.risk)} · profits swing about {(selectedDef.risk * 100).toFixed(0)}% a year and setbacks can hit trade for a while. Income is paid to you automatically every day.
                 </p>
