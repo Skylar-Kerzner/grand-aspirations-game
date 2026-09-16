@@ -3,3 +3,4 @@
 - [x] Verify game behavior and presentation
 - [x] Balance business returns around paired portfolio milestones
 - [x] Add varied career positions with luck-based salary offers
+- [ ] Include required credit-card payments in daily costs
