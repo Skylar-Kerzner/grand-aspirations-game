@@ -168,10 +168,13 @@ export function getWorkHours(state: GameState): number {
 /** How close to full performance this venture runs, from the hours you give it.
  *  Concave: the first hours buy most of the performance, so even a little time
  *  on a side venture is worth something. */
-export function getBusinessAttentionOf(state: GameState, id: string): number {
-  const hours = state.businessHours[id] || 0;
+export function getBusinessAttentionFor(state: GameState, id: string, hours: number): number {
   const share = Math.min(1, hours / BUSINESS_ATTENTION_FULL_HOURS);
   return BUSINESS_ATTENTION_FLOOR + (1 - BUSINESS_ATTENTION_FLOOR) * Math.pow(share, BUSINESS_ATTENTION_CURVE);
+}
+
+export function getBusinessAttentionOf(state: GameState, id: string): number {
+  return getBusinessAttentionFor(state, id, state.businessHours[id] || 0);
 }
 
 /** Weekly hours available: 40, plus whatever your lifestyle buys back. */
@@ -277,12 +280,17 @@ export function getIndustryKnowledge(state: GameState, id: string) {
   };
 }
 
-export function getBusinessEffectiveROI(state: GameState, id: string): number {
+/** Annual return on capital at a given attention level (1 = full hours). */
+export function getBusinessROIAt(state: GameState, id: string, attention: number): number {
   const def = BUSINESSES.find((business) => business.id === id);
   if (!def) return 0;
   const fortune = state.businesses[id]?.fortune ?? 1;
-  return def.annualROI * fortune * getBusinessAttentionOf(state, id)
+  return def.annualROI * fortune * attention
     * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus);
+}
+
+export function getBusinessEffectiveROI(state: GameState, id: string): number {
+  return getBusinessROIAt(state, id, getBusinessAttentionOf(state, id));
 }
 
 export function getNextBusinessNetworkMilestone(state: GameState, id: string) {
@@ -317,13 +325,18 @@ export function businessIncomeOf(state: GameState, id: string): number {
   return getBusinessSteadyIncomeOf(state, id) * (biz.condition ?? 1);
 }
 
-/** Income ignoring today's trading conditions — used for valuation and planning. */
-export function getBusinessSteadyIncomeOf(state: GameState, id: string): number {
+/** Steady income at a given attention level (1 = full hours) — used for valuation and planning. */
+export function getBusinessSteadyIncomeAt(state: GameState, id: string, attention: number): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
   return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
-    * getBusinessAttentionOf(state, id);
+    * attention;
+}
+
+/** Income ignoring today's trading conditions. */
+export function getBusinessSteadyIncomeOf(state: GameState, id: string): number {
+  return getBusinessSteadyIncomeAt(state, id, getBusinessAttentionOf(state, id));
 }
 
 /** What this single venture would fetch if sold today. */

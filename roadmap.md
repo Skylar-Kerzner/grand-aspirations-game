@@ -31,3 +31,4 @@
 - [x] Venture hours curve: 25% potential at 0h, ~50% at 1h, 100% at 15h; capital + annual return shown per venture in the Time tab
 - [x] Venture hour sliders cap at 15h/week; blocked copy when the week's hours are fully allocated
 - [x] Lifestyle items affect time only (careerBonus/schoolBonus removed; watches now buy hours)
+- [x] Time tab: ROI at 15h + ROI at current hours + $/day per venture on each slider card
