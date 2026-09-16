@@ -378,7 +378,7 @@ export default function BusinessList() {
                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Overall business success</p>
                     <p className="text-sm font-semibold mt-1">
                       {businessFortuneLabel(selectedBiz.fortune ?? 1)} —{" "}
-                      {((selectedBiz.fortune ?? 1) * 100).toFixed(0)}% of a typical venture
+                      {((selectedBiz.fortune ?? 1) * selectedDef.annualROI * 100).toFixed(0)}% return on capital
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-1">{ventureName(selectedDef.id, selectedBiz.choices)}</p>
 
