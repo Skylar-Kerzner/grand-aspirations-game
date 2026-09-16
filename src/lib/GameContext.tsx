@@ -781,7 +781,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             choices: action.choices,
             fortune: rollBusinessFortune(action.choices || {}),
           }
-        : { ...cur, level: cur.level + 1 };
+        : {
+            // Growing the venture puts part of its fortune back on the table:
+            // a lucky start does not carry forever, and a poor one can recover.
+            ...cur,
+            level: cur.level + 1,
+            fortune:
+              (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
+              rollBusinessFortune(cur.choices || {}) * BUSINESS_UPGRADE_REROLL,
+          };
       return {
         ...state, cash: state.cash - cost,
         businesses: { ...state.businesses, [action.id]: next },
