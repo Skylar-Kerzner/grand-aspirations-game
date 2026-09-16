@@ -43,13 +43,19 @@ export default function BusinessList() {
               }`}
             >
               <div className="aspect-[4/3] bg-secondary relative">
-                {tierImage && biz.level > 0 ? (
-                  <img src={tierImage} alt={tierName} className="w-full h-full object-cover" />
+                {tierImage && (biz.level > 0 || unlocked) ? (
+                  <img
+                    src={tierImage}
+                    alt={biz.level > 0 ? tierName : def.name}
+                    loading="lazy"
+                    className={`w-full h-full object-cover ${biz.level > 0 ? "" : "opacity-40 grayscale"}`}
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs px-2 text-center">
                     {def.name}
                   </div>
                 )}
+
                 {biz.level > 0 && (
                   <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[10px] font-medium">
                     Lv.{biz.level}
