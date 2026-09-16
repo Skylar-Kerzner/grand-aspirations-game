@@ -11,7 +11,7 @@ export default function LedgerPanel() {
   const earned =
     s.salaryEarned + s.shiftEarned + s.businessEarned + s.investmentGains + s.eventGains;
   const spent =
-    s.livingSpent + s.trainingSpent + s.managerSpent + s.retainerSpent + s.assetSpent +
+    s.livingSpent + s.trainingSpent + s.retainerSpent + s.assetSpent +
     s.businessSpent + s.educationSpent + s.consultantSpent + s.loanInterestPaid +
     s.ccInterestPaid + s.eventLosses + s.taxesPaid;
 
@@ -49,7 +49,6 @@ export default function LedgerPanel() {
         <Line label="Lifestyle" value={-s.livingSpent} days={days} />
         <Line label="Training" value={-s.trainingSpent} days={days} />
         <Line label="Tuition" value={-s.educationSpent} days={days} />
-        <Line label="Managers" value={-s.managerSpent} days={days} />
         <Line label="Consultant retainers" value={-s.retainerSpent} days={days} />
         <Line label="Consultant hiring" value={-s.consultantSpent} days={days} />
         <Line label="Business purchases" value={-s.businessSpent} days={days} />
