@@ -1,28 +1,64 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION,
-  getBusinessCost as calcBusinessCost, amortizedPayment,
-  DAYS_PER_YEAR, TAX_RATE, BASE_FOOD_COST, BASE_RENT, BASE_TRANSIT,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS,
+  HOUSING_OPTIONS, FOOD_OPTIONS, CLOTHING_OPTIONS,
+  getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
+  DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, BASE_TRANSIT, WEEK_HOURS, TRAINING_REFERENCE,
   CAR_PAY_BONUS, HOUSE_FOCUS_BONUS, WARDROBE_BUSINESS_BONUS, WATCH_INVEST_BONUS,
   UNMANAGED_CAP_DAYS, BUSINESS_VALUATION_MULTIPLE, LOAN_EQUITY_REQUIREMENT,
+  CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
+  type LifestyleOption,
 } from "./gameData";
 
-const SAVE_KEY = "empire-tycoon-save-v2";
+const SAVE_KEY = "empire-tycoon-save-v3";
 const MAX_OFFLINE_DAYS = 240;
 
 export interface BusinessState { level: number; hasManager: boolean; accumulated: number }
-export interface LoanState { active: boolean; remaining: number; dailyPayment: number }
-export interface InvestmentState { value: number; deposited: number }
+export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
+export interface InvestmentState { value: number; basis: number }
+
+export interface GameEvent { day: number; title: string; text: string; tone: "good" | "bad" | "neutral" }
+
+export interface Stats {
+  salaryEarned: number;
+  shiftEarned: number;
+  businessEarned: number;
+  investmentGains: number;
+  eventGains: number;
+  eventLosses: number;
+  taxesPaid: number;
+  livingSpent: number;
+  trainingSpent: number;
+  loanInterestPaid: number;
+  ccInterestPaid: number;
+  assetSpent: number;
+  businessSpent: number;
+  educationSpent: number;
+  consultantSpent: number;
+  retainerSpent: number;
+  managerSpent: number;
+  investDeposited: number;
+  investWithdrawn: number;
+  jobEarned: Record<string, number>;
+  jobDays: Record<string, number>;
+  shifts: Record<string, number>;
+  investEarnedById: Record<string, number>;
+  businessEarnedById: Record<string, number>;
+}
 
 export interface GameState {
   cash: number;
-  totalEarned: number;
+  ccDebt: number;
   day: number;
   jobIndex: number;
   xp: number;
-  education: number;          // highest completed education index
+  education: number;
   studying: { level: number; daysLeft: number } | null;
-  savingsRate: number;        // 0..1 of discretionary income banked
+  studyHours: number;     // of the 40 weekly hours, how many go to school
+  trainingBudget: number; // dollars per day spent on courses and coaching
+  housing: string;
+  food: string;
+  clothing: string;
   lastShiftDay: number;
   businesses: Record<string, BusinessState>;
   assets: Record<string, number>;
@@ -30,13 +66,20 @@ export interface GameState {
   loans: Record<string, LoanState>;
   loansRepaid: string[];
   consultants: string[];
+  payMult: number; payUntil: number;
+  livingMult: number; livingUntil: number;
+  boostUntil: number;
+  events: GameEvent[];
+  stats: Stats;
   lastTick: number;
 }
 
 type GameAction =
   | { type: "TICK" }
   | { type: "WORK" }
-  | { type: "SET_SAVINGS_RATE"; rate: number }
+  | { type: "SET_STUDY_HOURS"; hours: number }
+  | { type: "SET_TRAINING"; amount: number }
+  | { type: "SET_LIFESTYLE"; slot: "housing" | "food" | "clothing"; id: string }
   | { type: "PROMOTE" }
   | { type: "STUDY"; level: number }
   | { type: "BUY_BUSINESS"; id: string }
@@ -45,10 +88,23 @@ type GameAction =
   | { type: "BUY_ASSET"; id: string }
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
-  | { type: "TAKE_LOAN"; id: string }
+  | { type: "TAKE_LOAN"; id: string; amount: number }
   | { type: "REPAY_LOAN"; id: string }
+  | { type: "PAY_CC" }
   | { type: "HIRE_CONSULTANT"; id: string }
-  | { type: "FIRE_CONSULTANT"; id: string };
+  | { type: "FIRE_CONSULTANT"; id: string }
+  | { type: "RESET" };
+
+function emptyStats(): Stats {
+  return {
+    salaryEarned: 0, shiftEarned: 0, businessEarned: 0, investmentGains: 0,
+    eventGains: 0, eventLosses: 0, taxesPaid: 0, livingSpent: 0, trainingSpent: 0,
+    loanInterestPaid: 0, ccInterestPaid: 0, assetSpent: 0, businessSpent: 0,
+    educationSpent: 0, consultantSpent: 0, retainerSpent: 0, managerSpent: 0,
+    investDeposited: 0, investWithdrawn: 0,
+    jobEarned: {}, jobDays: {}, shifts: {}, investEarnedById: {}, businessEarnedById: {},
+  };
+}
 
 // ---------- pure economic helpers (all per day) ----------
 
@@ -60,23 +116,77 @@ export function getJob(state: GameState) {
   return JOBS[Math.min(state.jobIndex, JOBS.length - 1)];
 }
 
+export function getTaxRate(state: GameState): number {
+  return state.consultants.includes("lobbyist") ? LOBBYIST_TAX_RATE : TAX_RATE;
+}
+
+export function getWorkHours(state: GameState): number {
+  return Math.max(0, WEEK_HOURS - state.studyHours);
+}
+
+export function option(list: LifestyleOption[], id: string): LifestyleOption {
+  return list.find((o) => o.id === id) || list[1] || list[0];
+}
+
+export function getHousing(state: GameState) { return option(HOUSING_OPTIONS, state.housing); }
+export function getFood(state: GameState) { return option(FOOD_OPTIONS, state.food); }
+export function getClothing(state: GameState) { return option(CLOTHING_OPTIONS, state.clothing); }
+
+export function getInvestmentTotal(state: GameState): number {
+  return Object.values(state.investments).reduce((s, i) => s + i.value, 0);
+}
+
+function investMultiplier(state: GameState): number {
+  let m = 1 + tierBonus(state.assets["watch"] || 0, WATCH_INVEST_BONUS);
+  if (state.consultants.includes("finance")) m *= 1.1;
+  if (state.consultants.includes("quant")) m *= 1.2;
+  return m;
+}
+
+export function getInvestmentPerDay(state: GameState): number {
+  const mult = investMultiplier(state);
+  let total = 0;
+  for (const [id, inv] of Object.entries(state.investments)) {
+    const def = INVESTMENTS.find((i) => i.id === id);
+    if (def) total += (inv.value * def.annualReturn * mult) / DAYS_PER_YEAR;
+  }
+  return total;
+}
+
 export function getGrossSalary(state: GameState): number {
-  if (state.studying) return 0;
-  let pay = getJob(state).dailyPay;
+  const job = getJob(state);
+  let pay = job.dailyPay * (getWorkHours(state) / WEEK_HOURS);
   pay *= 1 + tierBonus(state.assets["car"] || 0, CAR_PAY_BONUS);
-  if (state.consultants.includes("celebrity")) pay *= 1.2;
+  if (state.day < state.payUntil) pay *= state.payMult;
+  if (job.perfFee) {
+    // 2 and 20 on the money you run
+    pay += (getInvestmentTotal(state) * MGMT_FEE) / DAYS_PER_YEAR;
+    pay += Math.max(0, getInvestmentPerDay(state)) * PERF_FEE;
+  }
   return pay;
+}
+
+export function businessMultiplier(state: GameState): number {
+  let m = 1 + tierBonus(state.assets["wardrobe"] || 0, WARDROBE_BUSINESS_BONUS);
+  if (state.consultants.includes("marketing")) m *= 1.1;
+  if (state.consultants.includes("celebrity")) m *= 1.25;
+  if (state.day < state.boostUntil) m *= 2;
+  return m;
+}
+
+export function businessIncomeOf(state: GameState, id: string): number {
+  const def = BUSINESSES.find((b) => b.id === id);
+  const biz = state.businesses[id];
+  if (!def || !biz || biz.level === 0) return 0;
+  return getBusinessIncome(def, biz.level) * businessMultiplier(state);
 }
 
 export function getBusinessGross(state: GameState): number {
   let total = 0;
   for (const [id, biz] of Object.entries(state.businesses)) {
     if (!biz.hasManager || biz.level === 0) continue;
-    const def = BUSINESSES.find((b) => b.id === id);
-    if (def) total += def.baseIncome * biz.level;
+    total += businessIncomeOf(state, id);
   }
-  total *= 1 + tierBonus(state.assets["wardrobe"] || 0, WARDROBE_BUSINESS_BONUS);
-  if (state.consultants.includes("marketing")) total *= 1.1;
   return total;
 }
 
@@ -85,20 +195,21 @@ export function getManagerCosts(state: GameState): number {
   for (const [id, biz] of Object.entries(state.businesses)) {
     if (!biz.hasManager || biz.level === 0) continue;
     const def = BUSINESSES.find((b) => b.id === id);
-    if (def) total += def.baseIncome * biz.level * def.managerShare;
+    if (def) total += businessIncomeOf(state, id) * def.managerShare;
   }
   return total;
 }
 
 export function getLivingCosts(state: GameState): number {
-  let total = BASE_FOOD_COST;
+  let total = getFood(state).cost + getClothing(state).cost;
   const houseTier = state.assets["house"] || 0;
-  if (houseTier === 0) total += BASE_RENT;
+  if (houseTier === 0) total += getHousing(state).cost;
   if ((state.assets["car"] || 0) === 0) total += BASE_TRANSIT;
   for (const def of ASSETS) {
     const tier = state.assets[def.id] || 0;
     for (let i = 0; i < tier; i++) total += def.tiers[i].upkeep;
   }
+  if (state.day < state.livingUntil) total *= state.livingMult;
   return total;
 }
 
@@ -120,15 +231,20 @@ export function getOperatingCosts(state: GameState): number {
 export function getLoanPayments(state: GameState): number {
   let total = 0;
   for (const loan of Object.values(state.loans)) {
-    if (loan.active) total += Math.min(loan.dailyPayment, loan.remaining * 1.5);
+    if (loan.remaining > 0) total += Math.min(loan.dailyPayment, loan.remaining * 1.5);
   }
   return total;
 }
 
 export function getFocusMultiplier(state: GameState): number {
-  // Spending on yourself buys energy and connections; hoarding every dollar slows you down.
-  const spendRatio = 1 - state.savingsRate;
-  return 0.6 + 0.8 * spendRatio + tierBonus(state.assets["house"] || 0, HOUSE_FOCUS_BONUS);
+  const training = Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE);
+  const base = 1
+    + getFood(state).focus
+    + getClothing(state).focus
+    + ((state.assets["house"] || 0) > 0
+      ? tierBonus(state.assets["house"] || 0, HOUSE_FOCUS_BONUS)
+      : getHousing(state).focus);
+  return Math.max(0.2, base + training);
 }
 
 export function getBusinessValue(state: GameState): number {
@@ -136,9 +252,14 @@ export function getBusinessValue(state: GameState): number {
   for (const [id, biz] of Object.entries(state.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
     if (!def || biz.level === 0) continue;
-    total += def.baseIncome * biz.level * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+    total += getBusinessIncome(def, biz.level) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
   }
   return total;
+}
+
+export function getCreditLimit(state: GameState): number {
+  const positive = state.cash + getInvestmentTotal(state) + getBusinessValue(state);
+  return Math.max(CC_BASE_LIMIT, positive * 0.08, getGrossSalary(state) * 60);
 }
 
 export function isBusinessUnlocked(state: GameState, id: string): boolean {
@@ -151,128 +272,239 @@ export function isBusinessUnlocked(state: GameState, id: string): boolean {
 export function isInvestmentUnlocked(state: GameState, id: string): boolean {
   const def = INVESTMENTS.find((i) => i.id === id);
   if (!def?.unlockPrev) return true;
-  return (state.investments[def.unlockPrev]?.deposited || 0) >= (def.unlockAmount || 0);
+  const prev = state.investments[def.unlockPrev];
+  const everDeposited = (prev?.basis || 0) + (state.stats.investEarnedById[def.unlockPrev] || 0);
+  return Math.max(prev?.value || 0, everDeposited) >= (def.unlockAmount || 0);
+}
+
+export function upgradeCostFor(state: GameState, id: string): number {
+  const def = BUSINESSES.find((b) => b.id === id);
+  if (!def) return Infinity;
+  const level = state.businesses[id]?.level || 0;
+  const raw = calcBusinessCost(def.baseCost, def.costMultiplier, level);
+  return state.consultants.includes("banker") ? raw * 0.8 : raw;
+}
+
+function createFresh(): GameState {
+  return {
+    cash: 400, ccDebt: 0, day: 0,
+    jobIndex: 0, xp: 0, education: 0, studying: null,
+    studyHours: 0, trainingBudget: 0,
+    housing: "room", food: "groceries", clothing: "thrift",
+    lastShiftDay: -1,
+    businesses: {}, assets: {}, investments: {}, loans: {},
+    loansRepaid: [], consultants: [],
+    payMult: 1, payUntil: 0, livingMult: 1, livingUntil: 0, boostUntil: 0,
+    events: [], stats: emptyStats(), lastTick: Date.now(),
+  };
 }
 
 function createInitialState(): GameState {
-  const fresh: GameState = {
-    cash: 400, totalEarned: 0, day: 0,
-    jobIndex: 0, xp: 0, education: 0, studying: null,
-    savingsRate: 0.5, lastShiftDay: -1,
-    businesses: {}, assets: {}, investments: {}, loans: {},
-    loansRepaid: [], consultants: [], lastTick: Date.now(),
-  };
+  const fresh = createFresh();
   try {
     const saved = localStorage.getItem(SAVE_KEY);
     if (saved) {
-      const parsed = { ...fresh, ...(JSON.parse(saved) as GameState) };
-      const offlineDays = Math.min((Date.now() - parsed.lastTick) / 1000, MAX_OFFLINE_DAYS);
-      if (offlineDays > 5) return advance(parsed, offlineDays, Date.now());
-      parsed.lastTick = Date.now();
-      return parsed;
+      const parsed = JSON.parse(saved) as Partial<GameState>;
+      const merged: GameState = {
+        ...fresh, ...parsed,
+        stats: { ...emptyStats(), ...(parsed.stats || {}) },
+      };
+      const offlineDays = Math.min((Date.now() - merged.lastTick) / 1000, MAX_OFFLINE_DAYS);
+      if (offlineDays > 5) return advance(merged, offlineDays, Date.now());
+      merged.lastTick = Date.now();
+      return merged;
     }
   } catch { /* fall through */ }
   return fresh;
 }
 
+// ---------- random events ----------
+function rollEvent(state: GameState, days: number): GameState {
+  const chance = 1 - Math.pow(1 - EVENT_CHANCE_PER_DAY, days);
+  if (Math.random() > chance) return state;
+  const pool = EVENTS.filter((e) => !e.minDay || state.day >= e.minDay);
+  const totalWeight = pool.reduce((s, e) => s + e.weight, 0);
+  let r = Math.random() * totalWeight;
+  const def = pool.find((e) => (r -= e.weight) <= 0) || pool[0];
+  if (!def) return state;
+
+  const s: GameState = { ...state, stats: { ...state.stats } };
+  const netWorthish = Math.max(0, s.cash + getInvestmentTotal(s) + getBusinessValue(s));
+  const era = Math.max(1, Math.pow(1.0, 1)); // flat amounts stay small; % of net worth carries scale
+  let delta = 0;
+  if (def.cashFlat) delta += def.cashFlat * era;
+  if (def.cashPctOfNetWorth) delta += netWorthish * def.cashPctOfNetWorth;
+  if (delta !== 0) {
+    s.cash += delta;
+    if (delta > 0) s.stats.eventGains += delta; else s.stats.eventLosses += -delta;
+  }
+  if (def.xpFlat) s.xp += def.xpFlat;
+  if (def.businessBoostDays) s.boostUntil = s.day + def.businessBoostDays;
+  if (def.livingCostShift && def.livingCostShiftDays) {
+    s.livingMult = def.livingCostShift;
+    s.livingUntil = s.day + def.livingCostShiftDays;
+  }
+  if (def.payShift && def.payShiftDays) {
+    s.payMult = def.payShift;
+    s.payUntil = s.day + def.payShiftDays;
+  }
+  if (def.jobLoss && s.jobIndex > 0) { s.jobIndex = s.jobIndex - 1; s.xp = 0; }
+
+  s.events = [{ day: Math.floor(s.day), title: def.title, text: def.text, tone: def.tone }, ...s.events].slice(0, 30);
+  return s;
+}
+
 // ---------- the daily simulation ----------
 function advance(state: GameState, days: number, now: number): GameState {
-  let cash = state.cash;
-  let earned = 0;
+  let s: GameState = { ...state, stats: { ...state.stats, jobEarned: { ...state.stats.jobEarned }, jobDays: { ...state.stats.jobDays }, shifts: { ...state.stats.shifts }, investEarnedById: { ...state.stats.investEarnedById }, businessEarnedById: { ...state.stats.businessEarnedById } } };
+  const stats = s.stats;
+  let cash = s.cash;
+  const taxRate = getTaxRate(s);
 
-  // Education in progress
-  let studying = state.studying;
-  let education = state.education;
+  // Education in progress — study speed follows the hours you allocate
+  let studying = s.studying;
+  let education = s.education;
   if (studying) {
-    const left = studying.daysLeft - days;
-    if (left <= 0) { education = Math.max(education, studying.level); studying = null; }
+    const rate = s.studyHours / 40;
+    const left = studying.daysLeft - days * rate;
+    if (rate > 0 && left <= 0) { education = Math.max(education, studying.level); studying = null; }
     else studying = { ...studying, daysLeft: left };
   }
+  s = { ...s, studying, education };
 
-  // Salary, taxed, then living costs, then the savings split
-  const gross = getGrossSalary({ ...state, studying, education }) * days;
-  const living = getLivingCosts(state) * days;
-  const netSalary = gross * (1 - TAX_RATE);
-  const discretionary = netSalary - living;
-  if (discretionary >= 0) {
-    cash += discretionary * state.savingsRate; // the rest is spent on living well
-  } else {
-    cash += discretionary; // shortfall comes out of savings
-  }
-  earned += Math.max(0, discretionary * state.savingsRate);
+  // Salary
+  const job = getJob(s);
+  const gross = getGrossSalary(s) * days;
+  const tax = gross * taxRate;
+  const netSalary = gross - tax;
+  cash += netSalary;
+  stats.salaryEarned += netSalary;
+  stats.taxesPaid += tax;
+  stats.jobEarned[job.id] = (stats.jobEarned[job.id] || 0) + netSalary;
+  stats.jobDays[job.id] = (stats.jobDays[job.id] || 0) + days;
+
+  // Living and training
+  const living = getLivingCosts(s) * days;
+  const training = Math.max(0, s.trainingBudget) * days;
+  cash -= living + training;
+  stats.livingSpent += living;
+  stats.trainingSpent += training;
 
   // Businesses
   const businesses: Record<string, BusinessState> = {};
   let managedGross = 0;
-  for (const [id, biz] of Object.entries(state.businesses)) {
+  for (const [id, biz] of Object.entries(s.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
     if (!def || biz.level === 0) { businesses[id] = biz; continue; }
-    const perDay = def.baseIncome * biz.level;
+    const perDay = businessIncomeOf(s, id);
     if (biz.hasManager) {
-      managedGross += perDay * days;
+      const gain = perDay * days;
+      managedGross += gain;
+      stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
       businesses[id] = biz;
     } else {
       const cap = perDay * UNMANAGED_CAP_DAYS;
       businesses[id] = { ...biz, accumulated: Math.min(cap, (biz.accumulated || 0) + perDay * days) };
     }
   }
-  const bizMult = (1 + tierBonus(state.assets["wardrobe"] || 0, WARDROBE_BUSINESS_BONUS))
-    * (state.consultants.includes("marketing") ? 1.1 : 1);
-  const businessNet = managedGross * bizMult * (1 - TAX_RATE);
-  cash += businessNet;
-  earned += businessNet;
+  const bizTax = managedGross * taxRate;
+  cash += managedGross - bizTax;
+  stats.businessEarned += managedGross - bizTax;
+  stats.taxesPaid += bizTax;
 
-  // Operating costs (managers, retainers)
-  cash -= getOperatingCosts(state) * days;
+  // Operating costs
+  const mgr = getManagerCosts(s) * days;
+  const ret = getRetainerCosts(s) * days;
+  const operating = getOperatingCosts(s) * days;
+  cash -= operating;
+  stats.managerSpent += mgr;
+  stats.retainerSpent += ret;
 
-  // Investments — annual figures converted to daily
+  // Investments — lognormal so the long-run average matches the stated return
   const investments: Record<string, InvestmentState> = {};
-  const investMult = (1 + tierBonus(state.assets["watch"] || 0, WATCH_INVEST_BONUS))
-    * (state.consultants.includes("finance") ? 1.1 : 1);
-  for (const [id, inv] of Object.entries(state.investments)) {
+  const mult = investMultiplier(s);
+  const volDamp = s.consultants.includes("quant") ? 0.5 : 1;
+  for (const [id, inv] of Object.entries(s.investments)) {
     const def = INVESTMENTS.find((i) => i.id === id);
     if (!def || inv.value <= 0) { investments[id] = inv; continue; }
-    const drift = (def.annualReturn * investMult) / DAYS_PER_YEAR;
-    const shock = def.annualVolatility > 0
-      ? (Math.random() * 2 - 1) * (def.annualVolatility / Math.sqrt(DAYS_PER_YEAR)) * 1.7
-      : 0;
-    const growth = inv.value * (drift + shock / Math.sqrt(Math.max(1, days))) * days;
-    investments[id] = { ...inv, value: Math.max(0, inv.value + growth) };
+    const mu = def.annualReturn * mult;
+    const sigma = def.annualVolatility * volDamp;
+    const t = days / DAYS_PER_YEAR;
+    const z = gaussian();
+    const factor = Math.exp((Math.log(1 + mu) - (sigma * sigma) / 2) * t + sigma * Math.sqrt(t) * z);
+    const newValue = Math.max(0, inv.value * factor);
+    const gain = newValue - inv.value;
+    stats.investmentGains += gain;
+    stats.investEarnedById[id] = (stats.investEarnedById[id] || 0) + gain;
+    investments[id] = { ...inv, value: newValue };
   }
 
-  // Loan servicing — fixed amortized payments
+  // Loan servicing — interest accrues on the remaining balance only
   const loans: Record<string, LoanState> = {};
-  const loansRepaid = [...state.loansRepaid];
-  for (const [id, loan] of Object.entries(state.loans)) {
-    if (!loan.active) { loans[id] = loan; continue; }
+  const loansRepaid = [...s.loansRepaid];
+  for (const [id, loan] of Object.entries(s.loans)) {
+    if (loan.remaining <= 0) { loans[id] = loan; continue; }
     const def = LOANS.find((l) => l.id === id);
     if (!def) { loans[id] = loan; continue; }
     const dailyRate = def.annualRate / DAYS_PER_YEAR;
-    let remaining = loan.remaining * Math.pow(1 + dailyRate, days);
+    const grown = loan.remaining * Math.pow(1 + dailyRate, days);
+    stats.loanInterestPaid += grown - loan.remaining;
+    let remaining = grown;
     const due = Math.min(loan.dailyPayment * days, remaining);
-    const paid = Math.min(Math.max(cash, 0), due);
-    cash -= paid;
-    remaining -= paid;
+    cash -= due;
+    remaining -= due;
     if (remaining <= 0.5) {
       if (!loansRepaid.includes(id)) loansRepaid.push(id);
-      loans[id] = { active: false, remaining: 0, dailyPayment: 0 };
+      loans[id] = { drawn: 0, remaining: 0, dailyPayment: 0, timesRepaid: loan.timesRepaid + 1 };
     } else {
       loans[id] = { ...loan, remaining };
     }
   }
 
-  // Experience toward the next promotion
-  const xp = state.xp + (studying ? 0 : days * getFocusMultiplier(state));
+  // Credit card: anything you cannot cover becomes revolving debt
+  let ccDebt = s.ccDebt;
+  if (ccDebt > 0) {
+    const interest = ccDebt * (Math.pow(1 + CC_APR / DAYS_PER_YEAR, days) - 1);
+    ccDebt += interest;
+    stats.ccInterestPaid += interest;
+  }
+  if (cash < 0) { ccDebt += -cash; cash = 0; }
+  else if (ccDebt > 0) {
+    const pay = Math.min(cash, Math.max(ccDebt * CC_MIN_PAYMENT_RATE * days, Math.min(ccDebt, cash * 0.5)));
+    cash -= pay;
+    ccDebt -= pay;
+  }
 
-  return {
-    ...state,
-    cash: Math.max(0, cash),
-    totalEarned: state.totalEarned + earned,
-    day: state.day + days,
-    xp, education, studying,
-    businesses, investments, loans, loansRepaid,
-    lastTick: now,
+  // Over the limit: you get cut off and forced down to the cheapest life
+  let housing = s.housing, food = s.food, clothing = s.clothing;
+  let events = s.events;
+  if (ccDebt > getCreditLimit(s) && (housing !== "room" || food !== "instant" || clothing !== "thrift")) {
+    housing = (s.assets["car"] || 0) > 0 ? "car" : "room";
+    food = "instant"; clothing = "thrift";
+    events = [{ day: Math.floor(s.day), title: "Cut off", text: "Your card was declined. You have moved down to the cheapest possible life until the balance clears.", tone: "bad" }, ...events].slice(0, 30);
+  }
+
+  // Experience
+  const workShare = getWorkHours(s) / WEEK_HOURS;
+  const xp = s.xp + days * getFocusMultiplier(s) * (0.4 + 0.6 * workShare);
+
+  let next: GameState = {
+    ...s,
+    cash: Math.max(0, cash), ccDebt,
+    housing, food, clothing, events,
+    day: s.day + days,
+    xp, businesses, investments, loans, loansRepaid,
+    stats, lastTick: now,
   };
+  next = rollEvent(next, days);
+  return next;
+}
+
+function gaussian(): number {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
 
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -284,22 +516,44 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return advance(state, days, now);
     }
 
+    case "RESET": {
+      localStorage.removeItem(SAVE_KEY);
+      return createFresh();
+    }
+
     case "WORK": {
-      // One extra shift per day: a quarter-day of pay, plus experience.
       const today = Math.floor(state.day);
-      if (state.studying || state.lastShiftDay === today) return state;
-      const pay = getGrossSalary(state) * 0.25 * (1 - TAX_RATE);
+      if (state.lastShiftDay === today) return state;
+      const job = getJob(state);
+      const pay = getJob(state).dailyPay * 0.25 * (1 - getTaxRate(state));
+      const stats = { ...state.stats, shifts: { ...state.stats.shifts }, jobEarned: { ...state.stats.jobEarned } };
+      stats.shiftEarned += pay;
+      stats.shifts[job.id] = (stats.shifts[job.id] || 0) + 1;
+      stats.jobEarned[job.id] = (stats.jobEarned[job.id] || 0) + pay;
       return {
         ...state,
         cash: state.cash + pay,
-        totalEarned: state.totalEarned + pay,
         xp: state.xp + 2 * getFocusMultiplier(state),
         lastShiftDay: today,
+        stats,
       };
     }
 
-    case "SET_SAVINGS_RATE":
-      return { ...state, savingsRate: Math.max(0, Math.min(1, action.rate)) };
+    case "SET_STUDY_HOURS":
+      return { ...state, studyHours: Math.max(0, Math.min(WEEK_HOURS, Math.round(action.hours))) };
+
+    case "SET_TRAINING":
+      return { ...state, trainingBudget: Math.max(0, action.amount) };
+
+    case "SET_LIFESTYLE": {
+      if (action.slot === "housing") {
+        const opt = HOUSING_OPTIONS.find((o) => o.id === action.id);
+        if (!opt) return state;
+        if (opt.requiresCar && (state.assets["car"] || 0) === 0) return state;
+        return { ...state, housing: action.id };
+      }
+      return { ...state, [action.slot]: action.id } as GameState;
+    }
 
     case "PROMOTE": {
       const next = JOBS[state.jobIndex + 1];
@@ -314,29 +568,40 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!def || state.studying) return state;
       if (action.level !== state.education + 1) return state;
       if (state.cash < def.cost) return state;
-      return { ...state, cash: state.cash - def.cost, studying: { level: action.level, daysLeft: def.days } };
+      return {
+        ...state, cash: state.cash - def.cost,
+        studyHours: state.studyHours === 0 ? 20 : state.studyHours,
+        studying: { level: action.level, daysLeft: def.days },
+        stats: { ...state.stats, educationSpent: state.stats.educationSpent + def.cost },
+      };
     }
 
     case "BUY_BUSINESS": {
       const def = BUSINESSES.find((b) => b.id === action.id);
       if (!def || !isBusinessUnlocked(state, action.id)) return state;
       const cur = state.businesses[action.id] || { level: 0, hasManager: false, accumulated: 0 };
-      const cost = calcBusinessCost(def.baseCost, def.costMultiplier, cur.level);
+      const cost = upgradeCostFor(state, action.id);
       if (state.cash < cost) return state;
       return {
         ...state, cash: state.cash - cost,
         businesses: { ...state.businesses, [action.id]: { ...cur, level: cur.level + 1 } },
+        stats: { ...state.stats, businessSpent: state.stats.businessSpent + cost },
       };
     }
 
     case "COLLECT_BUSINESS": {
       const biz = state.businesses[action.id];
       if (!biz || biz.accumulated <= 0) return state;
-      const net = biz.accumulated * (1 - TAX_RATE);
+      const taxRate = getTaxRate(state);
+      const net = biz.accumulated * (1 - taxRate);
+      const stats = { ...state.stats, businessEarnedById: { ...state.stats.businessEarnedById } };
+      stats.businessEarned += net;
+      stats.taxesPaid += biz.accumulated - net;
+      stats.businessEarnedById[action.id] = (stats.businessEarnedById[action.id] || 0) + net;
       return {
         ...state, cash: state.cash + net,
-        totalEarned: state.totalEarned + net,
         businesses: { ...state.businesses, [action.id]: { ...biz, accumulated: 0 } },
+        stats,
       };
     }
 
@@ -344,10 +609,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = BUSINESSES.find((b) => b.id === action.id);
       const biz = state.businesses[action.id];
       if (!def || !biz || biz.hasManager || biz.level < 3) return state;
-      return {
-        ...state,
-        businesses: { ...state.businesses, [action.id]: { ...biz, hasManager: true } },
-      };
+      return { ...state, businesses: { ...state.businesses, [action.id]: { ...biz, hasManager: true } } };
     }
 
     case "BUY_ASSET": {
@@ -357,21 +619,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (cur >= def.tiers.length) return state;
       const cost = def.tiers[cur].cost;
       if (state.cash < cost) return state;
-      return { ...state, cash: state.cash - cost, assets: { ...state.assets, [action.id]: cur + 1 } };
+      return {
+        ...state, cash: state.cash - cost,
+        assets: { ...state.assets, [action.id]: cur + 1 },
+        stats: { ...state.stats, assetSpent: state.stats.assetSpent + cost },
+      };
     }
 
     case "INVEST": {
       const def = INVESTMENTS.find((i) => i.id === action.id);
       if (!def || action.amount <= 0 || state.cash < action.amount) return state;
       if (!isInvestmentUnlocked(state, action.id)) return state;
-      const cur = state.investments[action.id] || { value: 0, deposited: 0 };
+      const cur = state.investments[action.id] || { value: 0, basis: 0 };
       if (cur.value === 0 && action.amount < def.minInvestment) return state;
       return {
         ...state, cash: state.cash - action.amount,
         investments: {
           ...state.investments,
-          [action.id]: { value: cur.value + action.amount, deposited: cur.deposited + action.amount },
+          [action.id]: { value: cur.value + action.amount, basis: cur.basis + action.amount },
         },
+        stats: { ...state.stats, investDeposited: state.stats.investDeposited + action.amount },
       };
     }
 
@@ -380,26 +647,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!cur) return state;
       const amt = Math.min(action.amount, cur.value);
       if (amt <= 0) return state;
+      // basis comes out in the same proportion, so the gain figure stays honest
+      const share = amt / cur.value;
       return {
         ...state, cash: state.cash + amt,
-        investments: { ...state.investments, [action.id]: { ...cur, value: cur.value - amt } },
+        investments: {
+          ...state.investments,
+          [action.id]: { value: cur.value - amt, basis: cur.basis * (1 - share) },
+        },
+        stats: { ...state.stats, investWithdrawn: state.stats.investWithdrawn + amt },
       };
     }
 
     case "TAKE_LOAN": {
       const def = LOANS.find((l) => l.id === action.id);
-      if (!def || state.loans[action.id]?.active) return state;
+      if (!def) return state;
       if (state.loansRepaid.length < def.requiresCredit) return state;
+      const cur = state.loans[action.id] || { drawn: 0, remaining: 0, dailyPayment: 0, timesRepaid: 0 };
+      const available = def.amount - cur.drawn;
+      const amount = Math.min(action.amount, available);
+      if (amount <= 0) return state;
       const derived = calculateDerived(state);
       if (derived.netWorth < def.amount * LOAN_EQUITY_REQUIREMENT) return state;
+      const remaining = cur.remaining + amount;
       return {
-        ...state, cash: state.cash + def.amount,
+        ...state, cash: state.cash + amount,
         loans: {
           ...state.loans,
           [action.id]: {
-            active: true,
-            remaining: def.amount,
-            dailyPayment: amortizedPayment(def.amount, def.annualRate, def.termDays),
+            drawn: cur.drawn + amount,
+            remaining,
+            dailyPayment: amortizedPayment(remaining, def.annualRate, def.termDays),
+            timesRepaid: cur.timesRepaid,
           },
         },
       };
@@ -407,7 +686,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "REPAY_LOAN": {
       const loan = state.loans[action.id];
-      if (!loan?.active) return state;
+      const def = LOANS.find((l) => l.id === action.id);
+      if (!loan || loan.remaining <= 0 || !def) return state;
       const pay = Math.min(state.cash, loan.remaining);
       if (pay <= 0) return state;
       const rem = loan.remaining - pay;
@@ -418,9 +698,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ? [...state.loansRepaid, action.id] : state.loansRepaid,
         loans: {
           ...state.loans,
-          [action.id]: done ? { active: false, remaining: 0, dailyPayment: 0 } : { ...loan, remaining: rem },
+          [action.id]: done
+            ? { drawn: 0, remaining: 0, dailyPayment: 0, timesRepaid: loan.timesRepaid + 1 }
+            : { ...loan, remaining: rem, dailyPayment: amortizedPayment(rem, def.annualRate, def.termDays) },
         },
       };
+    }
+
+    case "PAY_CC": {
+      if (state.ccDebt <= 0) return state;
+      const pay = Math.min(state.cash, state.ccDebt);
+      if (pay <= 0) return state;
+      return { ...state, cash: state.cash - pay, ccDebt: state.ccDebt - pay };
     }
 
     case "HIRE_CONSULTANT": {
@@ -428,7 +717,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!def || state.consultants.includes(action.id) || state.cash < def.hireCost) return state;
       const levels = Object.values(state.businesses).reduce((s, b) => s + b.level, 0);
       if (levels < def.requiresBusinessLevels) return state;
-      return { ...state, cash: state.cash - def.hireCost, consultants: [...state.consultants, action.id] };
+      return {
+        ...state, cash: state.cash - def.hireCost,
+        consultants: [...state.consultants, action.id],
+        stats: { ...state.stats, consultantSpent: state.stats.consultantSpent + def.hireCost },
+      };
     }
 
     case "FIRE_CONSULTANT":
@@ -439,48 +732,49 @@ function gameReducer(state: GameState, action: GameAction): GameState {
   }
 }
 
-interface DerivedState {
+export interface DerivedState {
   netWorth: number;
-  salaryPerDay: number;         // after tax
-  businessPerDay: number;       // after tax, managed only
-  investmentPerDay: number;     // expected
+  salaryPerDay: number;
+  businessPerDay: number;
+  investmentPerDay: number;
   incomePerDay: number;
   livingCosts: number;
+  trainingCost: number;
   operatingCosts: number;
   loanPayments: number;
+  ccInterestPerDay: number;
   netPerDay: number;
-  savedPerDay: number;
   investmentTotal: number;
   loanTotal: number;
   assetValue: number;
   businessValue: number;
+  businessCapital: number;
   shiftPay: number;
   job: (typeof JOBS)[number];
   nextJob: (typeof JOBS)[number] | null;
   xpNeeded: number;
   focus: number;
   creditTier: number;
+  creditLimit: number;
+  taxRate: number;
+  workHours: number;
 }
 
 function calculateDerived(state: GameState): DerivedState {
-  const salaryPerDay = getGrossSalary(state) * (1 - TAX_RATE);
-  const businessPerDay = getBusinessGross(state) * (1 - TAX_RATE);
-  let investmentTotal = 0;
-  let investmentPerDay = 0;
-  const investMult = (1 + tierBonus(state.assets["watch"] || 0, WATCH_INVEST_BONUS))
-    * (state.consultants.includes("finance") ? 1.1 : 1);
-  for (const [id, inv] of Object.entries(state.investments)) {
-    investmentTotal += inv.value;
-    const def = INVESTMENTS.find((i) => i.id === id);
-    if (def) investmentPerDay += (inv.value * def.annualReturn * investMult) / DAYS_PER_YEAR;
-  }
+  const taxRate = getTaxRate(state);
+  const salaryPerDay = getGrossSalary(state) * (1 - taxRate);
+  const businessPerDay = getBusinessGross(state) * (1 - taxRate);
+  const investmentTotal = getInvestmentTotal(state);
+  const investmentPerDay = getInvestmentPerDay(state);
 
   const livingCosts = getLivingCosts(state);
   const operatingCosts = getOperatingCosts(state);
   const loanPayments = getLoanPayments(state);
+  const trainingCost = Math.max(0, state.trainingBudget);
+  const ccInterestPerDay = (state.ccDebt * CC_APR) / DAYS_PER_YEAR;
 
   let loanTotal = 0;
-  for (const l of Object.values(state.loans)) if (l.active) loanTotal += l.remaining;
+  for (const l of Object.values(state.loans)) loanTotal += l.remaining;
 
   let assetValue = 0;
   for (const [id, tier] of Object.entries(state.assets)) {
@@ -488,26 +782,32 @@ function calculateDerived(state: GameState): DerivedState {
     if (def) for (let i = 0; i < tier; i++) assetValue += def.tiers[i].cost * 0.8; // resale
   }
 
+  let businessCapital = 0;
+  for (const [id, biz] of Object.entries(state.businesses)) {
+    const def = BUSINESSES.find((b) => b.id === id);
+    if (def) businessCapital += getBusinessCapital(def, biz.level);
+  }
+
   const businessValue = getBusinessValue(state);
   const incomePerDay = salaryPerDay + businessPerDay + investmentPerDay;
-  const netPerDay = incomePerDay - livingCosts - operatingCosts - loanPayments;
-
-  const discretionary = salaryPerDay - livingCosts;
-  const savedPerDay = (discretionary >= 0 ? discretionary * state.savingsRate : discretionary)
-    + businessPerDay - operatingCosts - loanPayments;
+  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccInterestPerDay;
 
   const job = getJob(state);
   return {
-    netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal,
+    // you owe the principal, not the future interest
+    netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt,
     salaryPerDay, businessPerDay, investmentPerDay, incomePerDay,
-    livingCosts, operatingCosts, loanPayments, netPerDay, savedPerDay,
-    investmentTotal, loanTotal, assetValue, businessValue,
-    shiftPay: getGrossSalary(state) * 0.25 * (1 - TAX_RATE),
+    livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, netPerDay,
+    investmentTotal, loanTotal, assetValue, businessValue, businessCapital,
+    shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
     xpNeeded: job.xpToPromote,
     focus: getFocusMultiplier(state),
     creditTier: state.loansRepaid.length,
+    creditLimit: getCreditLimit(state),
+    taxRate,
+    workHours: getWorkHours(state),
   };
 }
 
