@@ -745,10 +745,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const cur = state.businesses[action.id] || { level: 0, condition: 1 };
       const cost = upgradeCostFor(state, action.id);
       if (state.cash < cost) return state;
+      const opening = cur.level === 0;
+      if (opening && !action.choices) return state;
+      const next: BusinessState = opening
+        ? {
+            level: 1,
+            condition: 1,
+            choices: action.choices,
+            fortune: rollBusinessFortune(action.choices || {}),
+          }
+        : { ...cur, level: cur.level + 1 };
       return {
         ...state, cash: state.cash - cost,
-        businesses: { ...state.businesses, [action.id]: { ...cur, level: cur.level + 1 } },
+        businesses: { ...state.businesses, [action.id]: next },
         stats: { ...state.stats, businessSpent: state.stats.businessSpent + cost },
+      };
+    }
+
+    case "SELL_BUSINESS": {
+      const biz = state.businesses[action.id];
+      if (!biz || biz.level === 0) return state;
+      const proceeds = getBusinessSalePrice(state, action.id);
+      return {
+        ...state, cash: state.cash + proceeds,
+        businesses: { ...state.businesses, [action.id]: { level: 0, condition: 1 } },
+        stats: { ...state.stats, businessSold: state.stats.businessSold + proceeds },
       };
     }
 
