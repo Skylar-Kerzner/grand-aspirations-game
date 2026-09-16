@@ -7,6 +7,9 @@
 export const DAYS_PER_YEAR = 365;
 export const TAX_RATE = 0.22;
 export const WEEK_HOURS = 40;
+// A venture only reaches its full return on the hours you personally put in.
+export const BUSINESS_ATTENTION_FLOOR = 0.5;      // an unattended venture runs at half its potential
+export const BUSINESS_ATTENTION_FULL_HOURS = 15;  // hours a week in one venture for full performance
 
 // ---------- Education ----------
 export interface MajorDef {

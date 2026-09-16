@@ -130,6 +130,11 @@ export default function LedgerPanel() {
               <span className="text-[10px] text-muted-foreground ml-2">Day {e.day + 1}</span>
             </p>
             <p className="text-[11px] text-muted-foreground">{e.text}</p>
+            {e.effect && (
+              <p className={`text-[11px] font-medium ${e.tone === "bad" ? "text-destructive" : e.tone === "good" ? "text-primary" : ""}`}>
+                {e.effect}
+              </p>
+            )}
           </div>
         ))}
       </Section>

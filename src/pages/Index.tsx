@@ -6,6 +6,7 @@ import AssetGallery from "@/components/game/AssetGallery";
 import InvestmentPanel from "@/components/game/InvestmentPanel";
 import FinancePanel from "@/components/game/FinancePanel";
 import CareerPanel from "@/components/game/CareerPanel";
+import TimePanel from "@/components/game/TimePanel";
 import LedgerPanel from "@/components/game/LedgerPanel";
 import BackgroundScene from "@/components/game/BackgroundScene";
 import EventModal from "@/components/game/EventModal";
@@ -17,6 +18,7 @@ const TABS = [
   { value: "assets", label: "Lifestyle" },
   { value: "investments", label: "Invest" },
   { value: "finance", label: "Money" },
+  { value: "time", label: "Time" },
   { value: "ledger", label: "Review" },
 ];
 
@@ -31,7 +33,7 @@ export default function Index() {
 
           <div className="px-4 pt-4 pb-28 max-w-lg mx-auto">
             <Tabs defaultValue="career" className="w-full">
-              <TabsList className="w-full grid grid-cols-6 bg-secondary h-10 rounded-lg p-1 mb-4">
+              <TabsList className="w-full grid grid-cols-7 bg-secondary h-10 rounded-lg p-1 mb-4">
                 {TABS.map((t) => (
                   <TabsTrigger
                     key={t.value}
@@ -48,6 +50,7 @@ export default function Index() {
               <TabsContent value="assets"><AssetGallery /></TabsContent>
               <TabsContent value="investments"><InvestmentPanel /></TabsContent>
               <TabsContent value="finance"><FinancePanel /></TabsContent>
+              <TabsContent value="time"><TimePanel /></TabsContent>
               <TabsContent value="ledger"><LedgerPanel /></TabsContent>
             </Tabs>
           </div>
