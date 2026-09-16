@@ -223,9 +223,42 @@ export function getBusinessNetworkBonus(state: GameState, id: string): number {
   return bonus;
 }
 
+/** Total days worked in a given industry across your whole career. */
+export function getTrackYears(state: GameState, trackId: string): number {
+  let days = 0;
+  const today = Math.floor(state.day);
+  state.jobHistory.forEach((job, i) => {
+    if (getCareerTrack(job.employer).id !== trackId) return;
+    const end = i + 1 < state.jobHistory.length ? state.jobHistory[i + 1].startDay : today;
+    days += Math.max(0, end - job.startDay);
+  });
+  return days / DAYS_PER_YEAR;
+}
+
+/** What your career and education bring to running a venture in its industry. */
+export function getIndustryKnowledge(state: GameState, id: string) {
+  const def = BUSINESSES.find((business) => business.id === id);
+  if (!def) return { returnBonus: 0, riskRelief: 0, hasMajor: false, years: 0, track: undefined };
+  const track = CAREER_TRACKS[def.track];
+  const major = getTrackMajor(def.track);
+  const hasMajor = !!major && state.majors.includes(major.id);
+  const years = getTrackYears(state, def.track);
+  const yearBonus = Math.min(INDUSTRY_YEAR_CAP, years * INDUSTRY_YEAR_STEP);
+  const returnBonus = (hasMajor ? INDUSTRY_MAJOR_BONUS : 0) + yearBonus;
+  const maxBonus = INDUSTRY_MAJOR_BONUS + INDUSTRY_YEAR_CAP;
+  return {
+    returnBonus,
+    riskRelief: INDUSTRY_RISK_RELIEF * (returnBonus / maxBonus),
+    hasMajor,
+    years,
+    track,
+  };
+}
+
 export function getBusinessEffectiveROI(state: GameState, id: string): number {
   const def = BUSINESSES.find((business) => business.id === id);
-  return def ? def.annualROI * (1 + getBusinessNetworkBonus(state, id)) : 0;
+  if (!def) return 0;
+  return def.annualROI * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus);
 }
 
 export function getNextBusinessNetworkMilestone(state: GameState, id: string) {
@@ -364,11 +397,9 @@ export function getCreditLimit(state: GameState): number {
   return Math.max(CC_BASE_LIMIT, positive * 0.08, getGrossSalary(state) * 60);
 }
 
-export function isBusinessUnlocked(state: GameState, id: string): boolean {
-  const idx = BUSINESSES.findIndex((b) => b.id === id);
-  if (idx <= 0) return true;
-  const prev = BUSINESSES[idx - 1];
-  return (state.businesses[prev.id]?.level || 0) >= BUSINESSES[idx].unlockLevelOfPrev;
+/** Every venture is open to anyone who can pay for it. */
+export function isBusinessUnlocked(_state: GameState, _id: string): boolean {
+  return true;
 }
 
 export function isInvestmentUnlocked(state: GameState, id: string): boolean {
