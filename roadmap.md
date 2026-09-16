@@ -13,3 +13,4 @@
 
 - [ ] Widen business luck range to roughly 15%-600% (was ~80-120%)
 - [ ] Rename 'How it turned out' to 'Overall business success'; drift fortune 0.9-1.1x each level up
+- [ ] Show business success as return on capital (fortune x 30% baseline) instead of a percent-of-typical
