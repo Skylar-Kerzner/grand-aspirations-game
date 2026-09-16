@@ -7,4 +7,4 @@
 - [x] Career: climb by staying in one industry, degree-free path, penalized sideways moves
 - [x] Fix housing images to match tier descriptions
 - [x] Make lifestyle tier rows themselves clickable instead of separate buttons
-- [ ] Business upgrades partially reroll fortune so a good roll isn't permanent
+- [x] Business upgrades partially reroll fortune so a good roll isn't permanent
