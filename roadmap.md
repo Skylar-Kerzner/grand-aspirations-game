@@ -9,5 +9,5 @@
 - [x] Make lifestyle tier rows themselves clickable instead of separate buttons
 - [x] Business upgrades partially reroll fortune so a good roll isn't permanent
 - [x] Rework business open choices: flavor-only (name/image), same risk for all, fun combos like matcha in Manhattan
-- [ ] Let players re-choose concept/location on each business tier-up (alongside the luck reroll)
+- [x] Let players re-choose concept/location on each business tier-up (alongside the luck reroll)
 
