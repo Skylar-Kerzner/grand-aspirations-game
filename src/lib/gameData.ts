@@ -149,7 +149,7 @@ export interface BusinessDef {
   baseCost: number;
   annualROI: number; // baseline profit per year as a share of capital invested
   costMultiplier: number;
-  managerShare: number; // fraction of revenue paid to manager per day
+  risk: number; // annual volatility of profit; higher means bigger swings and more shocks
   unlockLevelOfPrev: number; // levels required in the previous business
   description: string;
   tierNames: string[];
@@ -166,64 +166,73 @@ export const BUSINESS_NETWORK_MILESTONES = [
 export const BUSINESSES: BusinessDef[] = [
   {
     id: "coffee", name: "Coffee Shop", sector: "Food & Beverage",
-    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, managerShare: 0.14, unlockLevelOfPrev: 0,
+    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.55, unlockLevelOfPrev: 0,
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
     tierImages: ["coffee-t1", "coffee-t2", "coffee-t3", "coffee-t4"],
   },
   {
     id: "restaurant", name: "Restaurant", sector: "Food & Beverage",
-    baseCost: 60000, annualROI: 0.3, costMultiplier: 1.16, managerShare: 0.13, unlockLevelOfPrev: 8,
+    baseCost: 60000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.5, unlockLevelOfPrev: 8,
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Neighbourhood Bistro", "Fine Dining Room", "Culinary Empire"],
     tierImages: ["restaurant-t1", "restaurant-t2", "restaurant-t3", "restaurant-t4"],
   },
   {
     id: "tech", name: "Tech Startup", sector: "Technology",
-    baseCost: 600000, annualROI: 0.3, costMultiplier: 1.15, managerShare: 0.12, unlockLevelOfPrev: 8,
+    baseCost: 600000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.6, unlockLevelOfPrev: 8,
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Series A Office", "Tech Campus", "Tech Giant HQ"],
     tierImages: ["tech-t1", "tech-t2", "tech-t3", "tech-t4"],
   },
   {
     id: "hotel", name: "Hotel", sector: "Hospitality",
-    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.14, managerShare: 0.11, unlockLevelOfPrev: 8,
+    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.4, unlockLevelOfPrev: 8,
     description: "Luxury accommodations worldwide.",
     tierNames: ["Roadside Motel", "Boutique Hotel", "Luxury Resort", "Grand Hotel Empire"],
     tierImages: ["hotel-t1", "hotel-t2", "hotel-t3", "hotel-t4"],
   },
   {
     id: "fashion", name: "Fashion Brand", sector: "Retail",
-    baseCost: 60000000, annualROI: 0.3, costMultiplier: 1.13, managerShare: 0.1, unlockLevelOfPrev: 8,
+    baseCost: 60000000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.38, unlockLevelOfPrev: 8,
     description: "Define style itself.",
     tierNames: ["Market Stall", "Flagship Boutique", "Department Store", "Fashion House"],
     tierImages: ["fashion-t1", "fashion-t2", "fashion-t3", "fashion-t4"],
   },
   {
     id: "themepark", name: "Theme Park", sector: "Entertainment",
-    baseCost: 600000000, annualROI: 0.3, costMultiplier: 1.12, managerShare: 0.09, unlockLevelOfPrev: 8,
+    baseCost: 600000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.32, unlockLevelOfPrev: 8,
     description: "Create worlds of wonder.",
     tierNames: ["Travelling Carnival", "Family Fun Park", "Destination Theme Park", "Entertainment Empire"],
     tierImages: ["themepark-t1", "themepark-t2", "themepark-t3", "themepark-t4"],
   },
   {
     id: "media", name: "Media Network", sector: "Media",
-    baseCost: 6000000000, annualROI: 0.3, costMultiplier: 1.12, managerShare: 0.09, unlockLevelOfPrev: 8,
+    baseCost: 6000000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.3, unlockLevelOfPrev: 8,
     description: "Own the attention itself.",
     tierNames: ["Podcast Studio", "Streaming Channel", "Broadcast Network", "Global Media Conglomerate"],
     tierImages: ["media-t1", "media-t2", "media-t3", "media-t4"],
   },
   {
     id: "city", name: "City Development", sector: "Infrastructure",
-    baseCost: 60000000000, annualROI: 0.3, costMultiplier: 1.11, managerShare: 0.08, unlockLevelOfPrev: 8,
+    baseCost: 60000000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.24, unlockLevelOfPrev: 8,
     description: "Build the skyline everyone else lives in.",
     tierNames: ["City Block", "Mixed-Use District", "Waterfront Downtown", "Sovereign Metropolis"],
     tierImages: ["city-t1", "city-t2", "city-t3", "city-t4"],
   },
 ];
 
-// Uncollected revenue spoils after this many days without a manager
-export const UNMANAGED_CAP_DAYS = 20;
+// Trading conditions drift day to day and revert toward normal at this rate.
+export const BUSINESS_CONDITION_REVERSION = 0.04;
+// Chance per day, scaled by a business's risk, of a serious setback.
+export const BUSINESS_SHOCK_CHANCE = 0.006;
+export const BUSINESS_SHOCK_TEXTS = [
+  "a burst pipe closed the doors",
+  "a key supplier collapsed",
+  "a bad review cycle emptied the place",
+  "a licensing dispute halted trade",
+  "a competitor opened across the street",
+];
 // A business is worth this multiple of its annual profit (about 1.2x what you paid in)
 export const BUSINESS_VALUATION_MULTIPLE = 4;
 
