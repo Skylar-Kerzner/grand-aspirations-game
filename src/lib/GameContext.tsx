@@ -52,6 +52,7 @@ export interface GameState {
   jobIndex: number;
   currentJob: CareerOffer;
   careerOffers: CareerOffer[];
+  jobHistory: (CareerOffer & { startDay: number })[];
   xp: number;
   education: number;
   studying: { level: number; daysLeft: number } | null;
