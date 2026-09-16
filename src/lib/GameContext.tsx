@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, LOAN_EQUITY_REQUIREMENT,
@@ -54,8 +54,8 @@ export interface GameState {
   careerOffers: CareerOffer[];
   jobHistory: (CareerOffer & { startDay: number })[];
   xp: number;
-  education: number;
-  studying: { level: number; daysLeft: number } | null;
+  majors: string[]; // completed major ids — each opens a career track
+  studying: { majorId: string; daysLeft: number } | null;
   studyHours: number;     // of the 40 weekly hours, how many go to school
   trainingBudget: number; // dollars per day spent on courses and coaching
   lastShiftDay: number;
@@ -346,7 +346,7 @@ function createFresh(): GameState {
     currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
     careerOffers: [],
     jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
-    xp: 0, education: 0, studying: null,
+    xp: 0, majors: [], studying: null,
     studyHours: 0, trainingBudget: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
