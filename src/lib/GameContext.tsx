@@ -72,7 +72,7 @@ export interface GameState {
   lastTick: number;
 }
 
-type GameAction =
+export type GameAction =
   | { type: "TICK" }
   | { type: "WORK" }
   | { type: "SET_STUDY_HOURS"; hours: number }
@@ -882,13 +882,7 @@ function calculateDerived(state: GameState): DerivedState {
   };
 }
 
-interface GameContextType {
-  state: GameState;
-  derived: DerivedState;
-  dispatch: React.Dispatch<GameAction>;
-}
-
-const GameContext = createContext<GameContextType | null>(null);
+import { GameContext } from "./gameContextObject";
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialState);
