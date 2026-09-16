@@ -15,3 +15,5 @@
 - [x] Rename 'How it turned out' to 'Overall business success'; drift fortune 0.9-1.1x each level up
 - [x] Show business success as return on capital (fortune x 30% baseline) instead of a percent-of-typical
 - [x] Give every venture concept its own picture at each stage
+
+- [ ] Tier-up reroll: keep more old fortune when concept and city stay the same, less when both change (with subtext)
