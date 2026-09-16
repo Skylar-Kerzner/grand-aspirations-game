@@ -4,6 +4,6 @@
 - [x] Balance business returns around paired portfolio milestones
 - [x] Add varied career positions with luck-based salary offers
 - [x] Include required credit-card payments in daily costs
-- [ ] Career: climb by staying in one industry, degree-free path, penalized sideways moves
-- [ ] Fix housing images to match tier descriptions
-- [ ] Make lifestyle tier rows themselves clickable instead of separate buttons
+- [x] Career: climb by staying in one industry, degree-free path, penalized sideways moves
+- [x] Fix housing images to match tier descriptions
+- [x] Make lifestyle tier rows themselves clickable instead of separate buttons
