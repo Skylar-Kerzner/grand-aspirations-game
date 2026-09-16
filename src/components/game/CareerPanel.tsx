@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { EDUCATION, JOBS, WEEK_HOURS } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, EDUCATION, JOBS, WEEK_HOURS } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
@@ -9,7 +9,7 @@ export default function CareerPanel() {
   const next = derived.nextJob;
   const xpPct = Math.min(100, (state.xp / (derived.xpNeeded || 1)) * 100);
   const educationOk = next ? state.education >= next.education : true;
-  const canPromote = !!next && state.xp >= derived.xpNeeded && educationOk;
+  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && educationOk && state.careerOffers.length === 0;
 
   return (
     <div className="space-y-6">
@@ -22,6 +22,9 @@ export default function CareerPanel() {
           <span className="text-muted-foreground">Gross pay at {derived.workHours}h</span>
           <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
         </div>
+        <p className="text-[11px] text-muted-foreground mb-2">
+          Market range {formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max)}/day
+        </p>
         {job.perfFee && (
           <p className="text-[11px] text-primary mb-2">
             Plus 2% a year on the portfolio and 20% of its gains.
@@ -46,14 +49,43 @@ export default function CareerPanel() {
             {!educationOk && (
               <p className="text-[11px] text-muted-foreground mb-2">Requires {EDUCATION[next.education].name}.</p>
             )}
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => dispatch({ type: "PROMOTE" })}
-              disabled={!canPromote}
-              className="w-full h-10 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40"
-            >
-              Accept promotion to {next.title}
-            </motion.button>
+            {state.careerOffers.length === 0 ? (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => dispatch({ type: "GENERATE_JOB_OFFERS" })}
+                disabled={!canSeekOffers}
+                className="w-full h-10 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40"
+              >
+                Seek offers for the next career level
+              </motion.button>
+            ) : (
+              <div className="space-y-2 mt-3">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Your offers</p>
+                {state.careerOffers.map((offer, index) => (
+                  <button
+                    key={`${offer.employer}-${index}`}
+                    onClick={() => dispatch({ type: "ACCEPT_JOB_OFFER", index })}
+                    className="w-full surface-button rounded-lg p-3 text-left transition-game"
+                  >
+                    <span className="flex justify-between gap-3 text-sm font-semibold">
+                      <span>{offer.title}</span>
+                      <span className="font-mono-nums text-primary shrink-0">{formatMoney(offer.dailyPay)}/day</span>
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
+                  </button>
+                ))}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => dispatch({ type: "GENERATE_JOB_OFFERS" })}
+                  disabled={state.xp < derived.xpNeeded}
+                  className="w-full h-9 rounded-lg surface-button text-xs transition-game disabled:opacity-40"
+                >
+                  {state.xp >= derived.xpNeeded
+                    ? "Search again"
+                    : `Search again at ${Math.ceil(derived.xpNeeded - state.xp)} more experience`}
+                </motion.button>
+              </div>
+            )}
           </>
         ) : (
           <p className="text-xs text-primary">Top of the ladder.</p>
@@ -135,7 +167,7 @@ export default function CareerPanel() {
                     <span className="text-xs text-primary shrink-0">Completed</span>
                   ) : inProgress ? (
                     <span className="text-xs text-muted-foreground shrink-0">
-                      {Math.ceil(state.studying!.daysLeft)}d of work left
+                      {Math.ceil(state.studying?.daysLeft || 0)}d of work left
                     </span>
                   ) : (
                     <motion.button
@@ -168,7 +200,9 @@ export default function CareerPanel() {
                 <p className="text-[11px] text-muted-foreground">{j.employer}</p>
               </div>
               <span className="font-mono-nums text-xs text-muted-foreground self-center">
-                {formatMoney(j.dailyPay)}/day
+                {i === state.jobIndex
+                  ? `${formatMoney(job.dailyPay)}/day`
+                  : `${formatMoney(j.dailyPay * CAREER_SALARY_RANGE.min)}–${formatMoney(j.dailyPay * CAREER_SALARY_RANGE.max)}`}
               </span>
             </div>
           ))}

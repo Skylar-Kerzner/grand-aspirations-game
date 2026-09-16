@@ -38,6 +38,26 @@ export interface JobDef {
   perfFee?: boolean; // earns 2 & 20 on the portfolio
 }
 
+export interface CareerVariant { title: string; employer: string }
+
+export const CAREER_SALARY_RANGE = { min: 0.82, max: 1.22 };
+export const CAREER_VARIANTS: CareerVariant[][] = [
+  [{ title: "Dishwasher", employer: "Corner Diner" }, { title: "Kitchen Porter", employer: "The Brass Spoon" }, { title: "Prep Assistant", employer: "Market Street Grill" }],
+  [{ title: "Barista", employer: "Roast House" }, { title: "Counter Associate", employer: "Juniper Coffee" }, { title: "Café Host", employer: "Daily Ritual" }],
+  [{ title: "Shift Supervisor", employer: "Roast House" }, { title: "Floor Lead", employer: "Juniper Coffee" }, { title: "Assistant Manager", employer: "Daily Ritual" }],
+  [{ title: "Service Technician", employer: "Meridian Facilities" }, { title: "Field Technician", employer: "Apex Systems" }, { title: "Maintenance Specialist", employer: "Civic Works" }],
+  [{ title: "Operations Coordinator", employer: "Meridian Facilities" }, { title: "Project Coordinator", employer: "Apex Systems" }, { title: "Service Operations Lead", employer: "Civic Works" }],
+  [{ title: "Junior Analyst", employer: "Halstead Capital" }, { title: "Research Analyst", employer: "North & Finch" }, { title: "Financial Analyst", employer: "Summit Advisory" }],
+  [{ title: "Account Manager", employer: "Halstead Capital" }, { title: "Client Strategist", employer: "North & Finch" }, { title: "Commercial Manager", employer: "Summit Advisory" }],
+  [{ title: "Software Engineer", employer: "Northbeam Labs" }, { title: "Product Engineer", employer: "Vanta Works" }, { title: "Platform Developer", employer: "Fieldstone Tech" }],
+  [{ title: "Engineering Lead", employer: "Northbeam Labs" }, { title: "Staff Engineer", employer: "Vanta Works" }, { title: "Technical Lead", employer: "Fieldstone Tech" }],
+  [{ title: "Director of Strategy", employer: "Northbeam Labs" }, { title: "Director of Operations", employer: "Aster Group" }, { title: "Head of Growth", employer: "Vanta Works" }],
+  [{ title: "Vice President", employer: "Arclight Group" }, { title: "Senior Vice President", employer: "Sterling Partners" }, { title: "Division President", employer: "Aster Group" }],
+  [{ title: "Managing Partner", employer: "Arclight Group" }, { title: "Operating Partner", employer: "Sterling Partners" }, { title: "Senior Partner", employer: "Crown & Vale" }],
+  [{ title: "Portfolio Manager", employer: "Halstead Capital" }, { title: "Fund Manager", employer: "Crown & Vale" }, { title: "Chief Investment Officer", employer: "Sterling Partners" }],
+  [{ title: "Hedge Fund Manager", employer: "Your own fund" }, { title: "Founding Portfolio Manager", employer: "Your own fund" }, { title: "Chief Investment Partner", employer: "Your own fund" }],
+];
+
 export const JOBS: JobDef[] = [
   { id: "dish", title: "Dishwasher", employer: "Corner Diner", education: 0, dailyPay: 152, xpToPromote: 40, scene: "desk-t1" },
   { id: "barista", title: "Barista", employer: "Roast House", education: 0, dailyPay: 188, xpToPromote: 70, scene: "desk-t1" },

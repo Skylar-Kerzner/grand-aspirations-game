@@ -21,7 +21,7 @@ export default function FinancePanel() {
           <Row label="Managers & retainers" value={formatRate(-derived.operatingCosts)} tone="neg" />
           <Row label="Loan payments" value={formatRate(-derived.loanPayments)} tone="neg" />
           {state.ccDebt > 0.5 && (
-            <Row label="Card interest" value={formatRate(-derived.ccInterestPerDay)} tone="neg" />
+            <Row label="Credit card payment" value={formatRate(-derived.ccPaymentPerDay)} tone="neg" />
           )}
           <div className="flex justify-between border-t border-border pt-2">
             <span>Net</span>
@@ -41,7 +41,7 @@ export default function FinancePanel() {
           </span>
         </div>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Anything you can't cover goes on the card at 29% a year. It pays itself down when cash allows.
+          Anything you can't cover goes on the card at 29% a year. The daily minimum is included in costs, and extra cash pays it down faster.
           Go past the limit and you get cut back to the cheapest possible life.
         </p>
         <motion.button

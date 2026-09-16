@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
   UNMANAGED_CAP_DAYS, BUSINESS_VALUATION_MULTIPLE, BUSINESS_NETWORK_MILESTONES, LOAN_EQUITY_REQUIREMENT,
@@ -14,6 +14,7 @@ const MAX_OFFLINE_DAYS = 240;
 export interface BusinessState { level: number; hasManager: boolean; accumulated: number }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number }
+export interface CareerOffer { title: string; employer: string; dailyPay: number }
 
 export interface GameEvent { day: number; title: string; text: string; tone: "good" | "bad" | "neutral" }
 
@@ -49,6 +50,8 @@ export interface GameState {
   ccDebt: number;
   day: number;
   jobIndex: number;
+  currentJob: CareerOffer;
+  careerOffers: CareerOffer[];
   xp: number;
   education: number;
   studying: { level: number; daysLeft: number } | null;
@@ -75,7 +78,8 @@ type GameAction =
   | { type: "SET_STUDY_HOURS"; hours: number }
   | { type: "SET_TRAINING"; amount: number }
   | { type: "SET_LIFESTYLE"; id: string; tier: number }
-  | { type: "PROMOTE" }
+  | { type: "GENERATE_JOB_OFFERS" }
+  | { type: "ACCEPT_JOB_OFFER"; index: number }
   | { type: "STUDY"; level: number }
   | { type: "BUY_BUSINESS"; id: string }
   | { type: "COLLECT_BUSINESS"; id: string }
@@ -107,7 +111,7 @@ export function tierBonus(tier: number, table: number[]): number {
 }
 
 export function getJob(state: GameState) {
-  return JOBS[Math.min(state.jobIndex, JOBS.length - 1)];
+  return { ...JOBS[Math.min(state.jobIndex, JOBS.length - 1)], ...state.currentJob };
 }
 
 export function getTaxRate(state: GameState): number {
@@ -283,6 +287,12 @@ export function getLoanPayments(state: GameState): number {
   return total;
 }
 
+export function getCreditCardPayment(state: GameState): number {
+  if (state.ccDebt <= 0) return 0;
+  const balanceAfterInterest = state.ccDebt * (1 + CC_APR / DAYS_PER_YEAR);
+  return Math.min(balanceAfterInterest, balanceAfterInterest * CC_MIN_PAYMENT_RATE);
+}
+
 export function getCareerProgressMultiplier(state: GameState): number {
   const training = Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE);
   const lifestyle = ASSETS.reduce((sum, def) => sum + (getLifestyleTier(state, def.id)?.careerBonus || 0), 0);
@@ -332,9 +342,13 @@ export function upgradeCostFor(state: GameState, id: string): number {
 }
 
 function createFresh(): GameState {
+  const firstJob = JOBS[0];
   return {
     cash: 400, ccDebt: 0, day: 0,
-    jobIndex: 0, xp: 0, education: 0, studying: null,
+    jobIndex: 0,
+    currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
+    careerOffers: [],
+    xp: 0, education: 0, studying: null,
     studyHours: 0, trainingBudget: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
@@ -351,8 +365,11 @@ function createInitialState(): GameState {
     if (saved) {
       const parsed = JSON.parse(saved) as Partial<GameState> & { food?: string; clothing?: string };
       const legacyAssets = parsed.assets || {};
+      const savedJob = JOBS[Math.min(parsed.jobIndex || 0, JOBS.length - 1)];
       const merged: GameState = {
         ...fresh, ...parsed,
+        currentJob: parsed.currentJob || { title: savedJob.title, employer: savedJob.employer, dailyPay: savedJob.dailyPay },
+        careerOffers: parsed.careerOffers || [],
         assets: {
           house: legacyAssets.house || 1,
           food: legacyAssets.food || (parsed.food === "chef" ? 4 : parsed.food === "eatout" ? 3 : parsed.food === "groceries" ? 2 : 1),
@@ -401,7 +418,13 @@ function rollEvent(state: GameState, days: number): GameState {
     s.payMult = def.payShift;
     s.payUntil = s.day + def.payShiftDays;
   }
-  if (def.jobLoss && s.jobIndex > 0) { s.jobIndex = s.jobIndex - 1; s.xp = 0; }
+  if (def.jobLoss && s.jobIndex > 0) {
+    s.jobIndex -= 1;
+    const fallback = JOBS[s.jobIndex];
+    s.currentJob = { title: fallback.title, employer: fallback.employer, dailyPay: fallback.dailyPay };
+    s.careerOffers = [];
+    s.xp = 0;
+  }
 
   s.events = [{ day: Math.floor(s.day), title: def.title, text: def.text, tone: def.tone }, ...s.events].slice(0, 30);
   return s;
@@ -604,12 +627,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, assets: { ...state.assets, [action.id]: action.tier } };
     }
 
-    case "PROMOTE": {
+    case "GENERATE_JOB_OFFERS": {
       const next = JOBS[state.jobIndex + 1];
       if (!next) return state;
       if (state.xp < getJob(state).xpToPromote) return state;
       if (state.education < next.education) return state;
-      return { ...state, jobIndex: state.jobIndex + 1, xp: 0 };
+      const variants = CAREER_VARIANTS[state.jobIndex + 1] || [{ title: next.title, employer: next.employer }];
+      const careerOffers = [0, 1, 2].map((slot) => {
+        const variant = variants[(slot + Math.floor(Math.random() * variants.length)) % variants.length];
+        const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
+        return { ...variant, dailyPay: Math.round(next.dailyPay * factor) };
+      }).sort((a, b) => a.dailyPay - b.dailyPay);
+      return { ...state, careerOffers, xp: Math.max(0, state.xp - getJob(state).xpToPromote) };
+    }
+
+    case "ACCEPT_JOB_OFFER": {
+      const offer = state.careerOffers[action.index];
+      const next = JOBS[state.jobIndex + 1];
+      if (!offer || !next || state.education < next.education) return state;
+      return { ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0 };
     }
 
     case "STUDY": {
@@ -778,6 +814,7 @@ export interface DerivedState {
   operatingCosts: number;
   loanPayments: number;
   ccInterestPerDay: number;
+  ccPaymentPerDay: number;
   netPerDay: number;
   investmentTotal: number;
   loanTotal: number;
@@ -808,6 +845,7 @@ function calculateDerived(state: GameState): DerivedState {
   const loanPayments = getLoanPayments(state);
   const trainingCost = Math.max(0, state.trainingBudget);
   const ccInterestPerDay = (state.ccDebt * CC_APR) / DAYS_PER_YEAR;
+  const ccPaymentPerDay = getCreditCardPayment(state);
 
   let loanTotal = 0;
   for (const l of Object.values(state.loans)) loanTotal += l.remaining;
@@ -822,14 +860,14 @@ function calculateDerived(state: GameState): DerivedState {
 
   const businessValue = getBusinessValue(state);
   const incomePerDay = salaryPerDay + businessPerDay + investmentPerDay;
-  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccInterestPerDay;
+  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay;
 
   const job = getJob(state);
   return {
     // you owe the principal, not the future interest
     netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt,
     salaryPerDay, businessPerDay, investmentPerDay, incomePerDay,
-    livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, netPerDay,
+    livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
     investmentTotal, loanTotal, assetValue, businessValue, businessCapital,
     shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,

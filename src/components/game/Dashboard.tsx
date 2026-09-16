@@ -41,7 +41,7 @@ export default function Dashboard() {
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Costs</p>
           <p className="font-mono-nums text-sm text-destructive">
-            {formatRate(-(derived.livingCosts + derived.trainingCost + derived.operatingCosts + derived.loanPayments + derived.ccInterestPerDay))}
+            {formatRate(-(derived.livingCosts + derived.trainingCost + derived.operatingCosts + derived.loanPayments + derived.ccPaymentPerDay))}
           </p>
         </div>
         <div className="text-right">
