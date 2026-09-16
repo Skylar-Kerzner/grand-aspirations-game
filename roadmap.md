@@ -19,3 +19,4 @@
 - [x] Tier-up reroll: keep more old fortune when concept and city stay the same, less when both change (with subtext)
 - [ ] Event modal shows exact surprise quantities — code done, live modal verification inconclusive (events rare); ledger path confirmed
 - [ ] Time allocation: split the 40-hour week across school, career (work) and businesses — businesses yield more per hour allocated
+- [ ] Time tab: allocate 40h across job, school, training and each venture; venture ROI reaches full 30% only with enough attention
