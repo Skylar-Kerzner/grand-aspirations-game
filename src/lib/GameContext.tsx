@@ -835,17 +835,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             // and only then can it be rebranded.
             const tierUp =
               getBusinessTierIndex(cur.level + 1) !== getBusinessTierIndex(cur.level);
+            const nextChoices = tierUp ? action.choices || cur.choices : cur.choices;
+            // Keeping the product and the city carries more of what you built over;
+            // changing both starts far closer to a fresh venture.
+            const changed =
+              (nextChoices?.concept !== cur.choices?.concept ? 1 : 0) +
+              (nextChoices?.location !== cur.choices?.location ? 1 : 0);
+            const rerollWeight = businessRerollWeight(changed);
             return {
               ...cur,
               level: cur.level + 1,
-              choices: tierUp ? action.choices || cur.choices : cur.choices,
+              choices: nextChoices,
               fortune: Math.min(
                 6,
                 Math.max(
                   0.15,
                   (tierUp
-                    ? (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
-                      rollBusinessFortune() * BUSINESS_UPGRADE_REROLL
+                    ? (cur.fortune ?? 1) * (1 - rerollWeight) +
+                      rollBusinessFortune() * rerollWeight
                     : (cur.fortune ?? 1)) *
                     // every level nudges success a little, up or down
                     (0.9 + Math.random() * 0.2),
