@@ -11,3 +11,4 @@
 - [x] Rework business open choices: flavor-only (name/image), same risk for all, fun combos like matcha in Manhattan
 - [x] Let players re-choose concept/location on each business tier-up (alongside the luck reroll)
 
+- [ ] Widen business luck range to roughly 15%-600% (was ~80-120%)
