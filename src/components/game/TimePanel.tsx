@@ -1,5 +1,5 @@
 import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf } from "@/lib/GameContext";
-import { BUSINESSES, WEEK_HOURS, BUSINESS_ATTENTION_FULL_HOURS } from "@/lib/gameData";
+import { BUSINESSES, MAJORS, WEEK_HOURS, BUSINESS_ATTENTION_FULL_HOURS } from "@/lib/gameData";
 import { formatMoney } from "@/lib/formatters";
 
 export default function TimePanel() {
@@ -36,8 +36,9 @@ export default function TimePanel() {
         />
         {state.studying && (
           <p className="text-[11px] text-muted-foreground mt-1 mb-3">
+            {MAJORS.find((m) => m.id === state.studying?.majorId)?.name} ·{" "}
             {state.studyHours > 0
-              ? "Studying at this pace"
+              ? `${Math.ceil(state.studying.daysLeft / ((state.studyHours / WEEK_HOURS) * derived.schoolProgress))} days left at this pace`
               : "Paused — give your classes some hours"}
           </p>
         )}

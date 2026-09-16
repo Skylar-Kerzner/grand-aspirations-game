@@ -11,6 +11,7 @@ import {
   getNextBusinessNetworkMilestone,
   getBusinessUpgradeIncomeGain,
   getBusinessSalePrice,
+  getBusinessAttentionOf,
 } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
 import {
@@ -25,6 +26,8 @@ import {
   ventureNameAtTier,
   ventureImageAtTier,
   businessFortuneLabel,
+  BUSINESS_ATTENTION_FLOOR,
+  BUSINESS_ATTENTION_FULL_HOURS,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
@@ -225,7 +228,7 @@ export default function BusinessList() {
                   {(getBusinessEffectiveROI(state, selectedDef.id) * 100).toFixed(0)}% effective annual return
                   {getBusinessNetworkBonus(state, selectedDef.id) > 0
                     ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
-                    : " · 30% base return"}
+                    : " · up to 30% annual return"}
                 </p>
                 {(() => {
                   const k = getIndustryKnowledge(state, selectedDef.id);
@@ -237,6 +240,20 @@ export default function BusinessList() {
                             .filter(Boolean)
                             .join(" and ")}: +${(k.returnBonus * 100).toFixed(0)}% return, steadier trade`
                         : " — you have no experience in this industry yet"}
+                    </p>
+                  );
+                })()}
+                {selectedBiz.level > 0 && (() => {
+                  const hours = state.businessHours[selectedDef.id] || 0;
+                  const attention = getBusinessAttentionOf(state, selectedDef.id);
+                  return (
+                    <p className={`text-[11px] mb-1 ${hours > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                      {hours > 0
+                        ? `You give it ${hours}h of your week — running at ${Math.round(attention * 100)}% of its potential.`
+                        : `You give it none of your time — it runs at ${Math.round(BUSINESS_ATTENTION_FLOOR * 100)}% of its potential. Hours live in the Time tab.`}
+                      {hours > 0 && hours < BUSINESS_ATTENTION_FULL_HOURS
+                        ? ` ${BUSINESS_ATTENTION_FULL_HOURS - hours}h more takes it to full swing.`
+                        : ""}
                     </p>
                   );
                 })()}
