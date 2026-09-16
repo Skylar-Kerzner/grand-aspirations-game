@@ -432,6 +432,7 @@ function rollEvent(state: GameState, days: number): GameState {
     s.jobIndex -= 1;
     const fallback = JOBS[s.jobIndex];
     s.currentJob = { title: fallback.title, employer: fallback.employer, dailyPay: fallback.dailyPay };
+    s.jobHistory = [...s.jobHistory, { ...s.currentJob, startDay: Math.floor(s.day) }];
     s.careerOffers = [];
     s.xp = 0;
   }
