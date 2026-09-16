@@ -62,41 +62,8 @@ export const JOBS: JobDef[] = [
 export const MGMT_FEE = 0.02;
 export const PERF_FEE = 0.2;
 
-// ---------- Living (all per day, all adjustable) ----------
-export interface LifestyleOption {
-  id: string;
-  name: string;
-  cost: number;
-  focus: number; // additive multiplier on experience gain
-  note: string;
-  requiresCar?: boolean;
-}
-
-export const HOUSING_OPTIONS: LifestyleOption[] = [
-  { id: "car", name: "Living in your car", cost: 0, focus: -0.35, note: "Free, and it shows.", requiresCar: true },
-  { id: "room", name: "Shared room", cost: 34, focus: -0.1, note: "Cheap, loud, crowded." },
-  { id: "studio", name: "Rented studio", cost: 72, focus: 0, note: "Nothing special, nothing wrong." },
-  { id: "apartment", name: "Nice apartment", cost: 165, focus: 0.12, note: "Quiet, bright, you sleep well." },
-  { id: "penthouse", name: "Rented penthouse", cost: 520, focus: 0.25, note: "The view does something to you." },
-];
-
-export const FOOD_OPTIONS: LifestyleOption[] = [
-  { id: "instant", name: "Instant noodles", cost: 9, focus: -0.2, note: "Calories, technically." },
-  { id: "groceries", name: "Home cooking", cost: 24, focus: 0, note: "Sensible and steady." },
-  { id: "eatout", name: "Eating out", cost: 68, focus: 0.1, note: "Time back, energy up." },
-  { id: "chef", name: "Private chef", cost: 320, focus: 0.22, note: "You never think about food again." },
-];
-
-export const CLOTHING_OPTIONS: LifestyleOption[] = [
-  { id: "thrift", name: "Thrifted basics", cost: 3, focus: -0.08, note: "It covers you." },
-  { id: "highstreet", name: "High street", cost: 12, focus: 0, note: "Presentable anywhere." },
-  { id: "tailored", name: "Tailored", cost: 55, focus: 0.1, note: "People treat you differently." },
-];
-
-export const BASE_TRANSIT = 11; // no car? you pay fares
-
 // Training: money spent on courses, coaching and certifications converts to experience.
-export const TRAINING_REFERENCE = 60; // dollars/day that yields roughly +1.0 focus
+export const TRAINING_REFERENCE = 60; // dollars/day that meaningfully accelerates career progress
 
 // ---------- Businesses ----------
 export interface BusinessDef {
@@ -196,11 +163,12 @@ export function getBusinessIncome(def: BusinessDef, level: number): number {
   return (getBusinessCapital(def, level) * def.annualROI) / DAYS_PER_YEAR;
 }
 
-// ---------- Lifestyle assets ----------
+// ---------- Lifestyle (all costs recur daily) ----------
 export interface AssetTierDef {
   name: string;
-  cost: number;
-  upkeep: number; // per day
+  dailyCost: number;
+  careerBonus: number;
+  schoolBonus: number;
   image: string;
   benefit: string;
 }
@@ -214,47 +182,54 @@ export interface AssetDef {
 
 export const ASSETS: AssetDef[] = [
   {
-    id: "car", name: "Vehicle", category: "Transport",
+    id: "house", name: "Housing", category: "Home",
     tiers: [
-      { name: "Used Sedan", cost: 7500, upkeep: 19, image: "car-t1", benefit: "No transit fares · +4% pay" },
-      { name: "Luxury Sedan", cost: 46000, upkeep: 48, image: "car-t2", benefit: "+10% pay" },
-      { name: "Sports Car", cost: 240000, upkeep: 165, image: "car-t3", benefit: "+20% pay" },
-      { name: "Hypercar", cost: 2600000, upkeep: 880, image: "car-t4", benefit: "+35% pay" },
+      { name: "Shared Room", dailyCost: 34, careerBonus: 0, schoolBonus: 0, image: "house-t1", benefit: "Baseline career and school progress" },
+      { name: "Studio Apartment", dailyCost: 72, careerBonus: 0.04, schoolBonus: 0.08, image: "house-t2", benefit: "+4% career · +8% school progress" },
+      { name: "Modern Loft", dailyCost: 165, careerBonus: 0.1, schoolBonus: 0.16, image: "house-t3", benefit: "+10% career · +16% school progress" },
+      { name: "Penthouse", dailyCost: 520, careerBonus: 0.18, schoolBonus: 0.28, image: "house-t4", benefit: "+18% career · +28% school progress" },
     ],
   },
   {
-    id: "house", name: "Residence", category: "Property",
+    id: "food", name: "Food", category: "Daily life",
     tiers: [
-      { name: "Studio Apartment", cost: 185000, upkeep: 31, image: "house-t1", benefit: "Rent free · +10% focus" },
-      { name: "Modern Loft", cost: 620000, upkeep: 74, image: "house-t2", benefit: "Rent free · +20% focus" },
-      { name: "Hillside Villa", cost: 4200000, upkeep: 310, image: "house-t3", benefit: "Rent free · +32% focus" },
-      { name: "Oceanfront Compound", cost: 26000000, upkeep: 1550, image: "house-t4", benefit: "Rent free · +45% focus" },
+      { name: "Simple Groceries", dailyCost: 12, careerBonus: 0, schoolBonus: 0, image: "food-t1", benefit: "Baseline career and school progress" },
+      { name: "Fresh Home Cooking", dailyCost: 28, careerBonus: 0.04, schoolBonus: 0.06, image: "food-t2", benefit: "+4% career · +6% school progress" },
+      { name: "Restaurant Dining", dailyCost: 82, careerBonus: 0.09, schoolBonus: 0.12, image: "food-t3", benefit: "+9% career · +12% school progress" },
+      { name: "Private Chef", dailyCost: 320, careerBonus: 0.16, schoolBonus: 0.22, image: "food-t4", benefit: "+16% career · +22% school progress" },
     ],
   },
   {
-    id: "wardrobe", name: "Wardrobe", category: "Fashion",
+    id: "wardrobe", name: "Clothing", category: "Presentation",
     tiers: [
-      { name: "Casual Wear", cost: 1400, upkeep: 2, image: "wardrobe-t1", benefit: "+4% business income" },
-      { name: "Designer Collection", cost: 12500, upkeep: 6, image: "wardrobe-t2", benefit: "+9% business income" },
-      { name: "Haute Couture", cost: 95000, upkeep: 24, image: "wardrobe-t3", benefit: "+16% business income" },
-      { name: "Bespoke Atelier", cost: 640000, upkeep: 130, image: "wardrobe-t4", benefit: "+25% business income" },
+      { name: "Thrifted Basics", dailyCost: 3, careerBonus: 0, schoolBonus: 0, image: "wardrobe-t1", benefit: "Baseline career and school progress" },
+      { name: "High Street", dailyCost: 12, careerBonus: 0.05, schoolBonus: 0.02, image: "wardrobe-t2", benefit: "+5% career · +2% school progress" },
+      { name: "Tailored Wardrobe", dailyCost: 55, careerBonus: 0.12, schoolBonus: 0.05, image: "wardrobe-t3", benefit: "+12% career · +5% school progress" },
+      { name: "Bespoke Atelier", dailyCost: 180, careerBonus: 0.22, schoolBonus: 0.08, image: "wardrobe-t4", benefit: "+22% career · +8% school progress" },
     ],
   },
   {
-    id: "watch", name: "Timepiece", category: "Accessories",
+    id: "car", name: "Car", category: "Transport",
     tiers: [
-      { name: "Digital Watch", cost: 700, upkeep: 0, image: "watch-t1", benefit: "+4% investment returns" },
-      { name: "Automatic Movement", cost: 8500, upkeep: 2, image: "watch-t2", benefit: "+9% investment returns" },
-      { name: "Luxury Chronograph", cost: 115000, upkeep: 14, image: "watch-t3", benefit: "+16% investment returns" },
-      { name: "Haute Horlogerie", cost: 880000, upkeep: 90, image: "watch-t4", benefit: "+25% investment returns" },
+      { name: "Used Sedan", dailyCost: 19, careerBonus: 0.04, schoolBonus: 0.02, image: "car-t1", benefit: "+4% career · +2% school progress" },
+      { name: "Luxury Sedan", dailyCost: 48, careerBonus: 0.1, schoolBonus: 0.04, image: "car-t2", benefit: "+10% career · +4% school progress" },
+      { name: "Sports Car", dailyCost: 165, careerBonus: 0.18, schoolBonus: 0.07, image: "car-t3", benefit: "+18% career · +7% school progress" },
+      { name: "Hypercar", dailyCost: 880, careerBonus: 0.3, schoolBonus: 0.1, image: "car-t4", benefit: "+30% career · +10% school progress" },
+    ],
+  },
+  {
+    id: "watch", name: "Watch", category: "Accessories",
+    tiers: [
+      { name: "Digital Watch", dailyCost: 1, careerBonus: 0, schoolBonus: 0, image: "watch-t1", benefit: "Baseline career and school progress" },
+      { name: "Automatic Movement", dailyCost: 6, careerBonus: 0.03, schoolBonus: 0.03, image: "watch-t2", benefit: "+3% career · +3% school progress" },
+      { name: "Luxury Chronograph", dailyCost: 28, careerBonus: 0.08, schoolBonus: 0.06, image: "watch-t3", benefit: "+8% career · +6% school progress" },
+      { name: "Haute Horlogerie", dailyCost: 140, careerBonus: 0.15, schoolBonus: 0.1, image: "watch-t4", benefit: "+15% career · +10% school progress" },
     ],
   },
 ];
 
-export const CAR_PAY_BONUS = [0.04, 0.1, 0.2, 0.35];
-export const HOUSE_FOCUS_BONUS = [0.1, 0.2, 0.32, 0.45];
-export const WARDROBE_BUSINESS_BONUS = [0.04, 0.09, 0.16, 0.25];
-export const WATCH_INVEST_BONUS = [0.04, 0.09, 0.16, 0.25];
+export const WARDROBE_BUSINESS_BONUS = [0, 0.04, 0.09, 0.16];
+export const WATCH_INVEST_BONUS = [0, 0.04, 0.09, 0.16];
 
 // ---------- Investments ----------
 export interface InvestmentDef {
