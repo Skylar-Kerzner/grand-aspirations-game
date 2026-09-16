@@ -297,7 +297,7 @@ export default function BusinessList() {
                         <span className="font-mono-nums">{formatCompact(cost)}</span>
                       </motion.button>
                       <p className="text-center text-[11px] text-muted-foreground mb-2">
-                        Adds {formatRate(addedIncome)}
+                        Adds {formatRate(addedIncome)} across your businesses
                       </p>
                     </>
                   );

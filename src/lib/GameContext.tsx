@@ -227,7 +227,11 @@ export function getBusinessUpgradeIncomeGain(state: GameState, id: string): numb
     ...state,
     businesses: { ...state.businesses, [id]: { ...biz, level: biz.level + 1 } },
   };
-  return businessIncomeOf(upgraded, id) - businessIncomeOf(state, id);
+  const portfolioIncome = (snapshot: GameState) => BUSINESSES.reduce(
+    (total, business) => total + businessIncomeOf(snapshot, business.id),
+    0,
+  );
+  return portfolioIncome(upgraded) - portfolioIncome(state);
 }
 
 export function getBusinessGross(state: GameState): number {
