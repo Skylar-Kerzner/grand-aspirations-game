@@ -403,10 +403,6 @@ export function getCareerProgressMultiplier(state: GameState): number {
   return 1 + training;
 }
 
-export function getSchoolProgressMultiplier(_state: GameState): number {
-  return 1;
-}
-
 export function getBusinessValue(state: GameState): number {
   let total = 0;
   for (const [id, biz] of Object.entries(state.businesses)) {
