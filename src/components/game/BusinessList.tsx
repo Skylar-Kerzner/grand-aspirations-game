@@ -375,7 +375,7 @@ export default function BusinessList() {
 
                 {selectedBiz.level > 0 && selectedBiz.choices && (
                   <div className="surface-card rounded-lg p-3 my-4">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">How it turned out</p>
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Overall business success</p>
                     <p className="text-sm font-semibold mt-1">
                       {businessFortuneLabel(selectedBiz.fortune ?? 1)} —{" "}
                       {((selectedBiz.fortune ?? 1) * 100).toFixed(0)}% of a typical venture
