@@ -81,7 +81,7 @@ export type GameAction =
   | { type: "SET_LIFESTYLE"; id: string; tier: number }
   | { type: "GENERATE_JOB_OFFERS" }
   | { type: "ACCEPT_JOB_OFFER"; index: number }
-  | { type: "STUDY"; level: number }
+  | { type: "STUDY"; majorId: string }
   | { type: "BUY_BUSINESS"; id: string }
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
