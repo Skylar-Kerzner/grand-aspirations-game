@@ -1,11 +1,20 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame, isBusinessUnlocked, businessIncomeOf, upgradeCostFor, getTaxRate } from "@/lib/GameContext";
+import {
+  useGame,
+  isBusinessUnlocked,
+  businessIncomeOf,
+  upgradeCostFor,
+  getTaxRate,
+  getBusinessEffectiveROI,
+  getBusinessNetworkBonus,
+  getNextBusinessNetworkMilestone,
+  getBusinessUpgradeIncomeGain,
+} from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
 import {
   BUSINESSES,
   getBusinessTierIndex,
-  getBusinessIncome,
   BUSINESS_TIER_THRESHOLDS,
   UNMANAGED_CAP_DAYS,
 } from "@/lib/gameData";
@@ -31,6 +40,7 @@ export default function BusinessList() {
           const tierName = def.tierNames[tierIdx];
           const tierImage = getImage(def.tierImages[tierIdx]);
           const income = businessIncomeOf(state, def.id);
+          const networkBonus = getBusinessNetworkBonus(state, def.id);
           const ready = biz.accumulated > 0.01 && !biz.hasManager;
 
           return (
@@ -77,7 +87,12 @@ export default function BusinessList() {
                       : def.sector}
                 </p>
                 {unlocked && biz.level > 0 && (
-                  <p className="font-mono-nums text-[11px] text-primary mt-1">{formatRate(income)}</p>
+                  <div className="mt-1">
+                    <p className="font-mono-nums text-[11px] text-primary">{formatRate(income)}</p>
+                    {networkBonus > 0 && (
+                      <p className="text-[10px] text-primary">+{(networkBonus * 100).toFixed(0)}% network</p>
+                    )}
+                  </div>
                 )}
                 {unlocked && biz.level === 0 && (
                   <p className="font-mono-nums text-[11px] text-muted-foreground mt-1">
@@ -170,7 +185,10 @@ export default function BusinessList() {
                     : selectedDef.description}
                 </p>
                 <p className="text-[11px] text-muted-foreground mb-1">
-                  Returns about {(selectedDef.annualROI * 100).toFixed(0)}% a year on capital, at every tier.
+                  {(getBusinessEffectiveROI(state, selectedDef.id) * 100).toFixed(0)}% effective annual return
+                  {getBusinessNetworkBonus(state, selectedDef.id) > 0
+                    ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
+                    : " · 30% base return"}
                 </p>
                 {selectedBiz.level > 0 && (
                   <p className="text-xs text-primary mb-1">
@@ -184,6 +202,31 @@ export default function BusinessList() {
                     )}
                   </p>
                 )}
+
+                {(() => {
+                  const next = getNextBusinessNetworkMilestone(state, selectedDef.id);
+                  if (!next) {
+                    return (
+                      <div className="surface-card rounded-lg p-3 my-4 text-xs text-primary">
+                        Every neighboring business network is fully developed.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="surface-card rounded-lg p-3 my-4">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Next network milestone</p>
+                      <p className="text-sm font-semibold mt-1">{selectedDef.name} + {next.partner.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Reach level {next.level} in both for +{(next.bonus * 100).toFixed(0)}% income on each.
+                      </p>
+                      <p className="text-[11px] text-primary mt-1">
+                        {next.ownLevelsNeeded > 0 ? `${selectedDef.name}: ${next.ownLevelsNeeded} levels` : `${selectedDef.name}: ready`}
+                        {" · "}
+                        {next.partnerLevelsNeeded > 0 ? `${next.partner.name}: ${next.partnerLevelsNeeded} levels` : `${next.partner.name}: ready`}
+                      </p>
+                    </div>
+                  );
+                })()}
 
                 {/* Tier progress — nothing revealed before you get there */}
                 <div className="space-y-2 my-4">
@@ -241,9 +284,7 @@ export default function BusinessList() {
                 {(() => {
                   const cost = upgradeCostFor(state, selectedDef.id);
                   const canAfford = state.cash >= cost;
-                  const addedIncome =
-                    getBusinessIncome(selectedDef, selectedBiz.level + 1) -
-                    getBusinessIncome(selectedDef, selectedBiz.level);
+                  const addedIncome = getBusinessUpgradeIncomeGain(state, selectedDef.id);
                   return (
                     <>
                       <motion.button
@@ -256,7 +297,7 @@ export default function BusinessList() {
                         <span className="font-mono-nums">{formatCompact(cost)}</span>
                       </motion.button>
                       <p className="text-center text-[11px] text-muted-foreground mb-2">
-                        Adds {formatRate(addedIncome)}
+                        Adds {formatRate(addedIncome)} across your businesses
                       </p>
                     </>
                   );

@@ -1,6 +1,7 @@
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatDays } from "@/lib/formatters";
 import { JOBS, BUSINESSES, INVESTMENTS, DAYS_PER_YEAR } from "@/lib/gameData";
+import { getBusinessEffectiveROI, getBusinessNetworkBonus } from "@/lib/GameContext";
 
 export default function LedgerPanel() {
   const { state, derived } = useGame();
@@ -82,7 +83,12 @@ export default function LedgerPanel() {
             <div key={b.id} className="flex justify-between text-sm">
               <span className="text-muted-foreground">
                 {b.name}
-                <span className="block text-[10px]">{(b.annualROI * 100).toFixed(0)}% a year on capital</span>
+                <span className="block text-[10px]">
+                  {(getBusinessEffectiveROI(state, b.id) * 100).toFixed(0)}% effective return
+                  {getBusinessNetworkBonus(state, b.id) > 0
+                    ? ` · +${(getBusinessNetworkBonus(state, b.id) * 100).toFixed(0)}% network`
+                    : ""}
+                </span>
               </span>
               <span className="font-mono-nums text-primary">{formatCompact(lifetime)}</span>
             </div>

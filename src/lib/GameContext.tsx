@@ -3,7 +3,7 @@ import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
-  UNMANAGED_CAP_DAYS, BUSINESS_VALUATION_MULTIPLE, LOAN_EQUITY_REQUIREMENT,
+  UNMANAGED_CAP_DAYS, BUSINESS_VALUATION_MULTIPLE, BUSINESS_NETWORK_MILESTONES, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
 
@@ -166,11 +166,72 @@ export function businessMultiplier(state: GameState): number {
   return m;
 }
 
+export function getBusinessNetworkBonus(state: GameState, id: string): number {
+  const index = BUSINESSES.findIndex((business) => business.id === id);
+  if (index < 0) return 0;
+
+  let bonus = 0;
+  for (const partnerIndex of [index - 1, index + 1]) {
+    const partner = BUSINESSES[partnerIndex];
+    if (!partner) continue;
+    const ownLevel = state.businesses[id]?.level || 0;
+    const partnerLevel = state.businesses[partner.id]?.level || 0;
+    const reached = [...BUSINESS_NETWORK_MILESTONES]
+      .reverse()
+      .find((milestone) => ownLevel >= milestone.level && partnerLevel >= milestone.level);
+    bonus += reached?.bonus || 0;
+  }
+  return bonus;
+}
+
+export function getBusinessEffectiveROI(state: GameState, id: string): number {
+  const def = BUSINESSES.find((business) => business.id === id);
+  return def ? def.annualROI * (1 + getBusinessNetworkBonus(state, id)) : 0;
+}
+
+export function getNextBusinessNetworkMilestone(state: GameState, id: string) {
+  const index = BUSINESSES.findIndex((business) => business.id === id);
+  if (index < 0) return undefined;
+  const ownLevel = state.businesses[id]?.level || 0;
+  const candidates = [index - 1, index + 1].flatMap((partnerIndex) => {
+    const partner = BUSINESSES[partnerIndex];
+    if (!partner) return [];
+    const partnerLevel = state.businesses[partner.id]?.level || 0;
+    const milestone = BUSINESS_NETWORK_MILESTONES.find(
+      (item) => ownLevel < item.level || partnerLevel < item.level,
+    );
+    if (!milestone) return [];
+    return [{
+      partner,
+      level: milestone.level,
+      bonus: milestone.bonus,
+      ownLevelsNeeded: Math.max(0, milestone.level - ownLevel),
+      partnerLevelsNeeded: Math.max(0, milestone.level - partnerLevel),
+    }];
+  });
+  return candidates.sort(
+    (a, b) => Math.max(a.ownLevelsNeeded, a.partnerLevelsNeeded) - Math.max(b.ownLevelsNeeded, b.partnerLevelsNeeded),
+  )[0];
+}
+
 export function businessIncomeOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * businessMultiplier(state);
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * businessMultiplier(state);
+}
+
+export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
+  const biz = state.businesses[id] || { level: 0, hasManager: false, accumulated: 0 };
+  const upgraded = {
+    ...state,
+    businesses: { ...state.businesses, [id]: { ...biz, level: biz.level + 1 } },
+  };
+  const portfolioIncome = (snapshot: GameState) => BUSINESSES.reduce(
+    (total, business) => total + businessIncomeOf(snapshot, business.id),
+    0,
+  );
+  return portfolioIncome(upgraded) - portfolioIncome(state);
 }
 
 export function getBusinessGross(state: GameState): number {
@@ -237,7 +298,7 @@ export function getBusinessValue(state: GameState): number {
   for (const [id, biz] of Object.entries(state.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
     if (!def || biz.level === 0) continue;
-    total += getBusinessIncome(def, biz.level) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
   }
   return total;
 }
