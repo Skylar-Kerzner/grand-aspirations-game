@@ -96,6 +96,12 @@ export const TRACK_CONTINUITY_BONUS = 0.12;
 export const TRACK_TENURE_STEP = 0.06;
 export const TRACK_TENURE_CAP = 0.3;
 
+/** Time served in your current industry compounds too: per full year of service. */
+export const TRACK_EXPERIENCE_STEP = 0.04;
+export const TRACK_EXPERIENCE_CAP = 0.24;
+/** Years of service in one industry that can stand in for held positions at the no-degree gate. */
+export const TRACK_EXPERIENCE_YEARS_GATE = 3;
+
 /** Moving sideways into another industry costs you: you arrive as an outsider. */
 export const TRACK_SWITCH_PENALTY = 0.22;
 
@@ -526,46 +532,87 @@ export const EVENTS: EventDef[] = [
 
 export const EVENT_CHANCE_PER_DAY = 0.012;
 
-// ---------- Opening a business: location, market, product ----------
-export interface BusinessChoiceOption {
+// ---------- Opening a business: concept and location (pure flavor) ----------
+export interface BusinessConcept {
+  id: string;
+  name: string;        // the venture's name when opened
+  description: string;
+  image: string;       // artwork key for this concept
+}
+export interface BusinessLocation {
   id: string;
   name: string;
-  description: string;
-  bias: number;   // shifts the expected quality of the venture
-  spread: number; // how much luck is involved
-}
-export interface BusinessChoiceGroup {
-  id: string;
-  label: string;
-  options: BusinessChoiceOption[];
 }
 
-export const BUSINESS_CHOICE_GROUPS: BusinessChoiceGroup[] = [
-  {
-    id: "location", label: "Location",
-    options: [
-      { id: "sidestreet", name: "Quiet side street", description: "Cheap rent, modest footfall. Rarely a disaster.", bias: -0.04, spread: 0.07 },
-      { id: "highstreet", name: "Busy high street", description: "Plenty of passing trade, plenty of competition.", bias: 0.07, spread: 0.2 },
-      { id: "district", name: "Financial district", description: "Big spenders, brutal rent. Boom or bust.", bias: 0.16, spread: 0.36 },
-    ],
-  },
-  {
-    id: "market", label: "Market",
-    options: [
-      { id: "locals", name: "Local regulars", description: "Loyal, predictable, never spectacular.", bias: 0, spread: 0.08 },
-      { id: "visitors", name: "Tourists and visitors", description: "Volume trade that comes and goes.", bias: 0.06, spread: 0.26 },
-      { id: "luxury", name: "Luxury clientele", description: "Few customers, enormous tickets.", bias: 0.14, spread: 0.4 },
-    ],
-  },
-  {
-    id: "product", label: "Product",
-    options: [
-      { id: "classic", name: "Tried and tested", description: "Exactly what people expect.", bias: 0, spread: 0.06 },
-      { id: "signature", name: "A signature twist", description: "Familiar, with a reason to talk about it.", bias: 0.07, spread: 0.22 },
-      { id: "novel", name: "Something nobody has done", description: "A genuine gamble either way.", bias: 0.18, spread: 0.5 },
-    ],
-  },
-];
+/** Fun identity choices per business. Every concept carries the same odds — the dice roll is identical. */
+export const BUSINESS_CONCEPTS: Record<string, BusinessConcept[]> = {
+  coffee: [
+    { id: "espresso", name: "Corner Espresso Bar", description: "Sharp pulls, regulars who never leave.", image: "coffee-espresso" },
+    { id: "matcha", name: "Matcha House", description: "Whisked to order, photogenic by design.", image: "coffee-matcha" },
+    { id: "nitro", name: "Nitro Brew Lab", description: "Cold, creamy, poured from the tap.", image: "coffee-nitro" },
+  ],
+  restaurant: [
+    { id: "trattoria", name: "Family Trattoria", description: "Red sauce, checked cloths, loud tables.", image: "restaurant-trattoria" },
+    { id: "tasting", name: "Chef's Tasting Counter", description: "Twelve seats, one menu, no substitutions.", image: "restaurant-tasting" },
+    { id: "ramen", name: "Late-Night Ramen Bar", description: "Steam, stools and a 2am crowd.", image: "restaurant-ramen" },
+  ],
+  tech: [
+    { id: "app", name: "Campus App Startup", description: "Built by dropouts, pitched in hoodies.", image: "tech-app" },
+    { id: "ai", name: "AI Tooling Studio", description: "Sells the shovels for the gold rush.", image: "tech-ai" },
+    { id: "security", name: "Cybersecurity Firm", description: "Quiet work, paranoid clients, big contracts.", image: "tech-security" },
+  ],
+  hotel: [
+    { id: "boutique", name: "Boutique Inn", description: "Twelve rooms, one very opinionated host.", image: "hotel-boutique" },
+    { id: "resort", name: "Beach Resort", description: "Pools, umbrellas, all-inclusive everything.", image: "hotel-resort" },
+    { id: "design", name: "Design Hotel", description: "Concrete, brass and a rooftop bar.", image: "hotel-design" },
+  ],
+  fashion: [
+    { id: "streetwear", name: "Streetwear Label", description: "Drops that sell out in minutes.", image: "fashion-streetwear" },
+    { id: "vintage", name: "Vintage Boutique", description: "One-of-one pieces with a past.", image: "fashion-vintage" },
+    { id: "atelier", name: "Haute Atelier", description: "Made to measure, priced accordingly.", image: "fashion-atelier" },
+  ],
+  themepark: [
+    { id: "boardwalk", name: "Boardwalk Park", description: "Ferris wheel, fried dough, sea air.", image: "themepark-boardwalk" },
+    { id: "water", name: "Water Park", description: "Slides, wave pools and lifeguards everywhere.", image: "themepark-water" },
+    { id: "adventure", name: "Adventure Park", description: "Coasters over the treeline.", image: "themepark-adventure" },
+  ],
+  media: [
+    { id: "podcast", name: "Podcast Studio", description: "Two mics and an interview that goes viral.", image: "media-podcast" },
+    { id: "streaming", name: "Streaming Network", description: "Bingeable series, global audience.", image: "media-streaming" },
+    { id: "news", name: "News Channel", description: "Live coverage, breaking everything.", image: "media-news" },
+  ],
+  city: [
+    { id: "blocks", name: "Mixed-Use Blocks", description: "Shops below, apartments above.", image: "city-blocks" },
+    { id: "waterfront", name: "Waterfront District", description: "Boardwalks, marinas, sunset crowds.", image: "city-waterfront" },
+    { id: "green", name: "Green Suburb", description: "Lawns, lanes and good schools.", image: "city-green" },
+  ],
+};
+
+/** Where each kind of venture can open. Purely flavor — it names the business, nothing else. */
+export const BUSINESS_LOCATIONS: Record<string, BusinessLocation[]> = {
+  coffee: [{ id: "manhattan", name: "Manhattan" }, { id: "chicago", name: "Chicago" }, { id: "seattle", name: "Seattle" }],
+  restaurant: [{ id: "manhattan", name: "Manhattan" }, { id: "neworleans", name: "New Orleans" }, { id: "losangeles", name: "Los Angeles" }],
+  tech: [{ id: "sanfrancisco", name: "San Francisco" }, { id: "austin", name: "Austin" }, { id: "seattle", name: "Seattle" }],
+  hotel: [{ id: "miami", name: "Miami" }, { id: "lasvegas", name: "Las Vegas" }, { id: "kyoto", name: "Kyoto" }],
+  fashion: [{ id: "paris", name: "Paris" }, { id: "milan", name: "Milan" }, { id: "newyork", name: "New York" }],
+  themepark: [{ id: "orlando", name: "Orlando" }, { id: "losangeles", name: "Los Angeles" }, { id: "tokyo", name: "Tokyo" }],
+  media: [{ id: "losangeles", name: "Los Angeles" }, { id: "newyork", name: "New York" }, { id: "london", name: "London" }],
+  city: [{ id: "denver", name: "Denver" }, { id: "phoenix", name: "Phoenix" }, { id: "toronto", name: "Toronto" }],
+};
+
+export function getBusinessConcept(businessId: string, conceptId: string) {
+  return BUSINESS_CONCEPTS[businessId]?.find((c) => c.id === conceptId);
+}
+export function getBusinessLocation(businessId: string, locationId: string) {
+  return BUSINESS_LOCATIONS[businessId]?.find((l) => l.id === locationId);
+}
+/** The full flavor name of a venture, e.g. "Matcha House in Manhattan". */
+export function ventureName(businessId: string, choices?: Record<string, string>): string {
+  const concept = getBusinessConcept(businessId, choices?.concept || "");
+  const location = getBusinessLocation(businessId, choices?.location || "");
+  if (!concept) return BUSINESSES.find((b) => b.id === businessId)?.name || "";
+  return location ? `${concept.name} in ${location.name}` : concept.name;
+}
 
 /** How much of the sale price you actually walk away with. */
 export const BUSINESS_SALE_DISCOUNT = 0.9;
@@ -573,25 +620,13 @@ export const BUSINESS_SALE_DISCOUNT = 0.9;
 /** How much of a venture's fortune is put back on the table with each expansion. */
 export const BUSINESS_UPGRADE_REROLL = 0.4;
 
-export function findBusinessChoiceOption(groupId: string, optionId: string) {
-  return BUSINESS_CHOICE_GROUPS.find((g) => g.id === groupId)?.options.find((o) => o.id === optionId);
-}
-
-/** Roll the lasting fortune of a new venture from the choices made when opening it. */
-export function rollBusinessFortune(choices: Record<string, string>): number {
-  let bias = 0;
-  let spread = 0;
-  for (const group of BUSINESS_CHOICE_GROUPS) {
-    const option = findBusinessChoiceOption(group.id, choices[group.id]);
-    if (!option) continue;
-    bias += option.bias;
-    spread += option.spread;
-  }
-  // Box-Muller normal draw
+/** Every venture rolls the same dice, whatever identity you give it. */
+export function rollBusinessFortune(): number {
+  // Box-Muller normal draw, symmetric around 1
   const u = Math.max(1e-9, Math.random());
   const v = Math.random();
   const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-  return Math.min(2.2, Math.max(0.45, 1 + bias + z * spread));
+  return Math.min(2.2, Math.max(0.45, 1 + z * 0.25));
 }
 
 export function businessFortuneLabel(f: number): string {

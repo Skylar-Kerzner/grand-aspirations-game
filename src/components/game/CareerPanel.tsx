@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { useGame, getTrackTenure } from "@/lib/GameContext";
+import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, getCareerTrack, getTrackMajor, TRACK_EXPERIENCE_GATE, isAdjacentTrack } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, getTrackMajor, TRACK_EXPERIENCE_GATE, TRACK_EXPERIENCE_YEARS_GATE, isAdjacentTrack } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
@@ -12,13 +12,15 @@ export default function CareerPanel() {
   const gatedTier = !!next && nextTier >= MAJOR_GATE_TIER;
   const homeTrack = getCareerTrack(job.employer).id;
   const tenure = getTrackTenure(state);
+  const years = getTrackExperienceDays(state) / DAYS_PER_YEAR;
+  const experienceBonus = getTrackExperienceBonus(state);
   // Tracks whose offers are open to the player at the next level
   const openTracks = Object.values(CAREER_TRACKS).filter((t) => {
     const hasMajor = state.majors.includes(getTrackMajor(t.id)?.id || "");
     const sameTrack = t.id === homeTrack;
     if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, t.id)) return false;
     if (!gatedTier) return true;
-    return hasMajor || (sameTrack && tenure >= TRACK_EXPERIENCE_GATE);
+    return hasMajor || (sameTrack && (tenure >= TRACK_EXPERIENCE_GATE || years >= TRACK_EXPERIENCE_YEARS_GATE));
   });
   const canSeekOffers = !!next && state.xp >= derived.xpNeeded && openTracks.length > 0 && state.careerOffers.length === 0;
 
@@ -31,7 +33,10 @@ export default function CareerPanel() {
         <p className="text-[11px] text-muted-foreground">{job.employer}</p>
         <p className="text-[11px] text-primary">{getCareerTrack(job.employer).name}</p>
         <p className="text-[11px] text-muted-foreground mb-3">
-          {tenure} {tenure === 1 ? "position" : "positions"} in this industry. Every step you stay adds to your pay.
+          {tenure} {tenure === 1 ? "position" : "positions"} and {years.toFixed(1)} years in this industry.
+          {Math.round(experienceBonus * 100) >= 1
+            ? ` Years served are adding +${Math.round(experienceBonus * 100)}% to offers in this industry.`
+            : " Staying here builds industry experience that raises the pay of offers in this industry."}
         </p>
         <div className="flex justify-between text-sm mb-1">
           <span className="text-muted-foreground">Gross pay at {derived.workHours}h</span>
@@ -64,7 +69,8 @@ export default function CareerPanel() {
             {gatedTier && openTracks.length === 0 && (
               <p className="text-[11px] text-muted-foreground mb-2">
                 To climb further, either stay in {getCareerTrack(job.employer).name} until you have{" "}
-                {TRACK_EXPERIENCE_GATE} positions behind you, or study a major below to open another path.
+                {TRACK_EXPERIENCE_GATE} positions or {TRACK_EXPERIENCE_YEARS_GATE} years behind you, or study a major
+                below to open another path.
               </p>
             )}
             {openTracks.length > 0 && (
