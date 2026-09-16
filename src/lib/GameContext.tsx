@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
+  TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
-  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, rollBusinessFortune, LOAN_EQUITY_REQUIREMENT,
+  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, rollBusinessFortune, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
 
@@ -118,6 +119,17 @@ export function tierBonus(tier: number, table: number[]): number {
 
 export function getJob(state: GameState) {
   return { ...JOBS[Math.min(state.jobIndex, JOBS.length - 1)], ...state.currentJob };
+}
+
+/** How many consecutive positions you have held in your current industry. */
+export function getTrackTenure(state: GameState): number {
+  const home = getCareerTrack(state.currentJob.employer).id;
+  let count = 0;
+  for (let i = state.jobHistory.length - 1; i >= 0; i--) {
+    if (getCareerTrack(state.jobHistory[i].employer).id !== home) break;
+    count++;
+  }
+  return count;
 }
 
 export function getTaxRate(state: GameState): number {
@@ -688,10 +700,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!next) return state;
       if (state.xp < getJob(state).xpToPromote) return state;
       const tier = state.jobIndex + 1;
-      // Past the gate tier, a track's offers require its major.
-      const gated = (CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }]).filter(
-        (v) => tier < MAJOR_GATE_TIER || state.majors.includes(getTrackMajor(getCareerTrack(v.employer).id)?.id || ""),
-      );
+      const homeTrack = getCareerTrack(state.currentJob.employer).id;
+      const tenure = getTrackTenure(state);
+      // Past the gate tier you need either that path's major, or — on your own
+      // industry — enough years served in it. Sideways moves only into related
+      // industries, and only if that move makes sense at this level.
+      const gated = (CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }]).filter((v) => {
+        const track = getCareerTrack(v.employer).id;
+        const hasMajor = state.majors.includes(getTrackMajor(track)?.id || "");
+        const sameTrack = track === homeTrack;
+        if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, track)) return false;
+        if (tier < MAJOR_GATE_TIER) return true;
+        if (hasMajor) return true;
+        // No degree: climb on experience, but only inside your own industry.
+        return sameTrack && tenure >= TRACK_EXPERIENCE_GATE;
+      });
       if (gated.length === 0) return state;
       const variants = gated;
       // Shuffle, then take distinct titles and distinct employers so no offer repeats either.
@@ -707,11 +730,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const other = pool.find((v) => getCareerTrack(v.employer).id !== getCareerTrack(picked[0].employer).id);
         if (other) picked[2] = other;
       }
-      const currentTrack = getCareerTrack(state.currentJob.employer).id;
       const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
         const track = trackPayMultiplier(variant.employer, state.jobIndex + 1);
-        const loyalty = getCareerTrack(variant.employer).id === currentTrack ? 1 + TRACK_CONTINUITY_BONUS : 1;
+        const sameTrack = getCareerTrack(variant.employer).id === homeTrack;
+        // Staying put compounds: loyalty plus everything you have already served.
+        const loyalty = sameTrack
+          ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP)
+          : 1 - TRACK_SWITCH_PENALTY;
         return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty) };
       }).sort(() => Math.random() - 0.5);
       return { ...state, careerOffers, xp: Math.max(0, state.xp - getJob(state).xpToPromote) };
@@ -755,7 +781,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             choices: action.choices,
             fortune: rollBusinessFortune(action.choices || {}),
           }
-        : { ...cur, level: cur.level + 1 };
+        : {
+            // Growing the venture puts part of its fortune back on the table:
+            // a lucky start does not carry forever, and a poor one can recover.
+            ...cur,
+            level: cur.level + 1,
+            fortune:
+              (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
+              rollBusinessFortune(cur.choices || {}) * BUSINESS_UPGRADE_REROLL,
+          };
       return {
         ...state, cash: state.cash - cost,
         businesses: { ...state.businesses, [action.id]: next },
