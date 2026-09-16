@@ -342,8 +342,6 @@ export function getBusinessIncome(def: BusinessDef, level: number): number {
 export interface AssetTierDef {
   name: string;
   dailyCost: number;
-  careerBonus: number;
-  schoolBonus: number;
   hoursBonus: number; // extra weekly hours this tier buys back (staff, services, convenience)
   image: string;
   benefit: string;
@@ -360,46 +358,46 @@ export const ASSETS: AssetDef[] = [
   {
     id: "house", name: "Housing", category: "Home",
     tiers: [
-      { name: "Shared Room", dailyCost: 34, careerBonus: 0, schoolBonus: 0, hoursBonus: 0, image: "house-t1", benefit: "Baseline career and school progress" },
-      { name: "Studio Apartment", dailyCost: 72, careerBonus: 0.04, schoolBonus: 0.08, hoursBonus: 2, image: "house-t2", benefit: "+4% career · +8% school · +2h of your week back" },
-      { name: "Modern Loft", dailyCost: 165, careerBonus: 0.1, schoolBonus: 0.16, hoursBonus: 4, image: "house-t3", benefit: "+10% career · +16% school · +4h of your week back" },
-      { name: "Penthouse", dailyCost: 520, careerBonus: 0.18, schoolBonus: 0.28, hoursBonus: 7, image: "house-t4", benefit: "+18% career · +28% school · +7h of your week back" },
+      { name: "Shared Room", dailyCost: 34, hoursBonus: 0, image: "house-t1", benefit: "No time bought back yet" },
+      { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "+2h of your week back — no commute, building services" },
+      { name: "Modern Loft", dailyCost: 165, hoursBonus: 4, image: "house-t3", benefit: "+4h of your week back — doorman, cleaning, concierge" },
+      { name: "Penthouse", dailyCost: 520, hoursBonus: 7, image: "house-t4", benefit: "+7h of your week back — full household staff" },
     ],
   },
   {
     id: "food", name: "Food", category: "Daily life",
     tiers: [
-      { name: "Simple Groceries", dailyCost: 12, careerBonus: 0, schoolBonus: 0, hoursBonus: 0, image: "food-t1", benefit: "Baseline career and school progress" },
-      { name: "Fresh Home Cooking", dailyCost: 28, careerBonus: 0.04, schoolBonus: 0.06, hoursBonus: 2, image: "food-t2", benefit: "+4% career · +6% school · +2h of your week back" },
-      { name: "Restaurant Dining", dailyCost: 82, careerBonus: 0.09, schoolBonus: 0.12, hoursBonus: 3, image: "food-t3", benefit: "+9% career · +12% school · +3h of your week back" },
-      { name: "Private Chef", dailyCost: 320, careerBonus: 0.16, schoolBonus: 0.22, hoursBonus: 5, image: "food-t4", benefit: "+16% career · +22% school · +5h of your week back" },
+      { name: "Simple Groceries", dailyCost: 12, hoursBonus: 0, image: "food-t1", benefit: "No time bought back yet" },
+      { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 2, image: "food-t2", benefit: "+2h of your week back — delivery and meal prep" },
+      { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "+3h of your week back — every meal handled" },
+      { name: "Private Chef", dailyCost: 320, hoursBonus: 5, image: "food-t4", benefit: "+5h of your week back — a chef runs your kitchen" },
     ],
   },
   {
     id: "wardrobe", name: "Clothing", category: "Presentation",
     tiers: [
-      { name: "Thrifted Basics", dailyCost: 3, careerBonus: 0, schoolBonus: 0, hoursBonus: 0, image: "wardrobe-t1", benefit: "Baseline career and school progress" },
-      { name: "High Street", dailyCost: 12, careerBonus: 0.05, schoolBonus: 0.02, hoursBonus: 1, image: "wardrobe-t2", benefit: "+5% career · +2% school · +1h of your week back" },
-      { name: "Tailored Wardrobe", dailyCost: 55, careerBonus: 0.12, schoolBonus: 0.05, hoursBonus: 2, image: "wardrobe-t3", benefit: "+12% career · +5% school · +2h of your week back" },
-      { name: "Bespoke Atelier", dailyCost: 180, careerBonus: 0.22, schoolBonus: 0.08, hoursBonus: 4, image: "wardrobe-t4", benefit: "+22% career · +8% school · +4h of your week back" },
+      { name: "Thrifted Basics", dailyCost: 3, hoursBonus: 0, image: "wardrobe-t1", benefit: "No time bought back yet" },
+      { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "+1h of your week back — easy wardrobe, less upkeep" },
+      { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "+2h of your week back — a tailor keeps it all ready" },
+      { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "+4h of your week back — a stylist and valet service" },
     ],
   },
   {
     id: "car", name: "Car", category: "Transport",
     tiers: [
-      { name: "Used Sedan", dailyCost: 19, careerBonus: 0.04, schoolBonus: 0.02, hoursBonus: 0, image: "car-t1", benefit: "+4% career · +2% school progress" },
-      { name: "Luxury Sedan", dailyCost: 48, careerBonus: 0.1, schoolBonus: 0.04, hoursBonus: 2, image: "car-t2", benefit: "+10% career · +4% school · +2h of your week back" },
-      { name: "Sports Car", dailyCost: 165, careerBonus: 0.18, schoolBonus: 0.07, hoursBonus: 4, image: "car-t3", benefit: "+18% career · +7% school · +4h of your week back" },
-      { name: "Hypercar", dailyCost: 880, careerBonus: 0.3, schoolBonus: 0.1, hoursBonus: 8, image: "car-t4", benefit: "+30% career · +10% school · +8h of your week back (chauffeur included)" },
+      { name: "Used Sedan", dailyCost: 19, hoursBonus: 0, image: "car-t1", benefit: "No time bought back yet" },
+      { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "+2h of your week back — driver service on tap" },
+      { name: "Sports Car", dailyCost: 165, hoursBonus: 4, image: "car-t3", benefit: "+4h of your week back — a driver handles the road" },
+      { name: "Hypercar", dailyCost: 880, hoursBonus: 8, image: "car-t4", benefit: "+8h of your week back — chauffeur and fleet care included" },
     ],
   },
   {
     id: "watch", name: "Watch", category: "Accessories",
     tiers: [
-      { name: "Digital Watch", dailyCost: 1, careerBonus: 0, schoolBonus: 0, hoursBonus: 0, image: "watch-t1", benefit: "Baseline career and school progress" },
-      { name: "Automatic Movement", dailyCost: 6, careerBonus: 0.03, schoolBonus: 0.03, hoursBonus: 0, image: "watch-t2", benefit: "+3% career · +3% school progress" },
-      { name: "Luxury Chronograph", dailyCost: 28, careerBonus: 0.08, schoolBonus: 0.06, hoursBonus: 0, image: "watch-t3", benefit: "+8% career · +6% school progress" },
-      { name: "Haute Horlogerie", dailyCost: 140, careerBonus: 0.15, schoolBonus: 0.1, hoursBonus: 0, image: "watch-t4", benefit: "+15% career · +10% school progress" },
+      { name: "Digital Watch", dailyCost: 1, hoursBonus: 0, image: "watch-t1", benefit: "No time bought back yet" },
+      { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "+1h of your week back — club and concierge access" },
+      { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "+2h of your week back — a concierge runs your errands" },
+      { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 3, image: "watch-t4", benefit: "+3h of your week back — a personal assistant on call" },
     ],
   },
 ];

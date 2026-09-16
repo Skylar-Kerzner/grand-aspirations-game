@@ -79,7 +79,7 @@ export default function TimePanel() {
             <p className="text-[11px] text-muted-foreground mt-1 mb-3">
               {MAJORS.find((m) => m.id === state.studying?.majorId)?.name} ·{" "}
               {state.studyHours > 0
-                ? `${Math.ceil(state.studying.daysLeft / ((state.studyHours / WEEK_HOURS) * derived.schoolProgress))} days left at this pace`
+                ? `${Math.ceil(state.studying.daysLeft / (state.studyHours / WEEK_HOURS))} days left at this pace`
                 : "Paused — give your classes some hours"}
             </p>
           </>
@@ -97,13 +97,17 @@ export default function TimePanel() {
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Time in your ventures</h3>
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
           A venture you never visit limps along at a quarter of its potential — the first hour jumps it to half.
-          {BUSINESS_ATTENTION_FULL_HOURS} takes it to full swing. A little time in each of several ventures often
-          beats everything in one.
+          {BUSINESS_ATTENTION_FULL_HOURS}h a week is the most any one venture can take, and it takes that to full
+          swing. A little time in each of several ventures often beats everything in one.
         </p>
         <div className="space-y-3">
           {owned.map((def) => {
             const hours = state.businessHours[def.id] || 0;
             const attention = getBusinessAttentionOf(state, def.id);
+            const others = bizHours - hours;
+            const roomLeft = budget - state.studyHours - others;
+            const maxHours = Math.max(hours, Math.min(BUSINESS_ATTENTION_FULL_HOURS, roomLeft));
+            const blocked = freeHours <= 0 && hours < BUSINESS_ATTENTION_FULL_HOURS;
             return (
               <div key={def.id} className="surface-card rounded-xl p-4">
                 <div className="flex justify-between items-baseline mb-1">
@@ -122,16 +126,18 @@ export default function TimePanel() {
                 <input
                   type="range"
                   min={0}
-                  max={budget - state.studyHours - (bizHours - hours)}
+                  max={maxHours}
                   step={1}
                   value={hours}
                   onChange={(e) => dispatch({ type: "SET_BUSINESS_HOURS", id: def.id, hours: Number(e.target.value) })}
                   className="w-full accent-primary"
                 />
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  {hours >= BUSINESS_ATTENTION_FULL_HOURS
-                    ? "It has your full attention."
-                    : `${BUSINESS_ATTENTION_FULL_HOURS - hours}h more takes it to full swing.`}
+                  {blocked
+                    ? "Your week is fully booked — take hours from elsewhere to give it more."
+                    : hours >= BUSINESS_ATTENTION_FULL_HOURS
+                      ? "It has your full attention."
+                      : `${BUSINESS_ATTENTION_FULL_HOURS - hours}h more takes it to full swing.`}
                 </p>
               </div>
             );
@@ -152,7 +158,7 @@ export default function TimePanel() {
         </div>
         <p className="text-[11px] text-muted-foreground mb-3">
           Courses, certifications, coaching and conferences for your career. This raises career progress to{" "}
-          {derived.focus.toFixed(2)}×. Your Lifestyle choices also improve career and school progress.
+          {derived.focus.toFixed(2)}×.
         </p>
         <input
           type="range"

@@ -400,12 +400,7 @@ export function getCreditCardPayment(state: GameState): number {
 
 export function getCareerProgressMultiplier(state: GameState): number {
   const training = Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE);
-  const lifestyle = ASSETS.reduce((sum, def) => sum + (getLifestyleTier(state, def.id)?.careerBonus || 0), 0);
-  return 1 + lifestyle + training;
-}
-
-export function getSchoolProgressMultiplier(state: GameState): number {
-  return 1 + ASSETS.reduce((sum, def) => sum + (getLifestyleTier(state, def.id)?.schoolBonus || 0), 0);
+  return 1 + training;
 }
 
 export function getBusinessValue(state: GameState): number {
@@ -591,7 +586,7 @@ function advance(state: GameState, days: number, now: number): GameState {
   let studying = s.studying;
   let majors = s.majors;
   if (studying) {
-    const rate = (s.studyHours / 40) * getSchoolProgressMultiplier(s);
+    const rate = s.studyHours / 40;
     const left = studying.daysLeft - days * rate;
     if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
@@ -792,7 +787,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "SET_BUSINESS_HOURS": {
       const others = getTotalBusinessHours(state) - (state.businessHours[action.id] || 0);
-      const hours = Math.max(0, Math.min(getTimeBudget(state) - state.studyHours - others, Math.round(action.hours)));
+      const hours = Math.max(
+        0,
+        Math.min(getTimeBudget(state) - state.studyHours - others, BUSINESS_ATTENTION_FULL_HOURS, Math.round(action.hours))
+      );
       return { ...state, businessHours: { ...state.businessHours, [action.id]: hours } };
     }
 
@@ -1091,7 +1089,7 @@ export interface DerivedState {
   nextJob: (typeof JOBS)[number] | null;
   xpNeeded: number;
   focus: number;
-  schoolProgress: number;
+  
   creditTier: number;
   creditLimit: number;
   taxRate: number;
@@ -1139,7 +1137,6 @@ function calculateDerived(state: GameState): DerivedState {
     nextJob: JOBS[state.jobIndex + 1] || null,
     xpNeeded: job.xpToPromote,
     focus: getCareerProgressMultiplier(state),
-    schoolProgress: getSchoolProgressMultiplier(state),
     creditTier: state.loansRepaid.length,
     creditLimit: getCreditLimit(state),
     taxRate,
