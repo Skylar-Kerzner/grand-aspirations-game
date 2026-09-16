@@ -538,6 +538,7 @@ export interface BusinessConcept {
   name: string;        // the venture's name when opened
   description: string;
   image: string;       // artwork key for this concept
+  tierNames: [string, string, string, string]; // stage names in this concept's own words
 }
 export interface BusinessLocation {
   id: string;
