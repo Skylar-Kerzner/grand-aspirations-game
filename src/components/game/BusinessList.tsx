@@ -120,13 +120,14 @@ export default function BusinessList() {
               <div className="p-3">
                 <h3 className="font-semibold text-sm leading-tight">{displayName}</h3>
                 <p className="text-[11px] text-muted-foreground">
-                  {!unlocked
-                    ? `Needs ${BUSINESSES[idx - 1]?.name} at level ${def.unlockLevelOfPrev}`
-                    : biz.level > 0
-                      ? tierName
-                      : def.sector}
+                  {biz.level > 0 ? tierName : def.sector}
                 </p>
-                {unlocked && biz.level > 0 && (
+                {knowledge.returnBonus > 0 && (
+                  <p className="text-[10px] text-primary mt-1">
+                    {knowledge.track?.name}: +{(knowledge.returnBonus * 100).toFixed(0)}% return
+                  </p>
+                )}
+                {biz.level > 0 && (
                   <div className="mt-1">
                     <p className="font-mono-nums text-[11px] text-primary">{formatRate(income)}</p>
                     {networkBonus > 0 && (
@@ -135,7 +136,7 @@ export default function BusinessList() {
                     <p className={`text-[10px] ${condition.tone}`}>{condition.text}</p>
                   </div>
                 )}
-                {unlocked && biz.level === 0 && (
+                {biz.level === 0 && (
                   <>
                     <p className="font-mono-nums text-[11px] text-muted-foreground mt-1">
                       {formatCompact(def.baseCost)}
