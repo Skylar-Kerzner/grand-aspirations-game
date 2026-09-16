@@ -303,12 +303,13 @@ export default function BusinessList() {
                   })}
                 </div>
 
-                {(selectedBiz.level === 0 || selectedBiz.choices) && (
+                {(selectedBiz.level === 0 ||
+                  getBusinessTierIndex(selectedBiz.level + 1) !== getBusinessTierIndex(selectedBiz.level)) && (
                   <div className="surface-card rounded-lg p-3 my-4 space-y-4">
                     <p className="text-[11px] text-muted-foreground">
                       {selectedBiz.level > 0
-                        ? "Rebrand if you like — pick a new concept or city before you expand. Every venture rolls the same dice."
-                        : "Give the venture an identity. Every concept rolls the same dice — the odds are identical, so pick the one you like. You find out how it went once the doors open."}
+                        ? "Stepping up a tier is a chance to rebrand — pick a new concept or city before you expand."
+                        : "Give the venture an identity. You find out how it went once the doors open."}
                     </p>
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-2">Concept</p>
@@ -400,10 +401,11 @@ export default function BusinessList() {
                           ? "Adds income once you see how it trades"
                           : `Adds ${formatRate(addedIncome)} across your businesses`}
                       </p>
-                      {selectedBiz.level > 0 && (
+                      {selectedBiz.level > 0 &&
+                        getBusinessTierIndex(selectedBiz.level + 1) !== getBusinessTierIndex(selectedBiz.level) && (
                         <p className="text-center text-[11px] text-muted-foreground mb-2">
-                          Expanding puts part of its luck back on the table — a great venture can come back
-                          to earth, and a poor one can turn around. You can rebrand above before you do.
+                          Moving up a tier puts part of its luck back on the table — a great venture can come
+                          back to earth, and a poor one can turn around.
                         </p>
                       )}
 
