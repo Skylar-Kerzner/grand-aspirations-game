@@ -792,7 +792,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "SET_BUSINESS_HOURS": {
       const others = getTotalBusinessHours(state) - (state.businessHours[action.id] || 0);
-      const hours = Math.max(0, Math.min(getTimeBudget(state) - state.studyHours - others, Math.round(action.hours)));
+      const hours = Math.max(
+        0,
+        Math.min(getTimeBudget(state) - state.studyHours - others, BUSINESS_ATTENTION_FULL_HOURS, Math.round(action.hours))
+      );
       return { ...state, businessHours: { ...state.businessHours, [action.id]: hours } };
     }
 
