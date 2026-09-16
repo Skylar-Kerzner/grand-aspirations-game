@@ -133,7 +133,7 @@ export default function CareerPanel() {
         />
         {state.studying && (
           <p className="text-[11px] text-muted-foreground mt-2">
-            {EDUCATION[state.studying.level].name} ·{" "}
+            {MAJORS.find((m) => m.id === state.studying?.majorId)?.name} ·{" "}
             {state.studyHours > 0
               ? `${Math.ceil(state.studying.daysLeft / ((state.studyHours / WEEK_HOURS) * derived.schoolProgress))} days left at this pace`
               : "paused — give it some hours"}
@@ -162,15 +162,16 @@ export default function CareerPanel() {
         />
       </div>
 
-      {/* Education */}
+      {/* Education — pick a major, it opens a career path */}
       <div>
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Education</h3>
+        <p className="text-[11px] text-muted-foreground mb-3 px-1">
+          Each major leads to a different career path. Study any of them, in any order.
+        </p>
         <div className="space-y-3">
-          {EDUCATION.map((def, i) => {
-            const completed = state.education >= i;
-            const isNext = i === state.education + 1;
-            const inProgress = state.studying?.level === i;
-            if (i > state.education + 1) return null;
+          {MAJORS.map((def) => {
+            const completed = state.majors.includes(def.id);
+            const inProgress = state.studying?.majorId === def.id;
             return (
               <div key={def.id} className="surface-card rounded-xl p-4">
                 <div className="flex justify-between items-center gap-3">
@@ -192,8 +193,8 @@ export default function CareerPanel() {
                   ) : (
                     <motion.button
                       whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "STUDY", level: i })}
-                      disabled={!isNext || !!state.studying || state.cash < def.cost}
+                      onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
+                      disabled={!!state.studying || state.cash < def.cost}
                       className="h-9 px-4 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40 shrink-0"
                     >
                       Enroll
