@@ -475,35 +475,50 @@ function advance(state: GameState, days: number, now: number): GameState {
   stats.livingSpent += living;
   stats.trainingSpent += training;
 
-  // Businesses
+  // Businesses — profit swings with trading conditions and the odd setback
   const businesses: Record<string, BusinessState> = {};
-  let managedGross = 0;
+  const shockEvents: GameEvent[] = [];
+  let bizGross = 0;
   for (const [id, biz] of Object.entries(s.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
     if (!def || biz.level === 0) { businesses[id] = biz; continue; }
-    const perDay = businessIncomeOf(s, id);
-    if (biz.hasManager) {
-      const gain = perDay * days;
-      managedGross += gain;
-      stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
-      businesses[id] = biz;
-    } else {
-      const cap = perDay * UNMANAGED_CAP_DAYS;
-      businesses[id] = { ...biz, accumulated: Math.min(cap, (biz.accumulated || 0) + perDay * days) };
+    const steady = getBusinessSteadyIncomeOf(s, id);
+    let condition = biz.condition ?? 1;
+    let gain = 0;
+    const dailyVol = def.risk / Math.sqrt(DAYS_PER_YEAR);
+    for (let d = 0; d < days; d++) {
+      gain += steady * condition;
+      // mean-reverting drift around normal conditions
+      const noise = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * dailyVol;
+      condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + noise;
+      if (Math.random() < BUSINESS_SHOCK_CHANCE * def.risk) {
+        condition *= 0.35 + Math.random() * 0.25;
+        if (shockEvents.length < 3) {
+          shockEvents.push({
+            day: Math.floor(s.day) + d,
+            title: `Setback at ${def.name}`,
+            text: `At your ${def.name.toLowerCase()}, ${BUSINESS_SHOCK_TEXTS[Math.floor(Math.random() * BUSINESS_SHOCK_TEXTS.length)]}. Takings will be down until trade recovers.`,
+            tone: "bad",
+          });
+        }
+      }
+      condition = Math.min(1.8, Math.max(0.15, condition));
     }
+    bizGross += gain;
+    stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
+    businesses[id] = { ...biz, condition };
   }
-  const bizTax = managedGross * taxRate;
-  cash += managedGross - bizTax;
-  stats.businessEarned += managedGross - bizTax;
+  const bizTax = bizGross * taxRate;
+  cash += bizGross - bizTax;
+  stats.businessEarned += bizGross - bizTax;
   stats.taxesPaid += bizTax;
 
   // Operating costs
-  const mgr = getManagerCosts(s) * days;
   const ret = getRetainerCosts(s) * days;
   const operating = getOperatingCosts(s) * days;
   cash -= operating;
-  stats.managerSpent += mgr;
   stats.retainerSpent += ret;
+
 
   // Investments — lognormal so the long-run average matches the stated return
   const investments: Record<string, InvestmentState> = {};
