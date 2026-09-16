@@ -121,6 +121,17 @@ export function getJob(state: GameState) {
   return { ...JOBS[Math.min(state.jobIndex, JOBS.length - 1)], ...state.currentJob };
 }
 
+/** How many consecutive positions you have held in your current industry. */
+export function getTrackTenure(state: GameState): number {
+  const home = getCareerTrack(state.currentJob.employer).id;
+  let count = 0;
+  for (let i = state.jobHistory.length - 1; i >= 0; i--) {
+    if (getCareerTrack(state.jobHistory[i].employer).id !== home) break;
+    count++;
+  }
+  return count;
+}
+
 export function getTaxRate(state: GameState): number {
   return state.consultants.includes("lobbyist") ? LOBBYIST_TAX_RATE : TAX_RATE;
 }
