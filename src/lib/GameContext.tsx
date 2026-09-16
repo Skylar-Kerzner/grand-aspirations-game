@@ -3,7 +3,7 @@ import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
-  UNMANAGED_CAP_DAYS, BUSINESS_VALUATION_MULTIPLE, BUSINESS_NETWORK_MILESTONES, LOAN_EQUITY_REQUIREMENT,
+  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
 
@@ -11,7 +11,7 @@ const SAVE_KEY = "empire-tycoon-save-v4";
 const LEGACY_SAVE_KEY = "empire-tycoon-save-v3";
 const MAX_OFFLINE_DAYS = 240;
 
-export interface BusinessState { level: number; hasManager: boolean; accumulated: number }
+export interface BusinessState { level: number; condition: number }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number }
@@ -83,8 +83,6 @@ export type GameAction =
   | { type: "ACCEPT_JOB_OFFER"; index: number }
   | { type: "STUDY"; level: number }
   | { type: "BUY_BUSINESS"; id: string }
-  | { type: "COLLECT_BUSINESS"; id: string }
-  | { type: "HIRE_MANAGER"; id: string }
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
   | { type: "TAKE_LOAN"; id: string; amount: number }
@@ -223,11 +221,19 @@ export function businessIncomeOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
+  return getBusinessSteadyIncomeOf(state, id) * (biz.condition ?? 1);
+}
+
+/** Income ignoring today's trading conditions — used for valuation and planning. */
+export function getBusinessSteadyIncomeOf(state: GameState, id: string): number {
+  const def = BUSINESSES.find((b) => b.id === id);
+  const biz = state.businesses[id];
+  if (!def || !biz || biz.level === 0) return 0;
   return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * businessMultiplier(state);
 }
 
 export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
-  const biz = state.businesses[id] || { level: 0, hasManager: false, accumulated: 0 };
+  const biz = state.businesses[id] || { level: 0, condition: 1 };
   const upgraded = {
     ...state,
     businesses: { ...state.businesses, [id]: { ...biz, level: biz.level + 1 } },
@@ -242,18 +248,8 @@ export function getBusinessUpgradeIncomeGain(state: GameState, id: string): numb
 export function getBusinessGross(state: GameState): number {
   let total = 0;
   for (const [id, biz] of Object.entries(state.businesses)) {
-    if (!biz.hasManager || biz.level === 0) continue;
+    if (biz.level === 0) continue;
     total += businessIncomeOf(state, id);
-  }
-  return total;
-}
-
-export function getManagerCosts(state: GameState): number {
-  let total = 0;
-  for (const [id, biz] of Object.entries(state.businesses)) {
-    if (!biz.hasManager || biz.level === 0) continue;
-    const def = BUSINESSES.find((b) => b.id === id);
-    if (def) total += businessIncomeOf(state, id) * def.managerShare;
   }
   return total;
 }
@@ -275,7 +271,7 @@ export function getRetainerCosts(state: GameState): number {
 }
 
 export function getOperatingCosts(state: GameState): number {
-  let total = getManagerCosts(state) + getRetainerCosts(state);
+  let total = getRetainerCosts(state);
   if (state.consultants.includes("operations")) total *= 0.85;
   return total;
 }
@@ -387,7 +383,11 @@ function createInitialState(): GameState {
           car: legacyAssets.car || 1,
           watch: legacyAssets.watch || 1,
         },
+        businesses: Object.fromEntries(
+          Object.entries(parsed.businesses || {}).map(([id, biz]) => [id, { level: biz.level || 0, condition: biz.condition ?? 1 }]),
+        ),
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
+
       };
       const offlineDays = Math.min((Date.now() - merged.lastTick) / 1000, MAX_OFFLINE_DAYS);
       if (offlineDays > 5) return advance(merged, offlineDays, Date.now());
@@ -477,35 +477,50 @@ function advance(state: GameState, days: number, now: number): GameState {
   stats.livingSpent += living;
   stats.trainingSpent += training;
 
-  // Businesses
+  // Businesses — profit swings with trading conditions and the odd setback
   const businesses: Record<string, BusinessState> = {};
-  let managedGross = 0;
+  const shockEvents: GameEvent[] = [];
+  let bizGross = 0;
   for (const [id, biz] of Object.entries(s.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
     if (!def || biz.level === 0) { businesses[id] = biz; continue; }
-    const perDay = businessIncomeOf(s, id);
-    if (biz.hasManager) {
-      const gain = perDay * days;
-      managedGross += gain;
-      stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
-      businesses[id] = biz;
-    } else {
-      const cap = perDay * UNMANAGED_CAP_DAYS;
-      businesses[id] = { ...biz, accumulated: Math.min(cap, (biz.accumulated || 0) + perDay * days) };
+    const steady = getBusinessSteadyIncomeOf(s, id);
+    let condition = biz.condition ?? 1;
+    let gain = 0;
+    const dailyVol = def.risk / Math.sqrt(DAYS_PER_YEAR);
+    for (let d = 0; d < days; d++) {
+      gain += steady * condition;
+      // mean-reverting drift around normal conditions
+      const noise = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * dailyVol;
+      condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + noise;
+      if (Math.random() < BUSINESS_SHOCK_CHANCE * def.risk) {
+        condition *= 0.35 + Math.random() * 0.25;
+        if (shockEvents.length < 3) {
+          shockEvents.push({
+            day: Math.floor(s.day) + d,
+            title: `Setback at ${def.name}`,
+            text: `At your ${def.name.toLowerCase()}, ${BUSINESS_SHOCK_TEXTS[Math.floor(Math.random() * BUSINESS_SHOCK_TEXTS.length)]}. Takings will be down until trade recovers.`,
+            tone: "bad",
+          });
+        }
+      }
+      condition = Math.min(1.8, Math.max(0.15, condition));
     }
+    bizGross += gain;
+    stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
+    businesses[id] = { ...biz, condition };
   }
-  const bizTax = managedGross * taxRate;
-  cash += managedGross - bizTax;
-  stats.businessEarned += managedGross - bizTax;
+  const bizTax = bizGross * taxRate;
+  cash += bizGross - bizTax;
+  stats.businessEarned += bizGross - bizTax;
   stats.taxesPaid += bizTax;
 
   // Operating costs
-  const mgr = getManagerCosts(s) * days;
   const ret = getRetainerCosts(s) * days;
   const operating = getOperatingCosts(s) * days;
   cash -= operating;
-  stats.managerSpent += mgr;
   stats.retainerSpent += ret;
+
 
   // Investments — lognormal so the long-run average matches the stated return
   const investments: Record<string, InvestmentState> = {};
@@ -564,7 +579,7 @@ function advance(state: GameState, days: number, now: number): GameState {
 
   // Over the limit: you get cut off and forced down to the cheapest life
   let assets = s.assets;
-  let events = s.events;
+  let events = shockEvents.length ? [...shockEvents.reverse(), ...s.events].slice(0, 30) : s.events;
   if (ccDebt > getCreditLimit(s) && Object.values(assets).some((tier) => tier > 1)) {
     assets = Object.fromEntries(ASSETS.map((def) => [def.id, 1]));
     const cutoff: GameEvent = { day: Math.floor(s.day), title: "Cut off", text: "Your card was declined. You have moved down to the cheapest possible life until the balance clears.", tone: "bad" };
@@ -685,7 +700,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "BUY_BUSINESS": {
       const def = BUSINESSES.find((b) => b.id === action.id);
       if (!def || !isBusinessUnlocked(state, action.id)) return state;
-      const cur = state.businesses[action.id] || { level: 0, hasManager: false, accumulated: 0 };
+      const cur = state.businesses[action.id] || { level: 0, condition: 1 };
       const cost = upgradeCostFor(state, action.id);
       if (state.cash < cost) return state;
       return {
@@ -693,29 +708,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         businesses: { ...state.businesses, [action.id]: { ...cur, level: cur.level + 1 } },
         stats: { ...state.stats, businessSpent: state.stats.businessSpent + cost },
       };
-    }
-
-    case "COLLECT_BUSINESS": {
-      const biz = state.businesses[action.id];
-      if (!biz || biz.accumulated <= 0) return state;
-      const taxRate = getTaxRate(state);
-      const net = biz.accumulated * (1 - taxRate);
-      const stats = { ...state.stats, businessEarnedById: { ...state.stats.businessEarnedById } };
-      stats.businessEarned += net;
-      stats.taxesPaid += biz.accumulated - net;
-      stats.businessEarnedById[action.id] = (stats.businessEarnedById[action.id] || 0) + net;
-      return {
-        ...state, cash: state.cash + net,
-        businesses: { ...state.businesses, [action.id]: { ...biz, accumulated: 0 } },
-        stats,
-      };
-    }
-
-    case "HIRE_MANAGER": {
-      const def = BUSINESSES.find((b) => b.id === action.id);
-      const biz = state.businesses[action.id];
-      if (!def || !biz || biz.hasManager || biz.level < 3) return state;
-      return { ...state, businesses: { ...state.businesses, [action.id]: { ...biz, hasManager: true } } };
     }
 
     case "INVEST": {
