@@ -372,7 +372,13 @@ export const EVENTS: EventDef[] = [
   { id: "layoff", title: "Laid off", text: "Your position was eliminated. You start one rung lower.", tone: "bad", weight: 2, minDay: 200, jobLoss: true },
   { id: "audit", title: "Tax audit", text: "They found a discrepancy. You paid it.", tone: "bad", weight: 4, minDay: 150, cashPctOfNetWorth: -0.04 },
   { id: "award", title: "Industry award", text: "An award nobody outside the trade has heard of. It works.", tone: "good", weight: 5, minDay: 150, businessBoostDays: 21, xpFlat: 40 },
-  { id: "lawsuit", title: "Nuisance lawsuit", text: "Settled quietly, as these things are.", tone: "bad", weight: 4, minDay: 250, cashPctOfNetWorth: -0.05 },
+  { id: "lawsuit", title: "Nuisance lawsuit", text: "Settled quietly, as these things are.", tone: "bad", weight: 3, minDay: 250, cashPctOfNetWorth: -0.05 },
+  { id: "refund", title: "Overpayment refunded", text: "A billing error, finally caught, in your favour.", tone: "good", weight: 7, cashFlat: 600, cashPctOfNetWorth: 0.01 },
+  { id: "mentor", title: "A mentor takes an interest", text: "Someone senior starts telling you how things actually work.", tone: "good", weight: 6, xpFlat: 60 },
+  { id: "referral", title: "Word of mouth", text: "A regular brought everyone they know.", tone: "good", weight: 7, businessBoostDays: 10 },
+  { id: "windfall", title: "Old position pays off", text: "Something you forgot you owned was bought out.", tone: "good", weight: 4, minDay: 180, cashPctOfNetWorth: 0.08, cashFlat: 2500 },
+  { id: "press", title: "Flattering write-up", text: "A journalist needed a story and you were it.", tone: "good", weight: 5, minDay: 120, businessBoostDays: 18, xpFlat: 30 },
+  { id: "equity", title: "Vesting cliff", text: "Equity from an old contract finally vested.", tone: "good", weight: 4, minDay: 220, cashPctOfNetWorth: 0.06, cashFlat: 3000 },
 ];
 
 export const EVENT_CHANCE_PER_DAY = 0.012;
