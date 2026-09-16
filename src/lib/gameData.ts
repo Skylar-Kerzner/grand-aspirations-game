@@ -657,6 +657,11 @@ export function ventureImageAtTier(businessId: string, tierIdx: number, choices?
 export const BUSINESS_SALE_DISCOUNT = 0.9;
 
 /** How much of a venture's fortune is put back on the table with each expansion. */
+/** How much of a venture's luck goes back on the table at a tier step. */
+export function businessRerollWeight(changedChoices: number): number {
+  return BUSINESS_UPGRADE_REROLL + 0.2 * (changedChoices - 1);
+}
+
 export const BUSINESS_UPGRADE_REROLL = 0.4;
 
 /** Every venture rolls the same dice, whatever identity you give it. */
