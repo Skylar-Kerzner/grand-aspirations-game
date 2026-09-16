@@ -481,7 +481,8 @@ function advance(state: GameState, days: number, now: number): GameState {
   if (ccDebt > getCreditLimit(s) && (housing !== "room" || food !== "instant" || clothing !== "thrift")) {
     housing = (s.assets["car"] || 0) > 0 ? "car" : "room";
     food = "instant"; clothing = "thrift";
-    events = [{ day: Math.floor(s.day), title: "Cut off", text: "Your card was declined. You have moved down to the cheapest possible life until the balance clears.", tone: "bad" }, ...events].slice(0, 30);
+    const cutoff: GameEvent = { day: Math.floor(s.day), title: "Cut off", text: "Your card was declined. You have moved down to the cheapest possible life until the balance clears.", tone: "bad" };
+    events = [cutoff, ...events].slice(0, 30);
   }
 
   // Experience
