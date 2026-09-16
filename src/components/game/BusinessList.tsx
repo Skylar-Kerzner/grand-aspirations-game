@@ -47,11 +47,12 @@ export default function BusinessList() {
   const [confirmSell, setConfirmSell] = useState(false);
 
   const openBusiness = (id: string) => {
+    const cur = state.businesses[id];
     setSelected(id);
     setConfirmSell(false);
     setChoices({
-      concept: BUSINESS_CONCEPTS[id]?.[0].id || "",
-      location: BUSINESS_LOCATIONS[id]?.[0].id || "",
+      concept: cur?.choices?.concept || BUSINESS_CONCEPTS[id]?.[0].id || "",
+      location: cur?.choices?.location || BUSINESS_LOCATIONS[id]?.[0].id || "",
     });
   };
 
@@ -302,11 +303,12 @@ export default function BusinessList() {
                   })}
                 </div>
 
-                {selectedBiz.level === 0 && (
+                {(selectedBiz.level === 0 || selectedBiz.choices) && (
                   <div className="surface-card rounded-lg p-3 my-4 space-y-4">
                     <p className="text-[11px] text-muted-foreground">
-                      Give the venture an identity. Every concept rolls the same dice — the odds are
-                      identical, so pick the one you like. You find out how it went once the doors open.
+                      {selectedBiz.level > 0
+                        ? "Rebrand if you like — pick a new concept or city before you expand. Every venture rolls the same dice."
+                        : "Give the venture an identity. Every concept rolls the same dice — the odds are identical, so pick the one you like. You find out how it went once the doors open."}
                     </p>
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-2">Concept</p>
@@ -354,7 +356,8 @@ export default function BusinessList() {
                       </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      You'd open: <span className="text-foreground font-medium">{ventureName(selectedDef.id, choices)}</span>
+                      {selectedBiz.level > 0 ? "You'd run it as:" : "You'd open:"}{" "}
+                      <span className="text-foreground font-medium">{ventureName(selectedDef.id, choices)}</span>
                     </p>
                   </div>
                 )}
@@ -383,7 +386,7 @@ export default function BusinessList() {
                           dispatch({
                             type: "BUY_BUSINESS",
                             id: selectedDef.id,
-                            choices: selectedBiz.level === 0 ? choices : undefined,
+                            choices,
                           })
                         }
                         disabled={!canAfford}
