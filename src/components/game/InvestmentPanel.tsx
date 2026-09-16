@@ -4,7 +4,7 @@ import { useGame, isInvestmentUnlocked } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
 import { INVESTMENTS } from "@/lib/gameData";
 
-const QUICK_AMOUNTS = [1000, 10000, 100000, 1000000];
+const STEPS = [1, 10, 100, 1000, 10000];
 
 export default function InvestmentPanel() {
   const { state, derived, dispatch } = useGame();
@@ -13,11 +13,13 @@ export default function InvestmentPanel() {
   return (
     <div className="space-y-3">
       {INVESTMENTS.map((def) => {
-        const inv = state.investments[def.id] || { value: 0, deposited: 0 };
+        const inv = state.investments[def.id] || { value: 0, basis: 0 };
         const unlocked = isInvestmentUnlocked(state, def.id);
         const isExpanded = expandedId === def.id && unlocked;
-        const gain = inv.value - inv.deposited;
+        const gain = inv.value - inv.basis;
         const prev = INVESTMENTS.find((i) => i.id === def.unlockPrev);
+        // amounts start at the minimum for this fund, so nothing offered is unusable
+        const amounts = STEPS.map((s) => s * def.minInvestment).filter((a) => a <= 1e15).slice(0, 4);
 
         return (
           <div key={def.id} className={`surface-card rounded-xl p-4 ${unlocked ? "" : "opacity-60"}`}>
@@ -30,7 +32,7 @@ export default function InvestmentPanel() {
                 <p className="text-[11px] text-muted-foreground">
                   {unlocked
                     ? def.description
-                    : `Deposit ${formatCompact(def.unlockAmount || 0)} into ${prev?.name} to unlock`}
+                    : `Put ${formatCompact(def.unlockAmount || 0)} into ${prev?.name} to unlock`}
                 </p>
               </div>
               <div className="text-right shrink-0">
@@ -38,7 +40,7 @@ export default function InvestmentPanel() {
                   <>
                     <p className="font-mono-nums text-sm">{formatMoney(inv.value)}</p>
                     <p className={`text-[10px] font-mono-nums ${gain >= 0 ? "text-primary" : "text-destructive"}`}>
-                      {gain >= 0 ? "+" : ""}{formatCompact(gain)}
+                      {gain >= 0 ? "+" : ""}{formatCompact(gain)} on what's still in
                     </p>
                   </>
                 ) : (
@@ -56,14 +58,17 @@ export default function InvestmentPanel() {
               <div className="mt-3 pt-3 border-t border-border">
                 <p className="text-[11px] text-muted-foreground mb-2">
                   {(def.annualReturn * 100).toFixed(1)}% a year expected · volatility {(def.annualVolatility * 100).toFixed(0)}%
+                  {(state.stats.investEarnedById[def.id] || 0) !== 0 && (
+                    <> · lifetime {formatCompact(state.stats.investEarnedById[def.id])}</>
+                  )}
                 </p>
                 <div className="flex gap-2 flex-wrap">
-                  {QUICK_AMOUNTS.map((amt) => (
+                  {amounts.map((amt) => (
                     <motion.button
                       key={amt}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => dispatch({ type: "INVEST", id: def.id, amount: amt })}
-                      disabled={state.cash < amt || (inv.value === 0 && amt < def.minInvestment)}
+                      disabled={state.cash < amt}
                       className="h-8 px-3 rounded-lg surface-button text-xs font-mono-nums transition-game disabled:opacity-30"
                     >
                       {formatCompact(amt)}
