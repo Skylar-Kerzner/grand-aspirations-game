@@ -74,12 +74,13 @@ export default function BusinessList() {
           const biz = state.businesses[def.id] || { level: 0, condition: 1 };
           const unlocked = isBusinessUnlocked(state, def.id);
           const tierIdx = getBusinessTierIndex(biz.level);
-          const tierName = def.tierNames[tierIdx];
-          const conceptImage = biz.level > 0 && biz.choices
-            ? getImage(getBusinessConcept(def.id, biz.choices.concept || "")?.image || "")
-            : "";
-          const tierImage = tierIdx === 0 && conceptImage ? conceptImage : getImage(def.tierImages[tierIdx]);
-          const displayName = biz.level > 0 && biz.choices ? ventureName(def.id, biz.choices) : def.name;
+          const owned = biz.level > 0 && !!biz.choices;
+          const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
+          const tierName = concept?.tierNames[tierIdx] || def.tierNames[tierIdx];
+          const tierImage = owned
+            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices)) || getImage(concept?.image || "") || getImage(def.tierImages[tierIdx])
+            : getImage(def.tierImages[tierIdx]);
+          const displayName = owned ? ventureNameAtTier(def.id, tierIdx, biz.choices) : def.name;
           const income = businessIncomeOf(state, def.id);
           const networkBonus = getBusinessNetworkBonus(state, def.id);
           const condition = conditionLabel(biz.condition ?? 1);
