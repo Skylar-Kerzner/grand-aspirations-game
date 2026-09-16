@@ -87,7 +87,33 @@ export function trackPayMultiplier(employer: string, tierIndex: number): number 
 }
 
 /** Staying inside the same track carries a loyalty and experience premium. */
-export const TRACK_CONTINUITY_BONUS = 0.1;
+export const TRACK_CONTINUITY_BONUS = 0.12;
+
+/** Each consecutive level served in the same industry adds this much pay, up to the cap. */
+export const TRACK_TENURE_STEP = 0.06;
+export const TRACK_TENURE_CAP = 0.3;
+
+/** Moving sideways into another industry costs you: you arrive as an outsider. */
+export const TRACK_SWITCH_PENALTY = 0.22;
+
+/**
+ * Which industries a sideways move makes sense into. Anything not listed here is
+ * only reachable by studying that path's major.
+ */
+export const TRACK_ADJACENCY: Record<string, string[]> = {
+  hospitality: ["operations", "corporate"],
+  operations: ["hospitality", "corporate"],
+  corporate: ["operations", "hospitality", "finance"],
+  tech: ["corporate"],
+  finance: ["corporate"],
+};
+
+export function isAdjacentTrack(from: string, to: string): boolean {
+  return (TRACK_ADJACENCY[from] || []).includes(to);
+}
+
+/** Levels served in one industry that count in place of a degree on that path. */
+export const TRACK_EXPERIENCE_GATE = 3;
 
 export const CAREER_SALARY_RANGE = { min: 0.82, max: 1.22 };
 export const CAREER_VARIANTS: CareerVariant[][] = [
