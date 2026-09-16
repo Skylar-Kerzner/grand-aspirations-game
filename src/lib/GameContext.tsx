@@ -404,7 +404,8 @@ export function getBusinessValue(state: GameState): number {
   for (const [id, biz] of Object.entries(state.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
     if (!def || biz.level === 0) continue;
-    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1)
+      * getBusinessAttentionOf(state, id) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
   }
   return total;
 }
