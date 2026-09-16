@@ -64,7 +64,7 @@ export default function BusinessList() {
     ? state.businesses[selected] || { level: 0, condition: 1 }
     : null;
   const ventureTitle = selected && selectedBiz && selectedBiz.level > 0 && selectedBiz.choices
-    ? ventureName(selected, selectedBiz.choices)
+    ? ventureNameAtTier(selected, getBusinessTierIndex(selectedBiz.level), selectedBiz.choices)
     : selectedDef?.name || "";
 
   return (
