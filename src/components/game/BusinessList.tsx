@@ -2,10 +2,10 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useGame,
+  getBusinessSteadyIncomeOf,
   isBusinessUnlocked,
   businessIncomeOf,
   upgradeCostFor,
-  getTaxRate,
   getBusinessEffectiveROI,
   getBusinessNetworkBonus,
   getNextBusinessNetworkMilestone,
@@ -16,32 +16,44 @@ import {
   BUSINESSES,
   getBusinessTierIndex,
   BUSINESS_TIER_THRESHOLDS,
-  UNMANAGED_CAP_DAYS,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
+
+function conditionLabel(c: number) {
+  if (c >= 1.15) return { text: "Booming", tone: "text-primary" };
+  if (c >= 1.04) return { text: "Strong trade", tone: "text-primary" };
+  if (c >= 0.96) return { text: "Steady trade", tone: "text-muted-foreground" };
+  if (c >= 0.8) return { text: "Slow trade", tone: "text-muted-foreground" };
+  return { text: "Struggling", tone: "text-destructive" };
+}
+
+function riskLabel(risk: number) {
+  if (risk >= 0.5) return "High risk";
+  if (risk >= 0.35) return "Moderate risk";
+  return "Lower risk";
+}
 
 export default function BusinessList() {
   const { state, dispatch } = useGame();
   const [selected, setSelected] = useState<string | null>(null);
-  const taxRate = getTaxRate(state);
 
   const selectedDef = BUSINESSES.find((b) => b.id === selected);
   const selectedBiz = selected
-    ? state.businesses[selected] || { level: 0, hasManager: false, accumulated: 0 }
+    ? state.businesses[selected] || { level: 0, condition: 1 }
     : null;
 
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
         {BUSINESSES.map((def, idx) => {
-          const biz = state.businesses[def.id] || { level: 0, hasManager: false, accumulated: 0 };
+          const biz = state.businesses[def.id] || { level: 0, condition: 1 };
           const unlocked = isBusinessUnlocked(state, def.id);
           const tierIdx = getBusinessTierIndex(biz.level);
           const tierName = def.tierNames[tierIdx];
           const tierImage = getImage(def.tierImages[tierIdx]);
           const income = businessIncomeOf(state, def.id);
           const networkBonus = getBusinessNetworkBonus(state, def.id);
-          const ready = biz.accumulated > 0.01 && !biz.hasManager;
+          const condition = conditionLabel(biz.condition ?? 1);
 
           return (
             <motion.div
@@ -71,9 +83,9 @@ export default function BusinessList() {
                     Lv.{biz.level}
                   </div>
                 )}
-                {biz.hasManager && (
-                  <div className="absolute top-2 left-2 bg-primary/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
-                    Managed
+                {biz.level > 0 && (
+                  <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[10px] font-medium">
+                    {condition.text}
                   </div>
                 )}
               </div>
@@ -92,29 +104,18 @@ export default function BusinessList() {
                     {networkBonus > 0 && (
                       <p className="text-[10px] text-primary">+{(networkBonus * 100).toFixed(0)}% network</p>
                     )}
+                    <p className={`text-[10px] ${condition.tone}`}>{condition.text}</p>
                   </div>
                 )}
                 {unlocked && biz.level === 0 && (
-                  <p className="font-mono-nums text-[11px] text-muted-foreground mt-1">
-                    {formatCompact(def.baseCost)}
-                  </p>
+                  <>
+                    <p className="font-mono-nums text-[11px] text-muted-foreground mt-1">
+                      {formatCompact(def.baseCost)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">{riskLabel(def.risk)}</p>
+                  </>
                 )}
 
-                {ready && (
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      dispatch({ type: "COLLECT_BUSINESS", id: def.id });
-                    }}
-                    className="mt-2 w-full h-8 rounded-lg bg-primary/10 text-primary font-semibold text-[11px] transition-game"
-                  >
-                    Collect{" "}
-                    <span className="font-mono-nums">
-                      {formatCompact(biz.accumulated * (1 - taxRate))}
-                    </span>
-                  </motion.button>
-                )}
               </div>
             </motion.div>
           );
@@ -190,16 +191,20 @@ export default function BusinessList() {
                     ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
                     : " · 30% base return"}
                 </p>
+                <p className="text-[11px] text-muted-foreground mb-1">
+                  {riskLabel(selectedDef.risk)} · profits swing about {(selectedDef.risk * 100).toFixed(0)}% a year and setbacks can hit trade for a while. Income is paid to you automatically every day.
+                </p>
+                {selectedBiz.level > 0 && (
+                  <p className={`text-xs mb-1 ${conditionLabel(selectedBiz.condition ?? 1).tone}`}>
+                    {conditionLabel(selectedBiz.condition ?? 1).text} — {((selectedBiz.condition ?? 1) * 100).toFixed(0)}% of normal takings
+                  </p>
+                )}
                 {selectedBiz.level > 0 && (
                   <p className="text-xs text-primary mb-1">
-                    {formatRate(businessIncomeOf(state, selectedDef.id))}
-                    {selectedBiz.hasManager ? (
-                      <span className="text-muted-foreground ml-1">(auto-collected)</span>
-                    ) : (
-                      <span className="text-muted-foreground ml-1">
-                        (holds up to {UNMANAGED_CAP_DAYS} days of takings)
-                      </span>
-                    )}
+                    {formatRate(businessIncomeOf(state, selectedDef.id))} today
+                    <span className="text-muted-foreground ml-1">
+                      (normal trade {formatRate(getBusinessSteadyIncomeOf(state, selectedDef.id))})
+                    </span>
                   </p>
                 )}
 
@@ -268,19 +273,6 @@ export default function BusinessList() {
                   })}
                 </div>
 
-                {selectedBiz.level > 0 && !selectedBiz.hasManager && selectedBiz.accumulated > 0.01 && (
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => dispatch({ type: "COLLECT_BUSINESS", id: selectedDef.id })}
-                    className="w-full h-11 rounded-lg bg-primary/10 text-primary font-semibold text-sm mb-2 transition-game"
-                  >
-                    Collect{" "}
-                    <span className="font-mono-nums">
-                      {formatCompact(selectedBiz.accumulated * (1 - taxRate))}
-                    </span>
-                  </motion.button>
-                )}
-
                 {(() => {
                   const cost = upgradeCostFor(state, selectedDef.id);
                   const canAfford = state.cash >= cost;
@@ -303,25 +295,6 @@ export default function BusinessList() {
                   );
                 })()}
 
-                {selectedBiz.level > 0 && !selectedBiz.hasManager && (
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => dispatch({ type: "HIRE_MANAGER", id: selectedDef.id })}
-                    disabled={selectedBiz.level < 3}
-                    className="w-full h-11 rounded-lg surface-button font-semibold text-sm transition-game disabled:opacity-40"
-                  >
-                    {selectedBiz.level < 3
-                      ? "Manager available at level 3"
-                      : `Hire manager · ${(selectedDef.managerShare * 100).toFixed(0)}% of revenue`}
-                  </motion.button>
-                )}
-                {selectedBiz.hasManager && (
-                  <p className="text-center text-xs text-muted-foreground mt-1">
-                    Manager runs it for{" "}
-                    {formatMoney(businessIncomeOf(state, selectedDef.id) * selectedDef.managerShare)}
-                    /day
-                  </p>
-                )}
               </div>
             </div>
           </motion.div>
