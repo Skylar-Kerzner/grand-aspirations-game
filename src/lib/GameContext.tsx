@@ -280,7 +280,8 @@ export function getIndustryKnowledge(state: GameState, id: string) {
 export function getBusinessEffectiveROI(state: GameState, id: string): number {
   const def = BUSINESSES.find((business) => business.id === id);
   if (!def) return 0;
-  return def.annualROI * getBusinessAttentionOf(state, id)
+  const fortune = state.businesses[id]?.fortune ?? 1;
+  return def.annualROI * fortune * getBusinessAttentionOf(state, id)
     * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus);
 }
 
