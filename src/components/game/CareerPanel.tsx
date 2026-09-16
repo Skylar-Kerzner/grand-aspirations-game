@@ -134,54 +134,16 @@ export default function CareerPanel() {
         )}
       </div>
 
-      {/* Hours */}
+      {/* Time pointer */}
       <div className="surface-card rounded-xl p-4">
         <div className="flex justify-between items-baseline mb-1">
-          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Your 40 hours</h3>
+          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Your time</h3>
           <span className="font-mono-nums text-sm">{derived.workHours}h work · {state.studyHours}h school</span>
         </div>
-        <p className="text-[11px] text-muted-foreground mb-3">
-          Pay scales with the hours you work. Classes only progress with the hours you give them.
+        <p className="text-[11px] text-muted-foreground">
+          You split your week between your job, school and your ventures from the Time tab.
           Extra shifts are always available on top.
         </p>
-        <input
-          type="range"
-          min={0}
-          max={WEEK_HOURS}
-          step={4}
-          value={state.studyHours}
-          onChange={(e) => dispatch({ type: "SET_STUDY_HOURS", hours: Number(e.target.value) })}
-          className="w-full accent-primary"
-        />
-        {state.studying && (
-          <p className="text-[11px] text-muted-foreground mt-2">
-            {MAJORS.find((m) => m.id === state.studying?.majorId)?.name} ·{" "}
-            {state.studyHours > 0
-              ? `${Math.ceil(state.studying.daysLeft / ((state.studyHours / WEEK_HOURS) * derived.schoolProgress))} days left at this pace`
-              : "paused — give it some hours"}
-          </p>
-        )}
-      </div>
-
-      {/* Training budget */}
-      <div className="surface-card rounded-xl p-4">
-        <div className="flex justify-between items-baseline mb-1">
-          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Training budget</h3>
-          <span className="font-mono-nums text-sm">{formatMoney(state.trainingBudget)}/day</span>
-        </div>
-        <p className="text-[11px] text-muted-foreground mb-3">
-          Courses, certifications, coaching and conferences. This raises career progress to {derived.focus.toFixed(2)}×.
-          Your Lifestyle choices also improve career and school progress.
-        </p>
-        <input
-          type="range"
-          min={0}
-          max={Math.max(50, Math.round(Math.max(derived.salaryPerDay, 50) * 1.5))}
-          step={1}
-          value={Math.min(state.trainingBudget, Math.max(50, Math.round(Math.max(derived.salaryPerDay, 50) * 1.5)))}
-          onChange={(e) => dispatch({ type: "SET_TRAINING", amount: Number(e.target.value) })}
-          className="w-full accent-primary"
-        />
       </div>
 
       {/* Education — pick a major, it opens a career path */}
