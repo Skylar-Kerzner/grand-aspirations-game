@@ -9,22 +9,29 @@ export const TAX_RATE = 0.22;
 export const WEEK_HOURS = 40;
 
 // ---------- Education ----------
-export interface EducationDef {
+export interface MajorDef {
   id: string;
   name: string;
+  track: string; // career track this major opens up
   cost: number;
   days: number; // full-time study days (40 hrs/week) before it completes
   description: string;
 }
 
-export const EDUCATION: EducationDef[] = [
-  { id: "hs", name: "High School Diploma", cost: 0, days: 0, description: "Where everyone starts." },
-  { id: "trade", name: "Trade Certificate", cost: 3500, days: 60, description: "A licensed skill, fast payback." },
-  { id: "assoc", name: "Associate Degree", cost: 14000, days: 120, description: "Two years, real credentials." },
-  { id: "bachelor", name: "Bachelor's Degree", cost: 58000, days: 240, description: "The corporate entry ticket." },
-  { id: "mba", name: "MBA", cost: 190000, days: 300, description: "The executive fast lane." },
-  { id: "cfa", name: "CFA Charter", cost: 320000, days: 360, description: "The key to running other people's money." },
+/** From this career level on, offers in a track require that track's major. */
+export const MAJOR_GATE_TIER = 4;
+
+export const MAJORS: MajorDef[] = [
+  { id: "trade", name: "Trade Certificate", track: "operations", cost: 3500, days: 60, description: "A licensed skill, fast payback. Leads to careers in Operations & Industry." },
+  { id: "hospitality", name: "Hospitality Management", track: "hospitality", cost: 14000, days: 120, description: "Leads to careers in Hospitality & Retail." },
+  { id: "business", name: "Business Administration", track: "corporate", cost: 58000, days: 240, description: "Leads to careers in Corporate Leadership." },
+  { id: "cs", name: "Computer Science", track: "tech", cost: 58000, days: 240, description: "Leads to careers in Technology." },
+  { id: "finance", name: "Finance", track: "finance", cost: 190000, days: 300, description: "Leads to careers in Finance & Investing." },
 ];
+
+export function getTrackMajor(trackId: string): MajorDef | undefined {
+  return MAJORS.find((m) => m.track === trackId);
+}
 
 // ---------- Careers ----------
 export interface JobDef {
