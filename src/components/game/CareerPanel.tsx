@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, EDUCATION, JOBS, WEEK_HOURS } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, EDUCATION, JOBS, WEEK_HOURS, getCareerTrack, trackPayMultiplier } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
@@ -17,7 +17,8 @@ export default function CareerPanel() {
       <div className="surface-card rounded-xl p-4">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Current position</p>
         <h3 className="text-lg font-semibold tracking-tight">{job.title}</h3>
-        <p className="text-[11px] text-muted-foreground mb-3">{job.employer}</p>
+        <p className="text-[11px] text-muted-foreground">{job.employer}</p>
+        <p className="text-[11px] text-primary mb-3">{getCareerTrack(job.employer).name}</p>
         <div className="flex justify-between text-sm mb-1">
           <span className="text-muted-foreground">Gross pay at {derived.workHours}h</span>
           <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
@@ -61,6 +62,9 @@ export default function CareerPanel() {
             ) : (
               <div className="space-y-2 mt-3">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Your offers</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Offers arrive in no particular order. The best-paid job today is not always the best career.
+                </p>
                 {state.careerOffers.map((offer, index) => (
                   <button
                     key={`${offer.employer}-${index}`}
@@ -72,6 +76,13 @@ export default function CareerPanel() {
                       <span className="font-mono-nums text-primary shrink-0">{formatMoney(offer.dailyPay)}/day</span>
                     </span>
                     <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
+                    <span className="block text-[11px] text-primary mt-1">{getCareerTrack(offer.employer).name}</span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      {getCareerTrack(offer.employer).outlook} Top roles on this path pay around{" "}
+                      {formatCompact(
+                        JOBS[JOBS.length - 1].dailyPay * trackPayMultiplier(offer.employer, JOBS.length - 1),
+                      )}/day.
+                    </span>
                   </button>
                 ))}
                 <motion.button

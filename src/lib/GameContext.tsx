@@ -667,6 +667,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (picked.some((p) => p.title === v.title || p.employer === v.employer)) continue;
         picked.push(v);
       }
+      // Make sure the choice spans more than one career track where possible.
+      if (picked.length === 3 && new Set(picked.map((v) => getCareerTrack(v.employer).id)).size === 1) {
+        const other = pool.find((v) => getCareerTrack(v.employer).id !== getCareerTrack(picked[0].employer).id);
+        if (other) picked[2] = other;
+      }
       const currentTrack = getCareerTrack(state.currentJob.employer).id;
       const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
