@@ -400,12 +400,11 @@ export function getCreditCardPayment(state: GameState): number {
 
 export function getCareerProgressMultiplier(state: GameState): number {
   const training = Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE);
-  const lifestyle = ASSETS.reduce((sum, def) => sum + (getLifestyleTier(state, def.id)?.careerBonus || 0), 0);
-  return 1 + lifestyle + training;
+  return 1 + training;
 }
 
-export function getSchoolProgressMultiplier(state: GameState): number {
-  return 1 + ASSETS.reduce((sum, def) => sum + (getLifestyleTier(state, def.id)?.schoolBonus || 0), 0);
+export function getSchoolProgressMultiplier(_state: GameState): number {
+  return 1;
 }
 
 export function getBusinessValue(state: GameState): number {
