@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   useGame,
   getBusinessSteadyIncomeOf,
-  isBusinessUnlocked,
+  getIndustryKnowledge,
   businessIncomeOf,
   upgradeCostFor,
   getBusinessEffectiveROI,
@@ -72,7 +72,7 @@ export default function BusinessList() {
       <div className="grid grid-cols-2 gap-3">
         {BUSINESSES.map((def, idx) => {
           const biz = state.businesses[def.id] || { level: 0, condition: 1 };
-          const unlocked = isBusinessUnlocked(state, def.id);
+          const knowledge = getIndustryKnowledge(state, def.id);
           const tierIdx = getBusinessTierIndex(biz.level);
           const owned = biz.level > 0 && !!biz.choices;
           const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
@@ -88,14 +88,12 @@ export default function BusinessList() {
           return (
             <motion.div
               key={def.id}
-              whileTap={unlocked ? { scale: 0.98 } : undefined}
-              onClick={() => unlocked && openBusiness(def.id)}
-              className={`surface-card rounded-xl overflow-hidden transition-game ${
-                unlocked ? "cursor-pointer" : "opacity-50"
-              }`}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => openBusiness(def.id)}
+              className="surface-card rounded-xl overflow-hidden transition-game cursor-pointer"
             >
               <div className="aspect-[4/3] bg-secondary relative">
-                    {tierImage && (biz.level > 0 || unlocked) ? (
+                    {tierImage ? (
                   <img
                     src={tierImage}
                     alt={biz.level > 0 ? displayName : def.name}
@@ -122,13 +120,14 @@ export default function BusinessList() {
               <div className="p-3">
                 <h3 className="font-semibold text-sm leading-tight">{displayName}</h3>
                 <p className="text-[11px] text-muted-foreground">
-                  {!unlocked
-                    ? `Needs ${BUSINESSES[idx - 1]?.name} at level ${def.unlockLevelOfPrev}`
-                    : biz.level > 0
-                      ? tierName
-                      : def.sector}
+                  {biz.level > 0 ? tierName : def.sector}
                 </p>
-                {unlocked && biz.level > 0 && (
+                {knowledge.returnBonus > 0 && (
+                  <p className="text-[10px] text-primary mt-1">
+                    {knowledge.track?.name}: +{(knowledge.returnBonus * 100).toFixed(0)}% return
+                  </p>
+                )}
+                {biz.level > 0 && (
                   <div className="mt-1">
                     <p className="font-mono-nums text-[11px] text-primary">{formatRate(income)}</p>
                     {networkBonus > 0 && (
@@ -137,7 +136,7 @@ export default function BusinessList() {
                     <p className={`text-[10px] ${condition.tone}`}>{condition.text}</p>
                   </div>
                 )}
-                {unlocked && biz.level === 0 && (
+                {biz.level === 0 && (
                   <>
                     <p className="font-mono-nums text-[11px] text-muted-foreground mt-1">
                       {formatCompact(def.baseCost)}
@@ -228,6 +227,19 @@ export default function BusinessList() {
                     ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
                     : " · 30% base return"}
                 </p>
+                {(() => {
+                  const k = getIndustryKnowledge(state, selectedDef.id);
+                  return (
+                    <p className={`text-[11px] mb-1 ${k.returnBonus > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                      {k.track?.name}
+                      {k.returnBonus > 0
+                        ? ` — ${[k.hasMajor ? "your degree" : null, k.years >= 0.5 ? `${k.years.toFixed(0)} years in the industry` : null]
+                            .filter(Boolean)
+                            .join(" and ")}: +${(k.returnBonus * 100).toFixed(0)}% return, steadier trade`
+                        : " — you have no experience in this industry yet"}
+                    </p>
+                  );
+                })()}
                 <p className="text-[11px] text-muted-foreground mb-1">
                   {riskLabel(selectedDef.risk)} · profits swing about {(selectedDef.risk * 100).toFixed(0)}% a year and setbacks can hit trade for a while. Income is paid to you automatically every day.
                 </p>
@@ -371,6 +383,18 @@ export default function BusinessList() {
                         {ventureNameAtTier(selectedDef.id, getBusinessTierIndex(selectedBiz.level + 1), choices)}
                       </span>
                     </p>
+                    {selectedBiz.level > 0 && selectedBiz.choices && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {(() => {
+                          const changed =
+                            (choices.concept !== selectedBiz.choices?.concept ? 1 : 0) +
+                            (choices.location !== selectedBiz.choices?.location ? 1 : 0);
+                          if (changed === 0) return "Same product, same city — most of what you have built carries over.";
+                          if (changed === 1) return "One change means starting part of it over: some of what you have built carries over.";
+                          return "New product in a new city — you are largely starting over.";
+                        })()}
+                      </p>
+                    )}
                   </div>
                 )}
 

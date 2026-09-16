@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
-  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
+  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
 
@@ -223,9 +223,42 @@ export function getBusinessNetworkBonus(state: GameState, id: string): number {
   return bonus;
 }
 
+/** Total days worked in a given industry across your whole career. */
+export function getTrackYears(state: GameState, trackId: string): number {
+  let days = 0;
+  const today = Math.floor(state.day);
+  state.jobHistory.forEach((job, i) => {
+    if (getCareerTrack(job.employer).id !== trackId) return;
+    const end = i + 1 < state.jobHistory.length ? state.jobHistory[i + 1].startDay : today;
+    days += Math.max(0, end - job.startDay);
+  });
+  return days / DAYS_PER_YEAR;
+}
+
+/** What your career and education bring to running a venture in its industry. */
+export function getIndustryKnowledge(state: GameState, id: string) {
+  const def = BUSINESSES.find((business) => business.id === id);
+  if (!def) return { returnBonus: 0, riskRelief: 0, hasMajor: false, years: 0, track: undefined };
+  const track = CAREER_TRACKS[def.track];
+  const major = getTrackMajor(def.track);
+  const hasMajor = !!major && state.majors.includes(major.id);
+  const years = getTrackYears(state, def.track);
+  const yearBonus = Math.min(INDUSTRY_YEAR_CAP, years * INDUSTRY_YEAR_STEP);
+  const returnBonus = (hasMajor ? INDUSTRY_MAJOR_BONUS : 0) + yearBonus;
+  const maxBonus = INDUSTRY_MAJOR_BONUS + INDUSTRY_YEAR_CAP;
+  return {
+    returnBonus,
+    riskRelief: INDUSTRY_RISK_RELIEF * (returnBonus / maxBonus),
+    hasMajor,
+    years,
+    track,
+  };
+}
+
 export function getBusinessEffectiveROI(state: GameState, id: string): number {
   const def = BUSINESSES.find((business) => business.id === id);
-  return def ? def.annualROI * (1 + getBusinessNetworkBonus(state, id)) : 0;
+  if (!def) return 0;
+  return def.annualROI * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus);
 }
 
 export function getNextBusinessNetworkMilestone(state: GameState, id: string) {
@@ -265,7 +298,7 @@ export function getBusinessSteadyIncomeOf(state: GameState, id: string): number 
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * businessMultiplier(state) * (biz.fortune ?? 1);
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1);
 }
 
 /** What this single venture would fetch if sold today. */
@@ -273,7 +306,7 @@ export function getBusinessValueOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1)
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * (biz.fortune ?? 1)
     * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
 }
 
@@ -364,11 +397,9 @@ export function getCreditLimit(state: GameState): number {
   return Math.max(CC_BASE_LIMIT, positive * 0.08, getGrossSalary(state) * 60);
 }
 
-export function isBusinessUnlocked(state: GameState, id: string): boolean {
-  const idx = BUSINESSES.findIndex((b) => b.id === id);
-  if (idx <= 0) return true;
-  const prev = BUSINESSES[idx - 1];
-  return (state.businesses[prev.id]?.level || 0) >= BUSINESSES[idx].unlockLevelOfPrev;
+/** Every venture is open to anyone who can pay for it. */
+export function isBusinessUnlocked(_state: GameState, _id: string): boolean {
+  return true;
 }
 
 export function isInvestmentUnlocked(state: GameState, id: string): boolean {
@@ -546,13 +577,14 @@ function advance(state: GameState, days: number, now: number): GameState {
     const steady = getBusinessSteadyIncomeOf(s, id);
     let condition = biz.condition ?? 1;
     let gain = 0;
-    const dailyVol = def.risk / Math.sqrt(DAYS_PER_YEAR);
+    const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
+    const dailyVol = (def.risk * relief) / Math.sqrt(DAYS_PER_YEAR);
     for (let d = 0; d < days; d++) {
       gain += steady * condition;
       // mean-reverting drift around normal conditions
       const noise = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * dailyVol;
       condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + noise;
-      if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk) {
+      if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk * relief) {
         condition *= 0.35 + Math.random() * 0.25;
         if (shockEvents.length < 3) {
           shockEvents.push({
@@ -803,17 +835,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             // and only then can it be rebranded.
             const tierUp =
               getBusinessTierIndex(cur.level + 1) !== getBusinessTierIndex(cur.level);
+            const nextChoices = tierUp ? action.choices || cur.choices : cur.choices;
+            // Keeping the product and the city carries more of what you built over;
+            // changing both starts far closer to a fresh venture.
+            const changed =
+              (nextChoices?.concept !== cur.choices?.concept ? 1 : 0) +
+              (nextChoices?.location !== cur.choices?.location ? 1 : 0);
+            const rerollWeight = businessRerollWeight(changed);
             return {
               ...cur,
               level: cur.level + 1,
-              choices: tierUp ? action.choices || cur.choices : cur.choices,
+              choices: nextChoices,
               fortune: Math.min(
                 6,
                 Math.max(
                   0.15,
                   (tierUp
-                    ? (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
-                      rollBusinessFortune() * BUSINESS_UPGRADE_REROLL
+                    ? (cur.fortune ?? 1) * (1 - rerollWeight) +
+                      rollBusinessFortune() * rerollWeight
                     : (cur.fortune ?? 1)) *
                     // every level nudges success a little, up or down
                     (0.9 + Math.random() * 0.2),
