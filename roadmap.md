@@ -12,3 +12,4 @@
 - [x] Let players re-choose concept/location on each business tier-up (alongside the luck reroll)
 
 - [ ] Widen business luck range to roughly 15%-600% (was ~80-120%)
+- [ ] Rename 'How it turned out' to 'Overall business success'; drift fortune 0.9-1.1x each level up
