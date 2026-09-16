@@ -40,6 +40,48 @@ export interface JobDef {
 
 export interface CareerVariant { title: string; employer: string }
 
+/**
+ * Career tracks. Employers belong to a track, and each track pays differently
+ * over a lifetime: hospitality and trades pay well early and flatten, finance
+ * and tech start modest and climb far higher.
+ */
+export interface CareerTrack { id: string; name: string; curve: number; outlook: string }
+export const CAREER_TRACKS: Record<string, CareerTrack> = {
+  hospitality: { id: "hospitality", name: "Hospitality & Retail", curve: -0.6, outlook: "Pays well right away, but the ceiling is low." },
+  operations: { id: "operations", name: "Operations & Industry", curve: -0.25, outlook: "Steady pay that rises slowly and reliably." },
+  corporate: { id: "corporate", name: "Corporate Leadership", curve: 0.2, outlook: "Modest early, strong once you reach the top table." },
+  tech: { id: "tech", name: "Technology", curve: 0.5, outlook: "A slow start that compounds into very high pay." },
+  finance: { id: "finance", name: "Finance & Investing", curve: 0.85, outlook: "Lowest pay early, by far the highest ceiling." },
+};
+
+const EMPLOYER_TRACKS: Record<string, string> = {
+  "Corner Diner": "hospitality", "The Brass Spoon": "hospitality", "Market Street Grill": "hospitality",
+  "Harbour Canteen": "hospitality", "Roast House": "hospitality", "Juniper Coffee": "hospitality",
+  "Daily Ritual": "hospitality", "Pennington Hall": "hospitality", "Alder Grocers": "hospitality",
+  "Meridian Facilities": "operations", "Apex Systems": "operations", "Civic Works": "operations",
+  "Calder Freight": "operations", "Brightline Manufacturing": "operations",
+  "Northbeam Labs": "tech", "Vanta Works": "tech", "Fieldstone Tech": "tech", "Aster Group": "tech",
+  "Arclight Group": "corporate", "Sterling Partners": "corporate", "Summit Advisory": "corporate",
+  "Halstead Capital": "finance", "North & Finch": "finance", "Crown & Vale": "finance",
+  "Ashford Mutual": "finance", "Kestrel Capital": "finance", "Vale Point Partners": "finance",
+  "Ridgeline Asset Management": "finance", "Blackwater Fund": "finance", "Hollis & Co.": "finance",
+  "Your own fund": "finance",
+};
+
+export function getCareerTrack(employer: string): CareerTrack {
+  return CAREER_TRACKS[EMPLOYER_TRACKS[employer] || "operations"];
+}
+
+/** How a track's pay compares with the standard ladder at a given career level. */
+export function trackPayMultiplier(employer: string, tierIndex: number): number {
+  const track = getCareerTrack(employer);
+  const progress = tierIndex / Math.max(1, CAREER_VARIANTS.length - 1);
+  return Math.max(0.55, 1 + track.curve * (progress - 0.35));
+}
+
+/** Staying inside the same track carries a loyalty and experience premium. */
+export const TRACK_CONTINUITY_BONUS = 0.1;
+
 export const CAREER_SALARY_RANGE = { min: 0.82, max: 1.22 };
 export const CAREER_VARIANTS: CareerVariant[][] = [
   [

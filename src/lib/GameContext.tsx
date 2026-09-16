@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, LOAN_EQUITY_REQUIREMENT,
@@ -667,10 +667,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (picked.some((p) => p.title === v.title || p.employer === v.employer)) continue;
         picked.push(v);
       }
+      // Make sure the choice spans more than one career track where possible.
+      if (picked.length === 3 && new Set(picked.map((v) => getCareerTrack(v.employer).id)).size === 1) {
+        const other = pool.find((v) => getCareerTrack(v.employer).id !== getCareerTrack(picked[0].employer).id);
+        if (other) picked[2] = other;
+      }
+      const currentTrack = getCareerTrack(state.currentJob.employer).id;
       const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
-        return { ...variant, dailyPay: Math.round(next.dailyPay * factor) };
-      }).sort((a, b) => a.dailyPay - b.dailyPay);
+        const track = trackPayMultiplier(variant.employer, state.jobIndex + 1);
+        const loyalty = getCareerTrack(variant.employer).id === currentTrack ? 1 + TRACK_CONTINUITY_BONUS : 1;
+        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty) };
+      }).sort(() => Math.random() - 0.5);
       return { ...state, careerOffers, xp: Math.max(0, state.xp - getJob(state).xpToPromote) };
     }
 
