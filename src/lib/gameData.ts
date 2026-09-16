@@ -18,7 +18,10 @@ export interface MajorDef {
   description: string;
 }
 
-/** From this career level on, offers in a track require that track's major. */
+/**
+ * From this career level on, offers in a track require either that track's major
+ * or enough years served inside that same industry (see TRACK_EXPERIENCE_GATE).
+ */
 export const MAJOR_GATE_TIER = 4;
 
 export const MAJORS: MajorDef[] = [
