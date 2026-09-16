@@ -31,10 +31,11 @@ export default function BackgroundScene() {
   const workImg = getImage(derived.job.scene);
   const lifestyleLayers: SceneLayer[] = [
     { key: "home", src: assetImage("house"), className: "left-0 top-0 w-1/2 h-1/2" },
-    { key: "business", src: flagshipImg, className: "right-0 top-0 w-1/2 h-1/2" },
+    { key: "business", src: flagshipImg, className: "right-0 top-0 w-1/4 h-1/2" },
     { key: "car", src: assetImage("car"), className: "left-0 bottom-0 w-1/2 h-1/2" },
-    { key: "wardrobe", src: assetImage("wardrobe"), className: "right-0 bottom-0 w-1/4 h-1/2" },
-    { key: "watch", src: assetImage("watch"), className: "right-1/4 bottom-0 w-1/4 h-1/2" },
+    { key: "food", src: assetImage("food"), className: "right-1/4 top-0 w-1/4 h-1/2" },
+    { key: "wardrobe", src: assetImage("wardrobe"), className: "right-0 bottom-0 w-1/6 h-1/2" },
+    { key: "watch", src: assetImage("watch"), className: "right-1/6 bottom-0 w-1/3 h-1/2" },
   ].filter((layer) => layer.src);
 
   return (

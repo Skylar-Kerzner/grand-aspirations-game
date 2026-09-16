@@ -8,12 +8,13 @@ import FinancePanel from "@/components/game/FinancePanel";
 import CareerPanel from "@/components/game/CareerPanel";
 import LedgerPanel from "@/components/game/LedgerPanel";
 import BackgroundScene from "@/components/game/BackgroundScene";
+import EventModal from "@/components/game/EventModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TABS = [
   { value: "career", label: "Career" },
   { value: "businesses", label: "Business" },
-  { value: "assets", label: "Assets" },
+  { value: "assets", label: "Lifestyle" },
   { value: "investments", label: "Invest" },
   { value: "finance", label: "Money" },
   { value: "ledger", label: "Review" },
@@ -25,6 +26,7 @@ export default function Index() {
       <div className="min-h-screen font-sans relative">
         <BackgroundScene />
         <div className="relative z-10">
+          <EventModal />
           <Dashboard />
 
           <div className="px-4 pt-4 pb-28 max-w-lg mx-auto">
