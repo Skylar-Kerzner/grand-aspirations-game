@@ -662,7 +662,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const offer = state.careerOffers[action.index];
       const next = JOBS[state.jobIndex + 1];
       if (!offer || !next || state.education < next.education) return state;
-      return { ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0 };
+      return {
+        ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0,
+        jobHistory: [...state.jobHistory, { ...offer, startDay: Math.floor(state.day) }],
+      };
     }
 
     case "STUDY": {
