@@ -16,9 +16,13 @@ export default function FinancePanel() {
           <Row label="Salary (after tax)" value={formatRate(derived.salaryPerDay)} tone="pos" />
           <Row label="Business profit" value={formatRate(derived.businessPerDay)} tone="pos" />
           <Row label="Investment returns" value={formatRate(derived.investmentPerDay)} tone="pos" />
-          <Row label="Living costs" value={formatRate(-derived.livingCosts)} tone="neg" />
+          <Row label="Cost of living" value={formatRate(-derived.livingCosts)} tone="neg" />
+          <Row label="Training" value={formatRate(-derived.trainingCost)} tone="neg" />
           <Row label="Managers & retainers" value={formatRate(-derived.operatingCosts)} tone="neg" />
           <Row label="Loan payments" value={formatRate(-derived.loanPayments)} tone="neg" />
+          {state.ccDebt > 0.5 && (
+            <Row label="Card interest" value={formatRate(-derived.ccInterestPerDay)} tone="neg" />
+          )}
           <div className="flex justify-between border-t border-border pt-2">
             <span>Net</span>
             <span className={`font-mono-nums font-semibold ${derived.netPerDay >= 0 ? "text-primary" : "text-destructive"}`}>
@@ -28,21 +32,45 @@ export default function FinancePanel() {
         </div>
       </div>
 
+      {/* Credit card */}
+      <div className="surface-card rounded-xl p-4">
+        <div className="flex justify-between items-baseline mb-1">
+          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Credit card</h3>
+          <span className="font-mono-nums text-sm">
+            {formatMoney(state.ccDebt)} of {formatCompact(derived.creditLimit)}
+          </span>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          Anything you can't cover goes on the card at 29% a year. It pays itself down when cash allows.
+          Go past the limit and you get cut back to the cheapest possible life.
+        </p>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => dispatch({ type: "PAY_CC" })}
+          disabled={state.ccDebt <= 0 || state.cash <= 0}
+          className="w-full h-9 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
+        >
+          Pay off now · {formatCompact(Math.min(state.cash, state.ccDebt))}
+        </motion.button>
+      </div>
+
       {/* Loans */}
       <div>
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-1 px-1">Loans</h3>
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
-          Credit history: {derived.creditTier} loan{derived.creditTier === 1 ? "" : "s"} repaid in full.
+          Credit history: {derived.creditTier} facilit{derived.creditTier === 1 ? "y" : "ies"} repaid in full.
+          Interest is charged on what you still owe, so paying early always costs less.
         </p>
         <div className="space-y-3">
           {LOANS.map((def) => {
-            const loan = state.loans[def.id];
-            const isActive = loan?.active;
-            const repaid = state.loansRepaid.includes(def.id);
+            const loan = state.loans[def.id] || { drawn: 0, remaining: 0, dailyPayment: 0, timesRepaid: 0 };
             const creditOk = state.loansRepaid.length >= def.requiresCredit;
             const equityNeeded = def.amount * LOAN_EQUITY_REQUIREMENT;
             const equityOk = derived.netWorth >= equityNeeded;
-            const payment = amortizedPayment(def.amount, def.annualRate, def.termDays);
+            const available = def.amount - loan.drawn;
+            const samplePayment = amortizedPayment(def.amount, def.annualRate, def.termDays);
+            const visible = creditOk || state.loansRepaid.length >= def.requiresCredit - 1;
+            if (!visible) return null;
 
             return (
               <div key={def.id} className={`surface-card rounded-xl p-4 ${creditOk ? "" : "opacity-60"}`}>
@@ -58,47 +86,61 @@ export default function FinancePanel() {
                 </div>
 
                 <p className="text-[11px] text-muted-foreground mb-2 font-mono-nums">
-                  {formatMoney(payment)}/day for {def.termDays} days
+                  {formatMoney(samplePayment)}/day for {def.termDays} days at the full amount
+                  {loan.timesRepaid > 0 && ` · repaid ${loan.timesRepaid}x`}
                 </p>
 
-                {isActive && (
+                {loan.remaining > 0 && (
                   <p className="text-xs text-destructive font-mono-nums mb-2">
-                    Outstanding {formatMoney(loan.remaining)}
+                    Outstanding {formatMoney(loan.remaining)} · {formatMoney(loan.dailyPayment)}/day
                   </p>
                 )}
 
-                {!isActive && !creditOk && (
+                {!creditOk && (
                   <p className="text-[11px] text-muted-foreground mb-2">
-                    Requires {def.requiresCredit} repaid loan{def.requiresCredit === 1 ? "" : "s"}.
+                    Requires {def.requiresCredit} repaid facilit{def.requiresCredit === 1 ? "y" : "ies"}.
                   </p>
                 )}
-                {!isActive && creditOk && !equityOk && !repaid && (
+                {creditOk && !equityOk && (
                   <p className="text-[11px] text-muted-foreground mb-2">
                     Requires {formatCompact(equityNeeded)} net worth as collateral.
                   </p>
                 )}
 
-                {isActive ? (
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => dispatch({ type: "REPAY_LOAN", id: def.id })}
-                    disabled={state.cash <= 0}
-                    className="w-full h-9 rounded-lg bg-primary/10 text-primary text-xs font-medium transition-game disabled:opacity-40"
-                  >
-                    Pay off now · {formatCompact(Math.min(state.cash, loan.remaining))}
-                  </motion.button>
-                ) : repaid ? (
-                  <p className="text-xs text-primary">Repaid in full</p>
-                ) : (
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => dispatch({ type: "TAKE_LOAN", id: def.id })}
-                    disabled={!creditOk || !equityOk}
-                    className="w-full h-9 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
-                  >
-                    Borrow {formatCompact(def.amount)}
-                  </motion.button>
-                )}
+                <div className="flex gap-2">
+                  {available > 0.5 && (
+                    <>
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => dispatch({ type: "TAKE_LOAN", id: def.id, amount: available })}
+                        disabled={!creditOk || !equityOk}
+                        className="flex-1 h-9 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
+                      >
+                        Draw {formatCompact(available)}
+                      </motion.button>
+                      {available > def.amount * 0.3 && (
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => dispatch({ type: "TAKE_LOAN", id: def.id, amount: available / 4 })}
+                          disabled={!creditOk || !equityOk}
+                          className="h-9 px-3 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
+                        >
+                          Draw {formatCompact(available / 4)}
+                        </motion.button>
+                      )}
+                    </>
+                  )}
+                  {loan.remaining > 0 && (
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => dispatch({ type: "REPAY_LOAN", id: def.id })}
+                      disabled={state.cash <= 0}
+                      className="flex-1 h-9 rounded-lg bg-primary/10 text-primary text-xs font-medium transition-game disabled:opacity-40"
+                    >
+                      Pay down · {formatCompact(Math.min(state.cash, loan.remaining))}
+                    </motion.button>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -109,7 +151,7 @@ export default function FinancePanel() {
       <div>
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Consultants</h3>
         <div className="space-y-3">
-          {CONSULTANTS.map((def) => {
+          {CONSULTANTS.filter((d) => totalLevels >= d.requiresBusinessLevels * 0.5).map((def) => {
             const hired = state.consultants.includes(def.id);
             const eligible = totalLevels >= def.requiresBusinessLevels;
             return (

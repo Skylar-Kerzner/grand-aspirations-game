@@ -1,21 +1,20 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame } from "@/lib/GameContext";
-import { isBusinessUnlocked } from "@/lib/GameContext";
+import { useGame, isBusinessUnlocked, businessIncomeOf, upgradeCostFor, getTaxRate } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
 import {
   BUSINESSES,
-  getBusinessCost,
   getBusinessTierIndex,
+  getBusinessIncome,
   BUSINESS_TIER_THRESHOLDS,
   UNMANAGED_CAP_DAYS,
-  TAX_RATE,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 export default function BusinessList() {
   const { state, dispatch } = useGame();
   const [selected, setSelected] = useState<string | null>(null);
+  const taxRate = getTaxRate(state);
 
   const selectedDef = BUSINESSES.find((b) => b.id === selected);
   const selectedBiz = selected
@@ -31,7 +30,7 @@ export default function BusinessList() {
           const tierIdx = getBusinessTierIndex(biz.level);
           const tierName = def.tierNames[tierIdx];
           const tierImage = getImage(def.tierImages[tierIdx]);
-          const income = def.baseIncome * biz.level;
+          const income = businessIncomeOf(state, def.id);
           const ready = biz.accumulated > 0.01 && !biz.hasManager;
 
           return (
@@ -44,13 +43,19 @@ export default function BusinessList() {
               }`}
             >
               <div className="aspect-[4/3] bg-secondary relative">
-                {tierImage && biz.level > 0 ? (
-                  <img src={tierImage} alt={tierName} className="w-full h-full object-cover" />
+                {tierImage && (biz.level > 0 || unlocked) ? (
+                  <img
+                    src={tierImage}
+                    alt={biz.level > 0 ? tierName : def.name}
+                    loading="lazy"
+                    className={`w-full h-full object-cover ${biz.level > 0 ? "" : "opacity-40 grayscale"}`}
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs px-2 text-center">
                     {def.name}
                   </div>
                 )}
+
                 {biz.level > 0 && (
                   <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[10px] font-medium">
                     Lv.{biz.level}
@@ -66,7 +71,7 @@ export default function BusinessList() {
                 <h3 className="font-semibold text-sm">{def.name}</h3>
                 <p className="text-[11px] text-muted-foreground">
                   {!unlocked
-                    ? `Needs ${def.name === BUSINESSES[idx].name ? BUSINESSES[idx - 1]?.name : ""} at level ${def.unlockLevelOfPrev}`
+                    ? `Needs ${BUSINESSES[idx - 1]?.name} at level ${def.unlockLevelOfPrev}`
                     : biz.level > 0
                       ? tierName
                       : def.sector}
@@ -76,7 +81,7 @@ export default function BusinessList() {
                 )}
                 {unlocked && biz.level === 0 && (
                   <p className="font-mono-nums text-[11px] text-muted-foreground mt-1">
-                    {formatMoney(def.baseCost)}
+                    {formatCompact(def.baseCost)}
                   </p>
                 )}
 
@@ -91,7 +96,7 @@ export default function BusinessList() {
                   >
                     Collect{" "}
                     <span className="font-mono-nums">
-                      {formatCompact(biz.accumulated * (1 - TAX_RATE))}
+                      {formatCompact(biz.accumulated * (1 - taxRate))}
                     </span>
                   </motion.button>
                 )}
@@ -112,7 +117,6 @@ export default function BusinessList() {
             className="fixed inset-0 z-50 bg-background/95 backdrop-blur-lg flex flex-col"
             onClick={() => setSelected(null)}
           >
-            {/* Cash bar */}
             <div
               className="flex items-center justify-between px-5 py-4 border-b border-border"
               onClick={(e) => e.stopPropagation()}
@@ -134,7 +138,6 @@ export default function BusinessList() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-full max-w-lg">
-                {/* Business Image */}
                 {(() => {
                   const tierIdx = getBusinessTierIndex(selectedBiz.level);
                   const tierImage = getImage(selectedDef.tierImages[tierIdx]);
@@ -160,16 +163,18 @@ export default function BusinessList() {
                   );
                 })()}
 
-                {/* Info */}
                 <h2 className="text-xl font-bold tracking-tight">{selectedDef.name}</h2>
                 <p className="text-sm text-muted-foreground mb-1">
                   {selectedBiz.level > 0
                     ? `${selectedDef.tierNames[getBusinessTierIndex(selectedBiz.level)]} · Level ${selectedBiz.level}`
                     : selectedDef.description}
                 </p>
+                <p className="text-[11px] text-muted-foreground mb-1">
+                  Returns about {(selectedDef.annualROI * 100).toFixed(0)}% a year on capital, at every tier.
+                </p>
                 {selectedBiz.level > 0 && (
                   <p className="text-xs text-primary mb-1">
-                    {formatRate(selectedDef.baseIncome * selectedBiz.level)}
+                    {formatRate(businessIncomeOf(state, selectedDef.id))}
                     {selectedBiz.hasManager ? (
                       <span className="text-muted-foreground ml-1">(auto-collected)</span>
                     ) : (
@@ -180,7 +185,7 @@ export default function BusinessList() {
                   </p>
                 )}
 
-                {/* Tier Progress */}
+                {/* Tier progress — nothing revealed before you get there */}
                 <div className="space-y-2 my-4">
                   {selectedDef.tierNames.map((name, i) => {
                     const threshold = BUSINESS_TIER_THRESHOLDS[i];
@@ -194,7 +199,7 @@ export default function BusinessList() {
                         }`}
                       >
                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-                          {tierImg ? (
+                          {reached && tierImg ? (
                             <img src={tierImg} alt={name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full" />
@@ -202,7 +207,7 @@ export default function BusinessList() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm ${reached ? "text-foreground" : "text-muted-foreground"}`}>
-                            {name}
+                            {reached ? name : "?"}
                           </p>
                           <p className="text-[11px] text-muted-foreground">Level {threshold}+</p>
                         </div>
@@ -220,7 +225,6 @@ export default function BusinessList() {
                   })}
                 </div>
 
-                {/* Collect */}
                 {selectedBiz.level > 0 && !selectedBiz.hasManager && selectedBiz.accumulated > 0.01 && (
                   <motion.button
                     whileTap={{ scale: 0.97 }}
@@ -229,33 +233,35 @@ export default function BusinessList() {
                   >
                     Collect{" "}
                     <span className="font-mono-nums">
-                      {formatCompact(selectedBiz.accumulated * (1 - TAX_RATE))}
+                      {formatCompact(selectedBiz.accumulated * (1 - taxRate))}
                     </span>
                   </motion.button>
                 )}
 
-                {/* Buy / Upgrade */}
                 {(() => {
-                  const cost = getBusinessCost(
-                    selectedDef.baseCost,
-                    selectedDef.costMultiplier,
-                    selectedBiz.level,
-                  );
+                  const cost = upgradeCostFor(state, selectedDef.id);
                   const canAfford = state.cash >= cost;
+                  const addedIncome =
+                    getBusinessIncome(selectedDef, selectedBiz.level + 1) -
+                    getBusinessIncome(selectedDef, selectedBiz.level);
                   return (
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "BUY_BUSINESS", id: selectedDef.id })}
-                      disabled={!canAfford}
-                      className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40 mb-2"
-                    >
-                      {selectedBiz.level === 0 ? "Buy" : "Upgrade"} ·{" "}
-                      <span className="font-mono-nums">{formatCompact(cost)}</span>
-                    </motion.button>
+                    <>
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => dispatch({ type: "BUY_BUSINESS", id: selectedDef.id })}
+                        disabled={!canAfford}
+                        className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40 mb-1"
+                      >
+                        {selectedBiz.level === 0 ? "Buy" : "Upgrade"} ·{" "}
+                        <span className="font-mono-nums">{formatCompact(cost)}</span>
+                      </motion.button>
+                      <p className="text-center text-[11px] text-muted-foreground mb-2">
+                        Adds {formatRate(addedIncome)}
+                      </p>
+                    </>
                   );
                 })()}
 
-                {/* Manager */}
                 {selectedBiz.level > 0 && !selectedBiz.hasManager && (
                   <motion.button
                     whileTap={{ scale: 0.97 }}
@@ -271,9 +277,7 @@ export default function BusinessList() {
                 {selectedBiz.hasManager && (
                   <p className="text-center text-xs text-muted-foreground mt-1">
                     Manager runs it for{" "}
-                    {formatMoney(
-                      selectedDef.baseIncome * selectedBiz.level * selectedDef.managerShare,
-                    )}
+                    {formatMoney(businessIncomeOf(state, selectedDef.id) * selectedDef.managerShare)}
                     /day
                   </p>
                 )}

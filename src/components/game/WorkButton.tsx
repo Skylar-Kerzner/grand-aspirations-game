@@ -6,7 +6,6 @@ export default function WorkButton() {
   const { state, derived, dispatch } = useGame();
   const today = Math.floor(state.day);
   const workedToday = state.lastShiftDay === today;
-  const studying = !!state.studying;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3">
@@ -15,14 +14,12 @@ export default function WorkButton() {
           whileTap={{ scale: 0.97 }}
           transition={{ duration: 0.1 }}
           onClick={() => dispatch({ type: "WORK" })}
-          disabled={workedToday || studying}
+          disabled={workedToday}
           className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-sm tracking-wide transition-game disabled:opacity-40"
         >
-          {studying
-            ? "Studying — no shifts available"
-            : workedToday
-              ? "Shift done for today"
-              : `Take an extra shift — ${formatMoney(derived.shiftPay)}`}
+          {workedToday
+            ? "Shift done for today"
+            : `Take an extra shift — ${formatMoney(derived.shiftPay)}`}
         </motion.button>
         <p className="text-center text-[10px] text-muted-foreground mt-1.5">
           {derived.job.title} · {derived.job.employer}
