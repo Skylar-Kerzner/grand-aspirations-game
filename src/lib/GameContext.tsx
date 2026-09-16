@@ -719,11 +719,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const other = pool.find((v) => getCareerTrack(v.employer).id !== getCareerTrack(picked[0].employer).id);
         if (other) picked[2] = other;
       }
-      const currentTrack = getCareerTrack(state.currentJob.employer).id;
       const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
         const track = trackPayMultiplier(variant.employer, state.jobIndex + 1);
-        const loyalty = getCareerTrack(variant.employer).id === currentTrack ? 1 + TRACK_CONTINUITY_BONUS : 1;
+        const sameTrack = getCareerTrack(variant.employer).id === homeTrack;
+        // Staying put compounds: loyalty plus everything you have already served.
+        const loyalty = sameTrack
+          ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP)
+          : 1 - TRACK_SWITCH_PENALTY;
         return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty) };
       }).sort(() => Math.random() - 0.5);
       return { ...state, careerOffers, xp: Math.max(0, state.xp - getJob(state).xpToPromote) };
