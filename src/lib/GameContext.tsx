@@ -11,7 +11,12 @@ const SAVE_KEY = "empire-tycoon-save-v4";
 const LEGACY_SAVE_KEY = "empire-tycoon-save-v3";
 const MAX_OFFLINE_DAYS = 240;
 
-export interface BusinessState { level: number; condition: number }
+export interface BusinessState {
+  level: number;
+  condition: number;
+  fortune?: number;                    // lasting quality of this particular venture
+  choices?: Record<string, string>;    // location / market / product chosen when opening
+}
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number }
@@ -82,7 +87,8 @@ export type GameAction =
   | { type: "GENERATE_JOB_OFFERS" }
   | { type: "ACCEPT_JOB_OFFER"; index: number }
   | { type: "STUDY"; majorId: string }
-  | { type: "BUY_BUSINESS"; id: string }
+  | { type: "BUY_BUSINESS"; id: string; choices?: Record<string, string> }
+  | { type: "SELL_BUSINESS"; id: string }
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
   | { type: "TAKE_LOAN"; id: string; amount: number }
