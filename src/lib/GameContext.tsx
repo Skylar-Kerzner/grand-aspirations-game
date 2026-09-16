@@ -361,11 +361,21 @@ function createInitialState(): GameState {
   try {
     const saved = localStorage.getItem(SAVE_KEY) || localStorage.getItem(LEGACY_SAVE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved) as Partial<GameState> & { food?: string; clothing?: string };
+      const parsed = JSON.parse(saved) as Partial<GameState> & {
+        food?: string; clothing?: string; education?: number; studying?: { level?: number; majorId?: string; daysLeft: number } | null;
+      };
+      // Legacy saves: an education ladder index maps to a set of majors.
+      const LEGACY_MAJOR_MAP = ["trade", "hospitality", "business", "cs", "finance"];
+      const legacyEdu = Math.max(0, Math.min(5, parsed.education || 0));
+      const legacyStudying = parsed.studying && !parsed.studying.majorId
+        ? { majorId: LEGACY_MAJOR_MAP[Math.max(0, (parsed.studying.level || 1) - 1)], daysLeft: parsed.studying.daysLeft }
+        : parsed.studying || null;
       const legacyAssets = parsed.assets || {};
       const savedJob = JOBS[Math.min(parsed.jobIndex || 0, JOBS.length - 1)];
       const merged: GameState = {
         ...fresh, ...parsed,
+        majors: parsed.majors || LEGACY_MAJOR_MAP.slice(0, legacyEdu),
+        studying: legacyStudying as GameState["studying"],
         currentJob: parsed.currentJob || { title: savedJob.title, employer: savedJob.employer, dailyPay: savedJob.dailyPay },
         careerOffers: parsed.careerOffers || [],
         jobHistory: parsed.jobHistory && parsed.jobHistory.length
