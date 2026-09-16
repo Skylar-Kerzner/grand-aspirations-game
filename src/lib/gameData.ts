@@ -267,7 +267,7 @@ export const BUSINESSES: BusinessDef[] = [
 // Trading conditions drift day to day and revert toward normal at this rate.
 export const BUSINESS_CONDITION_REVERSION = 0.04;
 // Chance per day, scaled by a business's risk, of a serious setback.
-export const BUSINESS_SHOCK_CHANCE = 0.006;
+export const BUSINESS_SHOCK_CHANCE = 0.002;
 export const BUSINESS_SHOCK_TEXTS = [
   "a burst pipe closed the doors",
   "a key supplier collapsed",

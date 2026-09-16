@@ -493,7 +493,7 @@ function advance(state: GameState, days: number, now: number): GameState {
       // mean-reverting drift around normal conditions
       const noise = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * dailyVol;
       condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + noise;
-      if (Math.random() < BUSINESS_SHOCK_CHANCE * def.risk) {
+      if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk) {
         condition *= 0.35 + Math.random() * 0.25;
         if (shockEvents.length < 3) {
           shockEvents.push({
