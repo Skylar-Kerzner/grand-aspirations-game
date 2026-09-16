@@ -586,7 +586,7 @@ function advance(state: GameState, days: number, now: number): GameState {
   let studying = s.studying;
   let majors = s.majors;
   if (studying) {
-    const rate = (s.studyHours / 40) * getSchoolProgressMultiplier(s);
+    const rate = s.studyHours / 40;
     const left = studying.daysLeft - days * rate;
     if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
@@ -1137,7 +1137,6 @@ function calculateDerived(state: GameState): DerivedState {
     nextJob: JOBS[state.jobIndex + 1] || null,
     xpNeeded: job.xpToPromote,
     focus: getCareerProgressMultiplier(state),
-    schoolProgress: getSchoolProgressMultiplier(state),
     creditTier: state.loansRepaid.length,
     creditLimit: getCreditLimit(state),
     taxRate,
