@@ -184,9 +184,6 @@ export default function BusinessList() {
                     : "";
                   const tierImage = tierIdx === 0 && conceptImage ? conceptImage : getImage(selectedDef.tierImages[tierIdx]);
                   const tierName = selectedDef.tierNames[tierIdx];
-                  const ventureTitle = selectedBiz.level > 0 && selectedBiz.choices
-                    ? ventureName(selectedDef.id, selectedBiz.choices)
-                    : selectedDef.name;
                   return (
                     <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
                       {selectedBiz.level > 0 && tierImage ? (
