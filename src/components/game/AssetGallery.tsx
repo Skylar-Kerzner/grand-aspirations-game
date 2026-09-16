@@ -101,37 +101,40 @@ export default function AssetGallery() {
                   Lifestyle costs {formatMoney(derived.livingCosts)}/day total. Better choices accelerate promotions and school.
                 </p>
 
-                {/* Tiers */}
-                <div className="space-y-2 mb-4">
-                  {selectedDef.tiers.map((tier, i) => (
-                    <div key={i} className={`flex items-center justify-between py-2 ${i < selectedDef.tiers.length - 1 ? "border-b border-border" : ""}`}>
-                      <div>
-                         <p className={`text-sm ${i + 1 === selectedTier ? "text-foreground" : "text-muted-foreground"}`}>
-                          {tier.name}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">{tier.benefit}</p>
-                      </div>
-                      <div className="text-right">
-                         <span className={`font-mono-nums text-xs ${i + 1 === selectedTier ? "text-primary" : "text-muted-foreground"}`}>
-                           {i + 1 === selectedTier ? "Current · " : ""}{formatMoney(tier.dailyCost)}/day
-                         </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {selectedDef.tiers.map((tier, i) => (
-                    <motion.button
-                      key={tier.name}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "SET_LIFESTYLE", id: selectedDef.id, tier: i + 1 })}
-                      disabled={i + 1 === selectedTier}
-                      className={`min-h-11 rounded-lg px-3 text-xs font-medium transition-game disabled:opacity-60 ${i + 1 === selectedTier ? "bg-primary/15 text-primary" : "surface-button"}`}
-                    >
-                      {i + 1 === selectedTier ? "Current" : `Choose ${tier.name}`}
-                    </motion.button>
-                  ))}
+                {/* Tiers — tap a row to choose it */}
+                <div className="space-y-2">
+                  {selectedDef.tiers.map((tier, i) => {
+                    const isCurrent = i + 1 === selectedTier;
+                    return (
+                      <motion.button
+                        key={tier.name}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => dispatch({ type: "SET_LIFESTYLE", id: selectedDef.id, tier: i + 1 })}
+                        disabled={isCurrent}
+                        className={`w-full flex items-center gap-3 rounded-lg p-3 text-left transition-game ${isCurrent ? "bg-primary/15 ring-1 ring-primary/40" : "surface-button"}`}
+                      >
+                        <div className="w-16 h-12 rounded-md overflow-hidden bg-secondary shrink-0">
+                          {getImage(tier.image) && (
+                            <img src={getImage(tier.image)} alt={tier.name} className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <span className="flex-1 min-w-0">
+                          <span className={`block text-sm font-medium ${isCurrent ? "text-primary" : "text-foreground"}`}>
+                            {tier.name}
+                          </span>
+                          <span className="block text-[11px] text-muted-foreground">{tier.benefit}</span>
+                        </span>
+                        <span className="text-right shrink-0">
+                          <span className={`block font-mono-nums text-xs ${isCurrent ? "text-primary" : "text-foreground"}`}>
+                            {formatMoney(tier.dailyCost)}/day
+                          </span>
+                          <span className="block text-[10px] text-muted-foreground">
+                            {isCurrent ? "Current" : "Tap to choose"}
+                          </span>
+                        </span>
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
