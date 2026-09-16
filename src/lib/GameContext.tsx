@@ -5,7 +5,7 @@ import {
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
-  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, rollBusinessFortune, LOAN_EQUITY_REQUIREMENT,
+  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
 
@@ -798,16 +798,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             choices: action.choices,
             fortune: rollBusinessFortune(),
           }
-        : {
-            // Growing the venture puts part of its fortune back on the table:
-            // a lucky start does not carry forever, and a poor one can recover.
-            ...cur,
-            level: cur.level + 1,
-            choices: action.choices || cur.choices,
-            fortune:
-              (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
-              rollBusinessFortune() * BUSINESS_UPGRADE_REROLL,
-          };
+        : (() => {
+            // Only a tier step puts part of the venture's fortune back on the table,
+            // and only then can it be rebranded.
+            const tierUp =
+              getBusinessTierIndex(cur.level + 1) !== getBusinessTierIndex(cur.level);
+            return {
+              ...cur,
+              level: cur.level + 1,
+              choices: tierUp ? action.choices || cur.choices : cur.choices,
+              fortune: tierUp
+                ? (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
+                  rollBusinessFortune() * BUSINESS_UPGRADE_REROLL
+                : cur.fortune,
+            };
+          })();
       return {
         ...state, cash: state.cash - cost,
         businesses: { ...state.businesses, [action.id]: next },
