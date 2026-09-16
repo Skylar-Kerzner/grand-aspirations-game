@@ -78,10 +78,7 @@ export default function CareerPanel() {
                     <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
                     <span className="block text-[11px] text-primary mt-1">{getCareerTrack(offer.employer).name}</span>
                     <span className="block text-[11px] text-muted-foreground">
-                      {getCareerTrack(offer.employer).outlook} Top roles on this path pay around{" "}
-                      {formatCompact(
-                        JOBS[JOBS.length - 1].dailyPay * trackPayMultiplier(offer.employer, JOBS.length - 1),
-                      )}/day.
+                      {getCareerTrack(offer.employer).outlook}
                     </span>
                   </button>
                 ))}
