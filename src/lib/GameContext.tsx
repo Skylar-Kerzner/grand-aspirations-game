@@ -3,7 +3,6 @@ import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
-  WARDROBE_BUSINESS_BONUS, WATCH_INVEST_BONUS,
   UNMANAGED_CAP_DAYS, BUSINESS_VALUATION_MULTIPLE, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
@@ -131,7 +130,7 @@ export function getInvestmentTotal(state: GameState): number {
 }
 
 function investMultiplier(state: GameState): number {
-  let m = 1 + tierBonus(state.assets["watch"] || 0, WATCH_INVEST_BONUS);
+  let m = 1;
   if (state.consultants.includes("finance")) m *= 1.1;
   if (state.consultants.includes("quant")) m *= 1.2;
   return m;
@@ -160,7 +159,7 @@ export function getGrossSalary(state: GameState): number {
 }
 
 export function businessMultiplier(state: GameState): number {
-  let m = 1 + tierBonus(state.assets["wardrobe"] || 0, WARDROBE_BUSINESS_BONUS);
+  let m = 1;
   if (state.consultants.includes("marketing")) m *= 1.1;
   if (state.consultants.includes("celebrity")) m *= 1.25;
   if (state.day < state.boostUntil) m *= 2;
@@ -289,7 +288,7 @@ function createInitialState(): GameState {
   try {
     const saved = localStorage.getItem(SAVE_KEY) || localStorage.getItem(LEGACY_SAVE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved) as Partial<GameState>;
+      const parsed = JSON.parse(saved) as Partial<GameState> & { food?: string; clothing?: string };
       const legacyAssets = parsed.assets || {};
       const merged: GameState = {
         ...fresh, ...parsed,

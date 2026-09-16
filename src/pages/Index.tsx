@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const TABS = [
   { value: "career", label: "Career" },
   { value: "businesses", label: "Business" },
-  { value: "assets", label: "Assets" },
+  { value: "assets", label: "Lifestyle" },
   { value: "investments", label: "Invest" },
   { value: "finance", label: "Money" },
   { value: "ledger", label: "Review" },

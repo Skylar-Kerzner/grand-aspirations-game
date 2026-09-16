@@ -16,7 +16,7 @@ export default function FinancePanel() {
           <Row label="Salary (after tax)" value={formatRate(derived.salaryPerDay)} tone="pos" />
           <Row label="Business profit" value={formatRate(derived.businessPerDay)} tone="pos" />
           <Row label="Investment returns" value={formatRate(derived.investmentPerDay)} tone="pos" />
-          <Row label="Cost of living" value={formatRate(-derived.livingCosts)} tone="neg" />
+          <Row label="Lifestyle" value={formatRate(-derived.livingCosts)} tone="neg" />
           <Row label="Training" value={formatRate(-derived.trainingCost)} tone="neg" />
           <Row label="Managers & retainers" value={formatRate(-derived.operatingCosts)} tone="neg" />
           <Row label="Loan payments" value={formatRate(-derived.loanPayments)} tone="neg" />

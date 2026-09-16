@@ -1,11 +1,7 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import {
-  EDUCATION, JOBS, WEEK_HOURS,
-  HOUSING_OPTIONS, FOOD_OPTIONS, CLOTHING_OPTIONS,
-} from "@/lib/gameData";
-import type { LifestyleOption } from "@/lib/gameData";
+import { EDUCATION, JOBS, WEEK_HOURS } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
@@ -14,8 +10,6 @@ export default function CareerPanel() {
   const xpPct = Math.min(100, (state.xp / (derived.xpNeeded || 1)) * 100);
   const educationOk = next ? state.education >= next.education : true;
   const canPromote = !!next && state.xp >= derived.xpNeeded && educationOk;
-  const ownsHouse = (state.assets["house"] || 0) > 0;
-  const hasCar = (state.assets["car"] || 0) > 0;
 
   return (
     <div className="space-y-6">
@@ -89,7 +83,7 @@ export default function CareerPanel() {
           <p className="text-[11px] text-muted-foreground mt-2">
             {EDUCATION[state.studying.level].name} ·{" "}
             {state.studyHours > 0
-              ? `${Math.ceil(state.studying.daysLeft / (state.studyHours / WEEK_HOURS))} days left at this pace`
+              ? `${Math.ceil(state.studying.daysLeft / ((state.studyHours / WEEK_HOURS) * derived.schoolProgress))} days left at this pace`
               : "paused — give it some hours"}
           </p>
         )}
@@ -102,8 +96,8 @@ export default function CareerPanel() {
           <span className="font-mono-nums text-sm">{formatMoney(state.trainingBudget)}/day</span>
         </div>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Courses, certifications, coaching and conferences. Money spent here turns into experience —
-          you learn {derived.focus.toFixed(2)}x as fast as someone who spends nothing and eats badly.
+          Courses, certifications, coaching and conferences. This raises career progress to {derived.focus.toFixed(2)}×.
+          Your Lifestyle choices also improve career and school progress.
         </p>
         <input
           type="range"
@@ -114,37 +108,6 @@ export default function CareerPanel() {
           onChange={(e) => dispatch({ type: "SET_TRAINING", amount: Number(e.target.value) })}
           className="w-full accent-primary"
         />
-      </div>
-
-      {/* Lifestyle */}
-      <div>
-        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-1 px-1">Cost of living</h3>
-        <p className="text-[11px] text-muted-foreground mb-3 px-1">
-          {formatMoney(derived.livingCosts)}/day all in. You always need somewhere to sleep, food and clothes —
-          the only way to pay nothing for housing is to live in your car.
-        </p>
-        <div className="space-y-3">
-          <LifestyleRow
-            title="Housing"
-            options={HOUSING_OPTIONS}
-            current={ownsHouse ? "" : state.housing}
-            disabledNote={ownsHouse ? "You own your home — no rent to pay." : undefined}
-            isDisabled={(o) => !!o.requiresCar && !hasCar}
-            onPick={(id) => dispatch({ type: "SET_LIFESTYLE", slot: "housing", id })}
-          />
-          <LifestyleRow
-            title="Food"
-            options={FOOD_OPTIONS}
-            current={state.food}
-            onPick={(id) => dispatch({ type: "SET_LIFESTYLE", slot: "food", id })}
-          />
-          <LifestyleRow
-            title="Clothing"
-            options={CLOTHING_OPTIONS}
-            current={state.clothing}
-            onPick={(id) => dispatch({ type: "SET_LIFESTYLE", slot: "clothing", id })}
-          />
-        </div>
       </div>
 
       {/* Education */}
@@ -213,48 +176,6 @@ export default function CareerPanel() {
             <p className="text-[11px] text-muted-foreground pt-1">More opens up as you climb.</p>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function LifestyleRow({
-  title, options, current, onPick, disabledNote, isDisabled,
-}: {
-  title: string;
-  options: LifestyleOption[];
-  current: string;
-  onPick: (id: string) => void;
-  disabledNote?: string;
-  isDisabled?: (o: LifestyleOption) => boolean;
-}) {
-  return (
-    <div className="surface-card rounded-xl p-4">
-      <div className="flex justify-between items-baseline mb-2">
-        <h4 className="text-sm font-semibold">{title}</h4>
-        {disabledNote && <span className="text-[11px] text-primary">{disabledNote}</span>}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {options.map((o) => {
-          const off = isDisabled?.(o) || !!disabledNote;
-          const active = o.id === current;
-          return (
-            <button
-              key={o.id}
-              onClick={() => !off && onPick(o.id)}
-              disabled={off}
-              className={`px-3 py-2 rounded-lg text-left text-[11px] transition-game disabled:opacity-40 ${
-                active ? "bg-primary/15 text-primary" : "surface-button"
-              }`}
-            >
-              <span className="block font-medium">{o.name}</span>
-              <span className="block font-mono-nums opacity-80">
-                {formatMoney(o.cost)}/day
-                {o.focus !== 0 && ` · focus ${o.focus > 0 ? "+" : ""}${Math.round(o.focus * 100)}%`}
-              </span>
-            </button>
-          );
-        })}
       </div>
     </div>
   );
