@@ -383,7 +383,11 @@ function createInitialState(): GameState {
           car: legacyAssets.car || 1,
           watch: legacyAssets.watch || 1,
         },
+        businesses: Object.fromEntries(
+          Object.entries(parsed.businesses || {}).map(([id, biz]) => [id, { level: biz.level || 0, condition: biz.condition ?? 1 }]),
+        ),
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
+
       };
       const offlineDays = Math.min((Date.now() - merged.lastTick) / 1000, MAX_OFFLINE_DAYS);
       if (offlineDays > 5) return advance(merged, offlineDays, Date.now());
