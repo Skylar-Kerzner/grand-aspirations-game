@@ -698,14 +698,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "STUDY": {
-      const def = EDUCATION[action.level];
+      const def = MAJORS.find((m) => m.id === action.majorId);
       if (!def || state.studying) return state;
-      if (action.level !== state.education + 1) return state;
+      if (state.majors.includes(def.id)) return state;
       if (state.cash < def.cost) return state;
       return {
         ...state, cash: state.cash - def.cost,
         studyHours: state.studyHours === 0 ? 20 : state.studyHours,
-        studying: { level: action.level, daysLeft: def.days },
+        studying: { majorId: def.id, daysLeft: def.days },
         stats: { ...state.stats, educationSpent: state.stats.educationSpent + def.cost },
       };
     }
