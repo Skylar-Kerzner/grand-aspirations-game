@@ -37,6 +37,7 @@ export interface Stats {
   ccInterestPaid: number;
   assetSpent: number;
   businessSpent: number;
+  businessSold: number;
   educationSpent: number;
   consultantSpent: number;
   retainerSpent: number;
