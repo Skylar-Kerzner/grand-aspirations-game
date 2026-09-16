@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
-import { ASSETS, BUSINESSES, getBusinessTierIndex } from "@/lib/gameData";
+import { ASSETS, BUSINESSES, getBusinessTierIndex, ventureImageAtTier } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 interface SceneLayer {
