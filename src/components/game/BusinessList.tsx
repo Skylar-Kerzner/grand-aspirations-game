@@ -40,6 +40,17 @@ function riskLabel(risk: number) {
 export default function BusinessList() {
   const { state, dispatch } = useGame();
   const [selected, setSelected] = useState<string | null>(null);
+  const [choices, setChoices] = useState<Record<string, string>>({});
+  const [confirmSell, setConfirmSell] = useState(false);
+
+  const openBusiness = (id: string) => {
+    setSelected(id);
+    setConfirmSell(false);
+    setChoices(
+      Object.fromEntries(BUSINESS_CHOICE_GROUPS.map((g) => [g.id, g.options[0].id])),
+    );
+  };
+
 
   const selectedDef = BUSINESSES.find((b) => b.id === selected);
   const selectedBiz = selected
