@@ -103,6 +103,11 @@ export default function CareerPanel() {
                     <span className="block text-[11px] text-muted-foreground">
                       {getCareerTrack(offer.employer).outlook}
                     </span>
+                    <span className="block text-[11px] text-muted-foreground mt-1">
+                      {getCareerTrack(offer.employer).id === homeTrack
+                        ? "Same industry — your years here are paid for in this offer."
+                        : "A change of industry — you start over as an outsider, and the pay reflects it."}
+                    </span>
                   </button>
                 ))}
                 <motion.button
