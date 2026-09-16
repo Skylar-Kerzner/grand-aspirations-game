@@ -74,7 +74,7 @@ export default function BusinessList() {
             <motion.div
               key={def.id}
               whileTap={unlocked ? { scale: 0.98 } : undefined}
-              onClick={() => unlocked && setSelected(def.id)}
+              onClick={() => unlocked && openBusiness(def.id)}
               className={`surface-card rounded-xl overflow-hidden transition-game ${
                 unlocked ? "cursor-pointer" : "opacity-50"
               }`}
@@ -288,24 +288,104 @@ export default function BusinessList() {
                   })}
                 </div>
 
+                {selectedBiz.level === 0 && (
+                  <div className="surface-card rounded-lg p-3 my-4 space-y-4">
+                    <p className="text-[11px] text-muted-foreground">
+                      Decide how you open it. Safer choices trade close to expectations; bolder ones
+                      can be far better or far worse — and you only find out once the doors are open.
+                    </p>
+                    {BUSINESS_CHOICE_GROUPS.map((group) => (
+                      <div key={group.id}>
+                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-2">
+                          {group.label}
+                        </p>
+                        <div className="space-y-1.5">
+                          {group.options.map((option) => {
+                            const active = choices[group.id] === option.id;
+                            return (
+                              <button
+                                key={option.id}
+                                onClick={() => setChoices((c) => ({ ...c, [group.id]: option.id }))}
+                                className={`w-full text-left rounded-lg px-3 py-2 border transition-game ${
+                                  active ? "border-primary bg-primary/10" : "border-border"
+                                }`}
+                              >
+                                <p className="text-sm">{option.name}</p>
+                                <p className="text-[11px] text-muted-foreground">{option.description}</p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {selectedBiz.level > 0 && selectedBiz.choices && (
+                  <div className="surface-card rounded-lg p-3 my-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">How it turned out</p>
+                    <p className="text-sm font-semibold mt-1">
+                      {businessFortuneLabel(selectedBiz.fortune ?? 1)} —{" "}
+                      {((selectedBiz.fortune ?? 1) * 100).toFixed(0)}% of a typical venture
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {BUSINESS_CHOICE_GROUPS.map((group) =>
+                        findBusinessChoiceOption(group.id, selectedBiz.choices?.[group.id] || "")?.name,
+                      )
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                )}
+
                 {(() => {
                   const cost = upgradeCostFor(state, selectedDef.id);
                   const canAfford = state.cash >= cost;
                   const addedIncome = getBusinessUpgradeIncomeGain(state, selectedDef.id);
+                  const salePrice = getBusinessSalePrice(state, selectedDef.id);
                   return (
                     <>
                       <motion.button
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => dispatch({ type: "BUY_BUSINESS", id: selectedDef.id })}
+                        onClick={() =>
+                          dispatch({
+                            type: "BUY_BUSINESS",
+                            id: selectedDef.id,
+                            choices: selectedBiz.level === 0 ? choices : undefined,
+                          })
+                        }
                         disabled={!canAfford}
                         className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40 mb-1"
                       >
-                        {selectedBiz.level === 0 ? "Buy" : "Upgrade"} ·{" "}
+                        {selectedBiz.level === 0 ? "Open" : "Upgrade"} ·{" "}
                         <span className="font-mono-nums">{formatCompact(cost)}</span>
                       </motion.button>
                       <p className="text-center text-[11px] text-muted-foreground mb-2">
-                        Adds {formatRate(addedIncome)} across your businesses
+                        {selectedBiz.level === 0
+                          ? "Adds income once you see how it trades"
+                          : `Adds ${formatRate(addedIncome)} across your businesses`}
                       </p>
+
+                      {selectedBiz.level > 0 && (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (!confirmSell) { setConfirmSell(true); return; }
+                              dispatch({ type: "SELL_BUSINESS", id: selectedDef.id });
+                              setConfirmSell(false);
+                            }}
+                            className="w-full h-10 rounded-lg border border-border text-sm transition-game"
+                          >
+                            {confirmSell ? "Confirm sale" : "Sell"} ·{" "}
+                            <span className="font-mono-nums">{formatCompact(salePrice)}</span>
+                          </button>
+                          <p className="text-center text-[11px] text-muted-foreground mt-1 mb-2">
+                            {confirmSell
+                              ? "You keep the cash and give up every level. Opening again starts fresh."
+                              : "The price reflects how well it has actually done. Open it again to try different choices."}
+                          </p>
+                        </>
+                      )}
                     </>
                   );
                 })()}
