@@ -442,7 +442,7 @@ function createFresh(): GameState {
     careerOffers: [],
     jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
     xp: 0, majors: [], studying: null,
-    studyHours: 0, businessHours: 0, trainingBudget: 0,
+    studyHours: 0, businessHours: {}, trainingBudget: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
     loansRepaid: [], consultants: [],
@@ -601,7 +601,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     let condition = biz.condition ?? 1;
     let gain = 0;
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
-    const dailyVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * (1 - BUSINESS_ATTENTION_RISK * getBusinessAttention(s));
+    const dailyVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
     for (let d = 0; d < days; d++) {
       gain += steady * condition;
       // mean-reverting drift around normal conditions
@@ -758,15 +758,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "SET_STUDY_HOURS": {
-      const hours = Math.max(0, Math.min(WEEK_HOURS, Math.round(action.hours)));
-      const business = Math.max(0, Math.min(state.businessHours, WEEK_HOURS - hours));
-      return { ...state, studyHours: hours, businessHours: business };
+      const bizTotal = getTotalBusinessHours(state);
+      const hours = Math.max(0, Math.min(WEEK_HOURS - bizTotal, Math.round(action.hours)));
+      return { ...state, studyHours: hours };
     }
 
     case "SET_BUSINESS_HOURS": {
-      const hours = Math.max(0, Math.min(WEEK_HOURS, Math.round(action.hours)));
-      const study = Math.max(0, Math.min(state.studyHours, WEEK_HOURS - hours));
-      return { ...state, businessHours: hours, studyHours: study };
+      const others = getTotalBusinessHours(state) - (state.businessHours[action.id] || 0);
+      const hours = Math.max(0, Math.min(WEEK_HOURS - state.studyHours - others, Math.round(action.hours)));
+      return { ...state, businessHours: { ...state.businessHours, [action.id]: hours } };
     }
 
     case "SET_TRAINING":
@@ -844,7 +844,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state, cash: state.cash - def.cost,
         studyHours: state.studyHours === 0 ? 20 : state.studyHours,
-        businessHours: state.studyHours === 0 ? Math.min(state.businessHours, WEEK_HOURS - 20) : state.businessHours,
         studying: { majorId: def.id, daysLeft: def.days },
         stats: { ...state.stats, educationSpent: state.stats.educationSpent + def.cost },
       };
