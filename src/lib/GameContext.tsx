@@ -4,7 +4,7 @@ import {
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
-  DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS,
+  DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
@@ -158,17 +158,25 @@ export function getTaxRate(state: GameState): number {
 
 /** Total hours a week currently committed to your ventures. */
 export function getTotalBusinessHours(state: GameState): number {
-  return Math.min(WEEK_HOURS, Object.values(state.businessHours).reduce((s, h) => s + (h || 0), 0));
+  return Math.min(getTimeBudget(state), Object.values(state.businessHours).reduce((s, h) => s + (h || 0), 0));
 }
 
 export function getWorkHours(state: GameState): number {
-  return Math.max(0, WEEK_HOURS - state.studyHours - getTotalBusinessHours(state));
+  return Math.max(0, getTimeBudget(state) - state.studyHours - getTotalBusinessHours(state));
 }
 
-/** How close to full performance this venture runs, from the hours you give it. */
+/** How close to full performance this venture runs, from the hours you give it.
+ *  Concave: the first hours buy most of the performance, so even a little time
+ *  on a side venture is worth something. */
 export function getBusinessAttentionOf(state: GameState, id: string): number {
   const hours = state.businessHours[id] || 0;
-  return BUSINESS_ATTENTION_FLOOR + (1 - BUSINESS_ATTENTION_FLOOR) * Math.min(1, hours / BUSINESS_ATTENTION_FULL_HOURS);
+  const share = Math.min(1, hours / BUSINESS_ATTENTION_FULL_HOURS);
+  return BUSINESS_ATTENTION_FLOOR + (1 - BUSINESS_ATTENTION_FLOOR) * Math.pow(share, BUSINESS_ATTENTION_CURVE);
+}
+
+/** Weekly hours available: 40, plus whatever your lifestyle buys back. */
+export function getTimeBudget(state: GameState): number {
+  return WEEK_HOURS + ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
 }
 
 export function getLifestyleTier(state: GameState, id: string) {
@@ -492,7 +500,10 @@ function createInitialState(): GameState {
           watch: legacyAssets.watch || 1,
         },
         businesses: Object.fromEntries(
-          Object.entries(parsed.businesses || {}).map(([id, biz]) => [id, { level: biz.level || 0, condition: biz.condition ?? 1 }]),
+          Object.entries(parsed.businesses || {}).map(([id, biz]) => [
+            id,
+            { level: biz.level || 0, condition: biz.condition ?? 1, fortune: biz.fortune, choices: biz.choices },
+          ]),
         ),
         businessHours: parsed.businessHours && typeof parsed.businessHours === "object" ? parsed.businessHours : {},
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
@@ -511,7 +522,17 @@ function createInitialState(): GameState {
 function rollEvent(state: GameState, days: number): GameState {
   const chance = 1 - Math.pow(1 - EVENT_CHANCE_PER_DAY, days);
   if (Math.random() > chance) return state;
-  const pool = EVENTS.filter((e) => !e.minDay || state.day >= e.minDay);
+  const invested = getInvestmentTotal(state);
+  const ownedVentures = Object.values(state.businesses).filter((b) => b.level > 0).length;
+  const pool = EVENTS.filter((e) =>
+    (!e.minDay || state.day >= e.minDay)
+    && (!e.gateBusiness || ownedVentures > 0)
+    && (!e.gateInvested || invested >= e.gateInvested)
+    && (!e.gateNetWorth || state.cash + invested >= e.gateNetWorth)
+    && (!e.gateJobIndex || state.jobIndex >= e.gateJobIndex)
+    && (!e.gatePerfFee || !!getJob(state).perfFee)
+    && (!e.gateMajor || state.majors.length > 0)
+  );
   const totalWeight = pool.reduce((s, e) => s + e.weight, 0);
   let r = Math.random() * totalWeight;
   const def = pool.find((e) => (r -= e.weight) <= 0) || pool[0];
@@ -762,14 +783,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "SET_STUDY_HOURS": {
+      if (!state.studying) return state;
       const bizTotal = getTotalBusinessHours(state);
-      const hours = Math.max(0, Math.min(WEEK_HOURS - bizTotal, Math.round(action.hours)));
+      const hours = Math.max(0, Math.min(getTimeBudget(state) - bizTotal, Math.round(action.hours)));
       return { ...state, studyHours: hours };
     }
 
     case "SET_BUSINESS_HOURS": {
       const others = getTotalBusinessHours(state) - (state.businessHours[action.id] || 0);
-      const hours = Math.max(0, Math.min(WEEK_HOURS - state.studyHours - others, Math.round(action.hours)));
+      const hours = Math.max(0, Math.min(getTimeBudget(state) - state.studyHours - others, Math.round(action.hours)));
       return { ...state, businessHours: { ...state.businessHours, [action.id]: hours } };
     }
 
@@ -779,7 +801,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "SET_LIFESTYLE": {
       const def = ASSETS.find((asset) => asset.id === action.id);
       if (!def || action.tier < 1 || action.tier > def.tiers.length) return state;
-      return { ...state, assets: { ...state.assets, [action.id]: action.tier } };
+      const next = { ...state, assets: { ...state.assets, [action.id]: action.tier } };
+      // A humbler lifestyle means fewer bought-back hours — trim commitments to fit.
+      const budget = getTimeBudget(next);
+      const bizEntries = Object.entries(next.businessHours);
+      let bizTotal = bizEntries.reduce((s, [, h]) => s + (h || 0), 0);
+      const trimmed = { ...next.businessHours };
+      for (const [id, h] of bizEntries) {
+        if (bizTotal > budget - next.studyHours) {
+          const cut = Math.min(h || 0, bizTotal - (budget - next.studyHours));
+          trimmed[id] = (h || 0) - cut;
+          bizTotal -= cut;
+        }
+      }
+      next.businessHours = trimmed;
+      if (next.studyHours + bizTotal > budget) next.studyHours = Math.max(0, budget - bizTotal);
+      return next;
     }
 
     case "GENERATE_JOB_OFFERS": {
@@ -816,6 +853,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (picked.length === 3 && new Set(picked.map((v) => getCareerTrack(v.employer).id)).size === 1) {
         const other = pool.find((v) => getCareerTrack(v.employer).id !== getCareerTrack(picked[0].employer).id);
         if (other) picked[2] = other;
+      }
+      // A completed major guarantees its own industry is on the table.
+      const majorTracks = state.majors
+        .map((m) => MAJORS.find((d) => d.id === m)?.track)
+        .filter((t): t is string => !!t);
+      if (majorTracks.length > 0 && !picked.some((v) => majorTracks.includes(getCareerTrack(v.employer).id))) {
+        const replacement = pool.find((v) => majorTracks.includes(getCareerTrack(v.employer).id));
+        if (replacement) picked[0] = replacement;
       }
       const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);

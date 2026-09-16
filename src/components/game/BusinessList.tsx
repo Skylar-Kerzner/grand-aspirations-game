@@ -225,10 +225,11 @@ export default function BusinessList() {
                     : selectedDef.description}
                 </p>
                 <p className="text-[11px] text-muted-foreground mb-1">
-                  {(getBusinessEffectiveROI(state, selectedDef.id) * 100).toFixed(0)}% effective annual return
+                  {(getBusinessEffectiveROI(state, selectedDef.id) * 100).toFixed(0)}% annual return on capital at{" "}
+                  {state.businessHours[selectedDef.id] || 0}h a week
                   {getBusinessNetworkBonus(state, selectedDef.id) > 0
                     ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
-                    : " · up to 30% annual return"}
+                    : " · up to 30% annual return on capital at 15 hours a week"}
                 </p>
                 {(() => {
                   const k = getIndustryKnowledge(state, selectedDef.id);

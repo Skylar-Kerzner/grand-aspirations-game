@@ -44,6 +44,7 @@ export default function CareerPanel() {
         </div>
         <p className="text-[11px] text-muted-foreground mb-2">
           Market range {formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max)}/day
+          {" · "}{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min / 8)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max / 8)}/hour
         </p>
         {job.perfFee && (
           <p className="text-[11px] text-primary mb-2">
