@@ -20,3 +20,12 @@
 - [ ] Event modal shows exact surprise quantities — code done, live modal verification inconclusive (events rare); ledger path confirmed
 - [ ] Time allocation: split the 40-hour week across school, career (work) and businesses — businesses yield more per hour allocated
 - [ ] Time tab: allocate 40h across job, school, training and each venture; venture ROI reaches full 30% only with enough attention
+- [x] Time allocation basics (Time tab, per-venture hours, 30% at full attention) — verifying in preview
+- [x] Lifestyle tiers grant extra weekly hours (budget > 40)
+- [x] Career panel shows hourly rate
+- [x] Nonlinear (concave) ROI vs venture hours; ROI copy says "X% annual return on capital at Y hours/week"; Time tab shows total income for optimization
+- [ ] Balance career+passive investments vs business ownership
+- [ ] Events: unlock gates by net worth/business/investment/career status; specific flavor texts tied to holdings
+- [ ] Education/tracks: offers must make sense with completed major; clear messaging on adjacent-track moves
+- [x] School hours slider hidden unless enrolled in a program
+- [x] Venture hours curve: 25% potential at 0h, ~50% at 1h, 100% at 15h; capital + annual return shown per venture in the Time tab

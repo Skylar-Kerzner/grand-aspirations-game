@@ -8,8 +8,9 @@ export const DAYS_PER_YEAR = 365;
 export const TAX_RATE = 0.22;
 export const WEEK_HOURS = 40;
 // A venture only reaches its full return on the hours you personally put in.
-export const BUSINESS_ATTENTION_FLOOR = 0.5;      // an unattended venture runs at half its potential
+export const BUSINESS_ATTENTION_FLOOR = 0.25;     // an unattended venture limps along at a quarter of its potential
 export const BUSINESS_ATTENTION_FULL_HOURS = 15;  // hours a week in one venture for full performance
+export const BUSINESS_ATTENTION_CURVE = 0.45;     // concave: the first hour jumps to half potential, the rest approaches full slowly
 
 // ---------- Education ----------
 export interface MajorDef {
@@ -343,6 +344,7 @@ export interface AssetTierDef {
   dailyCost: number;
   careerBonus: number;
   schoolBonus: number;
+  hoursBonus: number; // extra weekly hours this tier buys back (staff, services, convenience)
   image: string;
   benefit: string;
 }
@@ -358,46 +360,46 @@ export const ASSETS: AssetDef[] = [
   {
     id: "house", name: "Housing", category: "Home",
     tiers: [
-      { name: "Shared Room", dailyCost: 34, careerBonus: 0, schoolBonus: 0, image: "house-t1", benefit: "Baseline career and school progress" },
-      { name: "Studio Apartment", dailyCost: 72, careerBonus: 0.04, schoolBonus: 0.08, image: "house-t2", benefit: "+4% career · +8% school progress" },
-      { name: "Modern Loft", dailyCost: 165, careerBonus: 0.1, schoolBonus: 0.16, image: "house-t3", benefit: "+10% career · +16% school progress" },
-      { name: "Penthouse", dailyCost: 520, careerBonus: 0.18, schoolBonus: 0.28, image: "house-t4", benefit: "+18% career · +28% school progress" },
+      { name: "Shared Room", dailyCost: 34, careerBonus: 0, schoolBonus: 0, hoursBonus: 0, image: "house-t1", benefit: "Baseline career and school progress" },
+      { name: "Studio Apartment", dailyCost: 72, careerBonus: 0.04, schoolBonus: 0.08, hoursBonus: 2, image: "house-t2", benefit: "+4% career · +8% school · +2h of your week back" },
+      { name: "Modern Loft", dailyCost: 165, careerBonus: 0.1, schoolBonus: 0.16, hoursBonus: 4, image: "house-t3", benefit: "+10% career · +16% school · +4h of your week back" },
+      { name: "Penthouse", dailyCost: 520, careerBonus: 0.18, schoolBonus: 0.28, hoursBonus: 7, image: "house-t4", benefit: "+18% career · +28% school · +7h of your week back" },
     ],
   },
   {
     id: "food", name: "Food", category: "Daily life",
     tiers: [
-      { name: "Simple Groceries", dailyCost: 12, careerBonus: 0, schoolBonus: 0, image: "food-t1", benefit: "Baseline career and school progress" },
-      { name: "Fresh Home Cooking", dailyCost: 28, careerBonus: 0.04, schoolBonus: 0.06, image: "food-t2", benefit: "+4% career · +6% school progress" },
-      { name: "Restaurant Dining", dailyCost: 82, careerBonus: 0.09, schoolBonus: 0.12, image: "food-t3", benefit: "+9% career · +12% school progress" },
-      { name: "Private Chef", dailyCost: 320, careerBonus: 0.16, schoolBonus: 0.22, image: "food-t4", benefit: "+16% career · +22% school progress" },
+      { name: "Simple Groceries", dailyCost: 12, careerBonus: 0, schoolBonus: 0, hoursBonus: 0, image: "food-t1", benefit: "Baseline career and school progress" },
+      { name: "Fresh Home Cooking", dailyCost: 28, careerBonus: 0.04, schoolBonus: 0.06, hoursBonus: 2, image: "food-t2", benefit: "+4% career · +6% school · +2h of your week back" },
+      { name: "Restaurant Dining", dailyCost: 82, careerBonus: 0.09, schoolBonus: 0.12, hoursBonus: 3, image: "food-t3", benefit: "+9% career · +12% school · +3h of your week back" },
+      { name: "Private Chef", dailyCost: 320, careerBonus: 0.16, schoolBonus: 0.22, hoursBonus: 5, image: "food-t4", benefit: "+16% career · +22% school · +5h of your week back" },
     ],
   },
   {
     id: "wardrobe", name: "Clothing", category: "Presentation",
     tiers: [
-      { name: "Thrifted Basics", dailyCost: 3, careerBonus: 0, schoolBonus: 0, image: "wardrobe-t1", benefit: "Baseline career and school progress" },
-      { name: "High Street", dailyCost: 12, careerBonus: 0.05, schoolBonus: 0.02, image: "wardrobe-t2", benefit: "+5% career · +2% school progress" },
-      { name: "Tailored Wardrobe", dailyCost: 55, careerBonus: 0.12, schoolBonus: 0.05, image: "wardrobe-t3", benefit: "+12% career · +5% school progress" },
-      { name: "Bespoke Atelier", dailyCost: 180, careerBonus: 0.22, schoolBonus: 0.08, image: "wardrobe-t4", benefit: "+22% career · +8% school progress" },
+      { name: "Thrifted Basics", dailyCost: 3, careerBonus: 0, schoolBonus: 0, hoursBonus: 0, image: "wardrobe-t1", benefit: "Baseline career and school progress" },
+      { name: "High Street", dailyCost: 12, careerBonus: 0.05, schoolBonus: 0.02, hoursBonus: 1, image: "wardrobe-t2", benefit: "+5% career · +2% school · +1h of your week back" },
+      { name: "Tailored Wardrobe", dailyCost: 55, careerBonus: 0.12, schoolBonus: 0.05, hoursBonus: 2, image: "wardrobe-t3", benefit: "+12% career · +5% school · +2h of your week back" },
+      { name: "Bespoke Atelier", dailyCost: 180, careerBonus: 0.22, schoolBonus: 0.08, hoursBonus: 4, image: "wardrobe-t4", benefit: "+22% career · +8% school · +4h of your week back" },
     ],
   },
   {
     id: "car", name: "Car", category: "Transport",
     tiers: [
-      { name: "Used Sedan", dailyCost: 19, careerBonus: 0.04, schoolBonus: 0.02, image: "car-t1", benefit: "+4% career · +2% school progress" },
-      { name: "Luxury Sedan", dailyCost: 48, careerBonus: 0.1, schoolBonus: 0.04, image: "car-t2", benefit: "+10% career · +4% school progress" },
-      { name: "Sports Car", dailyCost: 165, careerBonus: 0.18, schoolBonus: 0.07, image: "car-t3", benefit: "+18% career · +7% school progress" },
-      { name: "Hypercar", dailyCost: 880, careerBonus: 0.3, schoolBonus: 0.1, image: "car-t4", benefit: "+30% career · +10% school progress" },
+      { name: "Used Sedan", dailyCost: 19, careerBonus: 0.04, schoolBonus: 0.02, hoursBonus: 0, image: "car-t1", benefit: "+4% career · +2% school progress" },
+      { name: "Luxury Sedan", dailyCost: 48, careerBonus: 0.1, schoolBonus: 0.04, hoursBonus: 2, image: "car-t2", benefit: "+10% career · +4% school · +2h of your week back" },
+      { name: "Sports Car", dailyCost: 165, careerBonus: 0.18, schoolBonus: 0.07, hoursBonus: 4, image: "car-t3", benefit: "+18% career · +7% school · +4h of your week back" },
+      { name: "Hypercar", dailyCost: 880, careerBonus: 0.3, schoolBonus: 0.1, hoursBonus: 8, image: "car-t4", benefit: "+30% career · +10% school · +8h of your week back (chauffeur included)" },
     ],
   },
   {
     id: "watch", name: "Watch", category: "Accessories",
     tiers: [
-      { name: "Digital Watch", dailyCost: 1, careerBonus: 0, schoolBonus: 0, image: "watch-t1", benefit: "Baseline career and school progress" },
-      { name: "Automatic Movement", dailyCost: 6, careerBonus: 0.03, schoolBonus: 0.03, image: "watch-t2", benefit: "+3% career · +3% school progress" },
-      { name: "Luxury Chronograph", dailyCost: 28, careerBonus: 0.08, schoolBonus: 0.06, image: "watch-t3", benefit: "+8% career · +6% school progress" },
-      { name: "Haute Horlogerie", dailyCost: 140, careerBonus: 0.15, schoolBonus: 0.1, image: "watch-t4", benefit: "+15% career · +10% school progress" },
+      { name: "Digital Watch", dailyCost: 1, careerBonus: 0, schoolBonus: 0, hoursBonus: 0, image: "watch-t1", benefit: "Baseline career and school progress" },
+      { name: "Automatic Movement", dailyCost: 6, careerBonus: 0.03, schoolBonus: 0.03, hoursBonus: 0, image: "watch-t2", benefit: "+3% career · +3% school progress" },
+      { name: "Luxury Chronograph", dailyCost: 28, careerBonus: 0.08, schoolBonus: 0.06, hoursBonus: 0, image: "watch-t3", benefit: "+8% career · +6% school progress" },
+      { name: "Haute Horlogerie", dailyCost: 140, careerBonus: 0.15, schoolBonus: 0.1, hoursBonus: 0, image: "watch-t4", benefit: "+15% career · +10% school progress" },
     ],
   },
 ];
@@ -495,6 +497,13 @@ export interface EventDef {
   tone: "good" | "bad" | "neutral";
   weight: number;
   minDay?: number;
+  // soft unlocks — an event only enters the pool once these hold true
+  gateBusiness?: boolean;   // you own at least one venture
+  gateInvested?: number;    // you have at least this much invested
+  gateNetWorth?: number;
+  gateJobIndex?: number;    // you hold at least this career level
+  gatePerfFee?: boolean;    // you run a fund with a performance fee
+  gateMajor?: boolean;      // you hold at least one degree
   // effects
   cashPctOfNetWorth?: number; // + or -
   cashFlat?: number;          // scaled by era via multiplier below
@@ -511,7 +520,7 @@ export const EVENTS: EventDef[] = [
   { id: "inherit", title: "Inheritance", text: "A relative you barely knew left you something.", tone: "good", weight: 3, minDay: 120, cashPctOfNetWorth: 0.12, cashFlat: 4000 },
   { id: "bonus", title: "Surprise bonus", text: "Your employer had a good quarter and remembered you.", tone: "good", weight: 8, cashFlat: 900 },
   { id: "raise", title: "Off-cycle raise", text: "Someone finally noticed how much you do.", tone: "good", weight: 6, payShift: 1.15, payShiftDays: 120 },
-  { id: "boom", title: "Boom week", text: "A viral moment sends customers flooding in.", tone: "good", weight: 8, businessBoostDays: 14 },
+  { id: "boom", title: "Boom week", text: "A viral moment sends customers flooding in.", tone: "good", weight: 8, gateBusiness: true, businessBoostDays: 14 },
   { id: "headhunt", title: "Headhunted", text: "A recruiter's pitch teaches you more than the job does.", tone: "good", weight: 6, xpFlat: 80 },
   { id: "rentspike", title: "Rent spike", text: "The whole neighbourhood repriced overnight.", tone: "bad", weight: 8, livingCostShift: 1.3, livingCostShiftDays: 180 },
   { id: "rentdrop", title: "Cost of living relief", text: "Prices cooled off for a while.", tone: "good", weight: 5, livingCostShift: 0.8, livingCostShiftDays: 150 },
@@ -520,14 +529,22 @@ export const EVENTS: EventDef[] = [
   { id: "paycut", title: "Pay cut", text: "Restructuring. Everyone takes a trim.", tone: "bad", weight: 4, payShift: 0.85, payShiftDays: 120, minDay: 60 },
   { id: "layoff", title: "Laid off", text: "Your position was eliminated. You start one rung lower.", tone: "bad", weight: 2, minDay: 200, jobLoss: true },
   { id: "audit", title: "Tax audit", text: "They found a discrepancy. You paid it.", tone: "bad", weight: 4, minDay: 150, cashPctOfNetWorth: -0.04 },
-  { id: "award", title: "Industry award", text: "An award nobody outside the trade has heard of. It works.", tone: "good", weight: 5, minDay: 150, businessBoostDays: 21, xpFlat: 40 },
+  { id: "award", title: "Industry award", text: "An award nobody outside the trade has heard of. It works.", tone: "good", weight: 5, minDay: 150, gateBusiness: true, businessBoostDays: 21, xpFlat: 40 },
   { id: "lawsuit", title: "Nuisance lawsuit", text: "Settled quietly, as these things are.", tone: "bad", weight: 3, minDay: 250, cashPctOfNetWorth: -0.05 },
   { id: "refund", title: "Overpayment refunded", text: "A billing error, finally caught, in your favour.", tone: "good", weight: 7, cashFlat: 600, cashPctOfNetWorth: 0.01 },
   { id: "mentor", title: "A mentor takes an interest", text: "Someone senior starts telling you how things actually work.", tone: "good", weight: 6, xpFlat: 60 },
-  { id: "referral", title: "Word of mouth", text: "A regular brought everyone they know.", tone: "good", weight: 7, businessBoostDays: 10 },
+  { id: "referral", title: "Word of mouth", text: "A regular brought everyone they know.", tone: "good", weight: 7, gateBusiness: true, businessBoostDays: 10 },
   { id: "windfall", title: "Old position pays off", text: "Something you forgot you owned was bought out.", tone: "good", weight: 4, minDay: 180, cashPctOfNetWorth: 0.08, cashFlat: 2500 },
-  { id: "press", title: "Flattering write-up", text: "A journalist needed a story and you were it.", tone: "good", weight: 5, minDay: 120, businessBoostDays: 18, xpFlat: 30 },
-  { id: "equity", title: "Vesting cliff", text: "Equity from an old contract finally vested.", tone: "good", weight: 4, minDay: 220, cashPctOfNetWorth: 0.06, cashFlat: 3000 },
+  { id: "press", title: "Flattering write-up", text: "A journalist needed a story and you were it.", tone: "good", weight: 5, minDay: 120, gateBusiness: true, businessBoostDays: 18, xpFlat: 30 },
+  { id: "equity", title: "Vesting cliff", text: "Equity from an old contract finally vested.", tone: "good", weight: 4, minDay: 220, gateJobIndex: 10, cashPctOfNetWorth: 0.06, cashFlat: 3000 },
+  { id: "spacedividend", title: "Space dividend", text: "The space company you hold paid a huge special dividend ahead of its first orbital run.", tone: "good", weight: 6, minDay: 300, gateInvested: 50000, cashPctOfNetWorth: 0.08 },
+  { id: "patent", title: "Patent licensed", text: "A larger company licensed the method behind your flagship product.", tone: "good", weight: 5, minDay: 240, gateBusiness: true, cashPctOfNetWorth: 0.06, xpFlat: 60 },
+  { id: "supplier", title: "Supplier locked in", text: "You signed supplies at last year's prices the week before they jumped.", tone: "good", weight: 5, minDay: 120, gateBusiness: true, businessBoostDays: 21 },
+  { id: "vip", title: "A very regular guest", text: "Someone famous keeps booking the whole place and brings an entourage.", tone: "good", weight: 4, minDay: 200, gateBusiness: true, businessBoostDays: 14, xpFlat: 30 },
+  { id: "speaking", title: "Keynote invitation", text: "A conference pays handsomely just for telling your story.", tone: "good", weight: 4, minDay: 300, gateJobIndex: 8, cashPctOfNetWorth: 0.02, xpFlat: 80 },
+  { id: "alumni", title: "Alumni network", text: "A classmate steers a client your way and vouches for you.", tone: "good", weight: 5, minDay: 240, gateMajor: true, xpFlat: 100 },
+  { id: "margin", title: "Margin call", text: "Your broker wants cash you had other plans for.", tone: "bad", weight: 4, minDay: 300, gateInvested: 100000, cashPctOfNetWorth: -0.05 },
+  { id: "fundcollapse", title: "A fund goes under", text: "One of your holdings filed for protection. Your slice of it is gone.", tone: "bad", weight: 3, minDay: 360, gateInvested: 500000, cashPctOfNetWorth: -0.07 },
 ];
 
 export const EVENT_CHANCE_PER_DAY = 0.012;
