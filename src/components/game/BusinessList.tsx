@@ -383,6 +383,18 @@ export default function BusinessList() {
                         {ventureNameAtTier(selectedDef.id, getBusinessTierIndex(selectedBiz.level + 1), choices)}
                       </span>
                     </p>
+                    {selectedBiz.level > 0 && selectedBiz.choices && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {(() => {
+                          const changed =
+                            (choices.concept !== selectedBiz.choices?.concept ? 1 : 0) +
+                            (choices.location !== selectedBiz.choices?.location ? 1 : 0);
+                          if (changed === 0) return "Same product, same city — most of what you have built carries over.";
+                          if (changed === 1) return "One change means starting part of it over: some of what you have built carries over.";
+                          return "New product in a new city — you are largely starting over.";
+                        })()}
+                      </p>
+                    )}
                   </div>
                 )}
 
