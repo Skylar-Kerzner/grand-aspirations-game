@@ -41,6 +41,7 @@ export default function LedgerPanel() {
         <Line label="Extra shifts" value={s.shiftEarned} days={days} />
         <Line label="Businesses" value={s.businessEarned} days={days} />
         <Line label="Investments" value={s.investmentGains} days={days} />
+        <Line label="Business sales" value={s.businessSold} days={days} />
         <Line label="Luck and events" value={s.eventGains} days={days} />
       </Section>
 
