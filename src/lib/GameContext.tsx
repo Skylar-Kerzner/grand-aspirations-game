@@ -494,6 +494,7 @@ function createInitialState(): GameState {
         businesses: Object.fromEntries(
           Object.entries(parsed.businesses || {}).map(([id, biz]) => [id, { level: biz.level || 0, condition: biz.condition ?? 1 }]),
         ),
+        businessHours: parsed.businessHours && typeof parsed.businessHours === "object" ? parsed.businessHours : {},
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
 
       };
