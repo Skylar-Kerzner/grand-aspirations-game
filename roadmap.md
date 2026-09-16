@@ -2,4 +2,4 @@
 - [x] Show newly triggered surprise events in modals
 - [x] Verify game behavior and presentation
 - [x] Balance business returns around paired portfolio milestones
-- [ ] Add varied career positions with luck-based salary offers
+- [x] Add varied career positions with luck-based salary offers
