@@ -1,4 +1,4 @@
-import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getBusinessEffectiveROI } from "@/lib/GameContext";
+import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getBusinessEffectiveROI, getBusinessROIAt, getBusinessSteadyIncomeAt, businessIncomeOf } from "@/lib/GameContext";
 import { BUSINESSES, MAJORS, WEEK_HOURS, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital } from "@/lib/gameData";
 import { formatMoney } from "@/lib/formatters";
 
@@ -108,6 +108,11 @@ export default function TimePanel() {
             const roomLeft = budget - state.studyHours - others;
             const maxHours = Math.max(hours, Math.min(BUSINESS_ATTENTION_FULL_HOURS, roomLeft));
             const blocked = freeHours <= 0 && hours < BUSINESS_ATTENTION_FULL_HOURS;
+            const condition = state.businesses[def.id]?.condition ?? 1;
+            const fullROI = getBusinessROIAt(state, def.id, 1);
+            const currentROI = getBusinessEffectiveROI(state, def.id);
+            const currentPerDay = businessIncomeOf(state, def.id);
+            const fullPerDay = getBusinessSteadyIncomeAt(state, def.id, 1) * condition;
             return (
               <div key={def.id} className="surface-card rounded-xl p-4">
                 <div className="flex justify-between items-baseline mb-1">
@@ -117,12 +122,20 @@ export default function TimePanel() {
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-1">
-                  {formatMoney(getBusinessCapital(def, state.businesses[def.id]?.level || 0))} invested ·{" "}
-                  <span className={getBusinessEffectiveROI(state, def.id) >= 0.15 ? "text-primary" : ""}>
-                    {(getBusinessEffectiveROI(state, def.id) * 100).toFixed(0)}% annual return
-                  </span>{" "}
-                  at {hours}h a week
+                  {formatMoney(getBusinessCapital(def, state.businesses[def.id]?.level || 0))} invested
                 </p>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] mb-1">
+                  <span className="text-muted-foreground">Now, at {hours}h a week</span>
+                  <span className="text-right font-mono-nums">
+                    <span className={currentROI >= 0.15 ? "text-primary" : ""}>{(currentROI * 100).toFixed(0)}%</span>
+                    {" · "}{formatMoney(currentPerDay)}/day
+                  </span>
+                  <span className="text-muted-foreground">At {BUSINESS_ATTENTION_FULL_HOURS}h a week</span>
+                  <span className="text-right font-mono-nums">
+                    <span className={fullROI >= 0.15 ? "text-primary" : ""}>{(fullROI * 100).toFixed(0)}%</span>
+                    {" · "}{formatMoney(fullPerDay)}/day
+                  </span>
+                </div>
                 <input
                   type="range"
                   min={0}
