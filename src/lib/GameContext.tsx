@@ -298,7 +298,7 @@ export function getBusinessSteadyIncomeOf(state: GameState, id: string): number 
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * businessMultiplier(state) * (biz.fortune ?? 1);
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1);
 }
 
 /** What this single venture would fetch if sold today. */
@@ -306,7 +306,7 @@ export function getBusinessValueOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1)
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * (biz.fortune ?? 1)
     * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
 }
 
@@ -577,13 +577,14 @@ function advance(state: GameState, days: number, now: number): GameState {
     const steady = getBusinessSteadyIncomeOf(s, id);
     let condition = biz.condition ?? 1;
     let gain = 0;
-    const dailyVol = def.risk / Math.sqrt(DAYS_PER_YEAR);
+    const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
+    const dailyVol = (def.risk * relief) / Math.sqrt(DAYS_PER_YEAR);
     for (let d = 0; d < days; d++) {
       gain += steady * condition;
       // mean-reverting drift around normal conditions
       const noise = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * dailyVol;
       condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + noise;
-      if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk) {
+      if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk * relief) {
         condition *= 0.35 + Math.random() * 0.25;
         if (shockEvents.length < 3) {
           shockEvents.push({
