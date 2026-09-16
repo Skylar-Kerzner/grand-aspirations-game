@@ -79,7 +79,7 @@ export default function TimePanel() {
             <p className="text-[11px] text-muted-foreground mt-1 mb-3">
               {MAJORS.find((m) => m.id === state.studying?.majorId)?.name} ·{" "}
               {state.studyHours > 0
-                ? `${Math.ceil(state.studying.daysLeft / ((state.studyHours / WEEK_HOURS) * derived.schoolProgress))} days left at this pace`
+                ? `${Math.ceil(state.studying.daysLeft / (state.studyHours / WEEK_HOURS))} days left at this pace`
                 : "Paused — give your classes some hours"}
             </p>
           </>

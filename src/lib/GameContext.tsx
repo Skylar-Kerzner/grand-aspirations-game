@@ -1089,7 +1089,7 @@ export interface DerivedState {
   nextJob: (typeof JOBS)[number] | null;
   xpNeeded: number;
   focus: number;
-  schoolProgress: number;
+  
   creditTier: number;
   creditLimit: number;
   taxRate: number;
