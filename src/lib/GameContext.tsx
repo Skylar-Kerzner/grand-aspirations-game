@@ -803,6 +803,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             // a lucky start does not carry forever, and a poor one can recover.
             ...cur,
             level: cur.level + 1,
+            choices: action.choices || cur.choices,
             fortune:
               (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
               rollBusinessFortune() * BUSINESS_UPGRADE_REROLL,
