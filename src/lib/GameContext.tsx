@@ -72,7 +72,7 @@ export interface GameState {
   lastTick: number;
 }
 
-type GameAction =
+export type GameAction =
   | { type: "TICK" }
   | { type: "WORK" }
   | { type: "SET_STUDY_HOURS"; hours: number }
