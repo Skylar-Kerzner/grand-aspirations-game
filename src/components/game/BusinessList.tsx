@@ -186,11 +186,16 @@ export default function BusinessList() {
               <div className="w-full max-w-lg">
                 {(() => {
                   const tierIdx = getBusinessTierIndex(selectedBiz.level);
-                  const conceptImage = selectedBiz.level > 0 && selectedBiz.choices
-                    ? getImage(getBusinessConcept(selectedDef.id, selectedBiz.choices.concept || "")?.image || "")
-                    : "";
-                  const tierImage = tierIdx === 0 && conceptImage ? conceptImage : getImage(selectedDef.tierImages[tierIdx]);
-                  const tierName = selectedDef.tierNames[tierIdx];
+                  const ownedHere = selectedBiz.level > 0 && !!selectedBiz.choices;
+                  const conceptHere = ownedHere
+                    ? getBusinessConcept(selectedDef.id, selectedBiz.choices?.concept || "")
+                    : undefined;
+                  const tierImage = ownedHere
+                    ? getImage(ventureImageAtTier(selectedDef.id, tierIdx, selectedBiz.choices)) ||
+                      getImage(conceptHere?.image || "") ||
+                      getImage(selectedDef.tierImages[tierIdx])
+                    : getImage(selectedDef.tierImages[tierIdx]);
+                  const tierName = conceptHere?.tierNames[tierIdx] || selectedDef.tierNames[tierIdx];
                   return (
                     <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
                       {selectedBiz.level > 0 && tierImage ? (
