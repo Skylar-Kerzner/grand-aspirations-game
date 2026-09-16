@@ -639,6 +639,24 @@ export function ventureName(businessId: string, choices?: Record<string, string>
   return location ? `${concept.name} in ${location.name}` : concept.name;
 }
 
+/** The venture's name at a given stage, e.g. "Matcha House Chain in Manhattan". */
+export function ventureNameAtTier(businessId: string, tierIdx: number, choices?: Record<string, string>): string {
+  const concept = getBusinessConcept(businessId, choices?.concept || "");
+  const def = BUSINESSES.find((b) => b.id === businessId);
+  if (!concept) return def?.tierNames[tierIdx] || def?.name || "";
+  const location = getBusinessLocation(businessId, choices?.location || "");
+  const stage = concept.tierNames[tierIdx] || concept.name;
+  return location ? `${stage} in ${location.name}` : stage;
+}
+
+/** Artwork key for a venture at a given stage. Falls back to the generic tier art. */
+export function ventureImageAtTier(businessId: string, tierIdx: number, choices?: Record<string, string>): string {
+  const concept = getBusinessConcept(businessId, choices?.concept || "");
+  const def = BUSINESSES.find((b) => b.id === businessId);
+  if (!concept) return def?.tierImages[tierIdx] || "";
+  return tierIdx === 1 ? concept.image : `${concept.image}-t${tierIdx + 1}`;
+}
+
 /** How much of the sale price you actually walk away with. */
 export const BUSINESS_SALE_DISCOUNT = 0.9;
 
