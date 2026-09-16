@@ -570,6 +570,9 @@ export const BUSINESS_CHOICE_GROUPS: BusinessChoiceGroup[] = [
 /** How much of the sale price you actually walk away with. */
 export const BUSINESS_SALE_DISCOUNT = 0.9;
 
+/** How much of a venture's fortune is put back on the table with each expansion. */
+export const BUSINESS_UPGRADE_REROLL = 0.4;
+
 export function findBusinessChoiceOption(groupId: string, optionId: string) {
   return BUSINESS_CHOICE_GROUPS.find((g) => g.id === groupId)?.options.find((o) => o.id === optionId);
 }
