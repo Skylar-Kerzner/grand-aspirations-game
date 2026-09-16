@@ -22,6 +22,8 @@ import {
   getBusinessConcept,
   getBusinessLocation,
   ventureName,
+  ventureNameAtTier,
+  ventureImageAtTier,
   businessFortuneLabel,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
