@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, EDUCATION, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, LOAN_EQUITY_REQUIREMENT,
@@ -54,8 +54,8 @@ export interface GameState {
   careerOffers: CareerOffer[];
   jobHistory: (CareerOffer & { startDay: number })[];
   xp: number;
-  education: number;
-  studying: { level: number; daysLeft: number } | null;
+  majors: string[]; // completed major ids — each opens a career track
+  studying: { majorId: string; daysLeft: number } | null;
   studyHours: number;     // of the 40 weekly hours, how many go to school
   trainingBudget: number; // dollars per day spent on courses and coaching
   lastShiftDay: number;
@@ -81,7 +81,7 @@ export type GameAction =
   | { type: "SET_LIFESTYLE"; id: string; tier: number }
   | { type: "GENERATE_JOB_OFFERS" }
   | { type: "ACCEPT_JOB_OFFER"; index: number }
-  | { type: "STUDY"; level: number }
+  | { type: "STUDY"; majorId: string }
   | { type: "BUY_BUSINESS"; id: string }
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
@@ -346,7 +346,7 @@ function createFresh(): GameState {
     currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
     careerOffers: [],
     jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
-    xp: 0, education: 0, studying: null,
+    xp: 0, majors: [], studying: null,
     studyHours: 0, trainingBudget: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
@@ -361,11 +361,21 @@ function createInitialState(): GameState {
   try {
     const saved = localStorage.getItem(SAVE_KEY) || localStorage.getItem(LEGACY_SAVE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved) as Partial<GameState> & { food?: string; clothing?: string };
+      const parsed = JSON.parse(saved) as Partial<GameState> & {
+        food?: string; clothing?: string; education?: number; studying?: { level?: number; majorId?: string; daysLeft: number } | null;
+      };
+      // Legacy saves: an education ladder index maps to a set of majors.
+      const LEGACY_MAJOR_MAP = ["trade", "hospitality", "business", "cs", "finance"];
+      const legacyEdu = Math.max(0, Math.min(5, parsed.education || 0));
+      const legacyStudying = parsed.studying && !parsed.studying.majorId
+        ? { majorId: LEGACY_MAJOR_MAP[Math.max(0, (parsed.studying.level || 1) - 1)], daysLeft: parsed.studying.daysLeft }
+        : parsed.studying || null;
       const legacyAssets = parsed.assets || {};
       const savedJob = JOBS[Math.min(parsed.jobIndex || 0, JOBS.length - 1)];
       const merged: GameState = {
         ...fresh, ...parsed,
+        majors: parsed.majors || LEGACY_MAJOR_MAP.slice(0, legacyEdu),
+        studying: legacyStudying as GameState["studying"],
         currentJob: parsed.currentJob || { title: savedJob.title, employer: savedJob.employer, dailyPay: savedJob.dailyPay },
         careerOffers: parsed.careerOffers || [],
         jobHistory: parsed.jobHistory && parsed.jobHistory.length
@@ -450,14 +460,14 @@ function advance(state: GameState, days: number, now: number): GameState {
 
   // Education in progress — study speed follows the hours you allocate
   let studying = s.studying;
-  let education = s.education;
+  let majors = s.majors;
   if (studying) {
     const rate = (s.studyHours / 40) * getSchoolProgressMultiplier(s);
     const left = studying.daysLeft - days * rate;
-    if (rate > 0 && left <= 0) { education = Math.max(education, studying.level); studying = null; }
+    if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
   }
-  s = { ...s, studying, education };
+  s = { ...s, studying, majors };
 
   // Salary
   const job = getJob(s);
@@ -657,8 +667,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const next = JOBS[state.jobIndex + 1];
       if (!next) return state;
       if (state.xp < getJob(state).xpToPromote) return state;
-      if (state.education < next.education) return state;
-      const variants = CAREER_VARIANTS[state.jobIndex + 1] || [{ title: next.title, employer: next.employer }];
+      const tier = state.jobIndex + 1;
+      // Past the gate tier, a track's offers require its major.
+      const gated = (CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }]).filter(
+        (v) => tier < MAJOR_GATE_TIER || state.majors.includes(getTrackMajor(getCareerTrack(v.employer).id)?.id || ""),
+      );
+      if (gated.length === 0) return state;
+      const variants = gated;
       // Shuffle, then take distinct titles and distinct employers so no offer repeats either.
       const pool = [...variants].sort(() => Math.random() - 0.5);
       const picked: typeof variants = [];
@@ -685,7 +700,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "ACCEPT_JOB_OFFER": {
       const offer = state.careerOffers[action.index];
       const next = JOBS[state.jobIndex + 1];
-      if (!offer || !next || state.education < next.education) return state;
+      if (!offer || !next) return state;
       return {
         ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0,
         jobHistory: [...state.jobHistory, { ...offer, startDay: Math.floor(state.day) }],
@@ -693,14 +708,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "STUDY": {
-      const def = EDUCATION[action.level];
+      const def = MAJORS.find((m) => m.id === action.majorId);
       if (!def || state.studying) return state;
-      if (action.level !== state.education + 1) return state;
+      if (state.majors.includes(def.id)) return state;
       if (state.cash < def.cost) return state;
       return {
         ...state, cash: state.cash - def.cost,
         studyHours: state.studyHours === 0 ? 20 : state.studyHours,
-        studying: { level: action.level, daysLeft: def.days },
+        studying: { majorId: def.id, daysLeft: def.days },
         stats: { ...state.stats, educationSpent: state.stats.educationSpent + def.cost },
       };
     }

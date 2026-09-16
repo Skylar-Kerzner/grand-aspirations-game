@@ -1,15 +1,20 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, EDUCATION, JOBS, WEEK_HOURS, getCareerTrack } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, getCareerTrack, getTrackMajor } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
   const job = derived.job;
   const next = derived.nextJob;
   const xpPct = Math.min(100, (state.xp / (derived.xpNeeded || 1)) * 100);
-  const educationOk = next ? state.education >= next.education : true;
-  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && educationOk && state.careerOffers.length === 0;
+  const nextTier = state.jobIndex + 1;
+  const gatedTier = !!next && nextTier >= MAJOR_GATE_TIER;
+  // Tracks whose offers are open to the player at the next level
+  const openTracks = Object.values(CAREER_TRACKS).filter(
+    (t) => !gatedTier || state.majors.includes(getTrackMajor(t.id)?.id || ""),
+  );
+  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && openTracks.length > 0 && state.careerOffers.length === 0;
 
   return (
     <div className="space-y-6">
@@ -41,14 +46,21 @@ export default function CareerPanel() {
         {next ? (
           <>
             <div className="flex justify-between text-[11px] text-muted-foreground mb-1 mt-3">
-              <span>Experience toward {next.title}</span>
+              <span>Experience toward the next level</span>
               <span className="font-mono-nums">{Math.floor(state.xp)} / {derived.xpNeeded}</span>
             </div>
             <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-3">
               <motion.div className="h-full bg-primary" animate={{ width: `${xpPct}%` }} transition={{ duration: 0.3 }} />
             </div>
-            {!educationOk && (
-              <p className="text-[11px] text-muted-foreground mb-2">Requires {EDUCATION[next.education].name}.</p>
+            {gatedTier && openTracks.length === 0 && (
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Advancement from here requires a degree. Choose a major below — each one opens a different career path.
+              </p>
+            )}
+            {gatedTier && openTracks.length > 0 && (
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Your {openTracks.length === 1 ? "major opens" : "majors open"}: {openTracks.map((t) => t.name).join(", ")}.
+              </p>
             )}
             {state.careerOffers.length === 0 ? (
               <motion.button
@@ -121,7 +133,7 @@ export default function CareerPanel() {
         />
         {state.studying && (
           <p className="text-[11px] text-muted-foreground mt-2">
-            {EDUCATION[state.studying.level].name} ·{" "}
+            {MAJORS.find((m) => m.id === state.studying?.majorId)?.name} ·{" "}
             {state.studyHours > 0
               ? `${Math.ceil(state.studying.daysLeft / ((state.studyHours / WEEK_HOURS) * derived.schoolProgress))} days left at this pace`
               : "paused — give it some hours"}
@@ -150,15 +162,16 @@ export default function CareerPanel() {
         />
       </div>
 
-      {/* Education */}
+      {/* Education — pick a major, it opens a career path */}
       <div>
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Education</h3>
+        <p className="text-[11px] text-muted-foreground mb-3 px-1">
+          Each major leads to a different career path. Study any of them, in any order.
+        </p>
         <div className="space-y-3">
-          {EDUCATION.map((def, i) => {
-            const completed = state.education >= i;
-            const isNext = i === state.education + 1;
-            const inProgress = state.studying?.level === i;
-            if (i > state.education + 1) return null;
+          {MAJORS.map((def) => {
+            const completed = state.majors.includes(def.id);
+            const inProgress = state.studying?.majorId === def.id;
             return (
               <div key={def.id} className="surface-card rounded-xl p-4">
                 <div className="flex justify-between items-center gap-3">
@@ -180,8 +193,8 @@ export default function CareerPanel() {
                   ) : (
                     <motion.button
                       whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "STUDY", level: i })}
-                      disabled={!isNext || !!state.studying || state.cash < def.cost}
+                      onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
+                      disabled={!!state.studying || state.cash < def.cost}
                       className="h-9 px-4 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40 shrink-0"
                     >
                       Enroll
