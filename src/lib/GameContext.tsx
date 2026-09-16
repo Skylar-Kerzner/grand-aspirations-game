@@ -372,6 +372,14 @@ function createInitialState(): GameState {
         ...fresh, ...parsed,
         currentJob: parsed.currentJob || { title: savedJob.title, employer: savedJob.employer, dailyPay: savedJob.dailyPay },
         careerOffers: parsed.careerOffers || [],
+        jobHistory: parsed.jobHistory && parsed.jobHistory.length
+          ? parsed.jobHistory
+          : [{
+              title: (parsed.currentJob || savedJob).title,
+              employer: (parsed.currentJob || savedJob).employer,
+              dailyPay: (parsed.currentJob || savedJob).dailyPay,
+              startDay: 0,
+            }],
         assets: {
           house: legacyAssets.house || 1,
           food: legacyAssets.food || (parsed.food === "chef" ? 4 : parsed.food === "eatout" ? 3 : parsed.food === "groceries" ? 2 : 1),
