@@ -648,11 +648,10 @@ export function ventureNameAtTier(businessId: string, tierIdx: number, choices?:
   return location ? `${stage} in ${location.name}` : stage;
 }
 
-/** Artwork key for a venture at a given stage. Falls back to the generic tier art. */
+/** Artwork key for a venture at a given stage. */
 export function ventureImageAtTier(businessId: string, tierIdx: number, choices?: Record<string, string>): string {
   const concept = getBusinessConcept(businessId, choices?.concept || "");
-  const def = BUSINESSES.find((b) => b.id === businessId);
-  if (!concept) return def?.tierImages[tierIdx] || "";
+  if (!concept) return "";
   return tierIdx === 1 ? concept.image : `${concept.image}-t${tierIdx + 1}`;
 }
 
