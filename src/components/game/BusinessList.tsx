@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   useGame,
   getBusinessSteadyIncomeOf,
-  isBusinessUnlocked,
+  getIndustryKnowledge,
   businessIncomeOf,
   upgradeCostFor,
   getBusinessEffectiveROI,
