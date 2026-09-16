@@ -272,7 +272,8 @@ export function getIndustryKnowledge(state: GameState, id: string) {
 export function getBusinessEffectiveROI(state: GameState, id: string): number {
   const def = BUSINESSES.find((business) => business.id === id);
   if (!def) return 0;
-  return def.annualROI * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus);
+  return def.annualROI * getBusinessAttentionOf(state, id)
+    * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus);
 }
 
 export function getNextBusinessNetworkMilestone(state: GameState, id: string) {
@@ -322,6 +323,7 @@ export function getBusinessValueOf(state: GameState, id: string): number {
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
   return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * (biz.fortune ?? 1)
+    * getBusinessAttentionOf(state, id)
     * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
 }
 
