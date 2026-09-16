@@ -220,7 +220,7 @@ export default function BusinessList() {
                 <h2 className="text-xl font-bold tracking-tight leading-tight">{ventureTitle}</h2>
                 <p className="text-sm text-muted-foreground mb-1">
                   {selectedBiz.level > 0
-                    ? `${selectedDef.name} · ${selectedDef.tierNames[getBusinessTierIndex(selectedBiz.level)]} · Level ${selectedBiz.level}`
+                    ? `${selectedDef.name} · Level ${selectedBiz.level}`
                     : selectedDef.description}
                 </p>
                 <p className="text-[11px] text-muted-foreground mb-1">
