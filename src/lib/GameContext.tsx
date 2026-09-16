@@ -103,7 +103,7 @@ function emptyStats(): Stats {
   return {
     salaryEarned: 0, shiftEarned: 0, businessEarned: 0, investmentGains: 0,
     eventGains: 0, eventLosses: 0, taxesPaid: 0, livingSpent: 0, trainingSpent: 0,
-    loanInterestPaid: 0, ccInterestPaid: 0, assetSpent: 0, businessSpent: 0,
+    loanInterestPaid: 0, ccInterestPaid: 0, assetSpent: 0, businessSpent: 0, businessSold: 0,
     educationSpent: 0, consultantSpent: 0, retainerSpent: 0, managerSpent: 0,
     investDeposited: 0, investWithdrawn: 0,
     jobEarned: {}, jobDays: {}, shifts: {}, investEarnedById: {}, businessEarnedById: {},
