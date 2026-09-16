@@ -229,7 +229,10 @@ export default function BusinessList() {
                   {state.businessHours[selectedDef.id] || 0}h a week
                   {getBusinessNetworkBonus(state, selectedDef.id) > 0
                     ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
-                    : " · up to 30% annual return on capital at 15 hours a week"}
+                    : ` · up to ${(
+                        (selectedBiz.fortune ?? 1) * selectedDef.annualROI
+                        * (1 + getIndustryKnowledge(state, selectedDef.id).returnBonus) * 100
+                      ).toFixed(0)}% annual return on capital at 15 hours a week`}
                 </p>
                 {(() => {
                   const k = getIndustryKnowledge(state, selectedDef.id);
