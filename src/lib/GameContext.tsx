@@ -688,10 +688,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!next) return state;
       if (state.xp < getJob(state).xpToPromote) return state;
       const tier = state.jobIndex + 1;
-      // Past the gate tier, a track's offers require its major.
-      const gated = (CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }]).filter(
-        (v) => tier < MAJOR_GATE_TIER || state.majors.includes(getTrackMajor(getCareerTrack(v.employer).id)?.id || ""),
-      );
+      const homeTrack = getCareerTrack(state.currentJob.employer).id;
+      const tenure = getTrackTenure(state);
+      // Past the gate tier you need either that path's major, or — on your own
+      // industry — enough years served in it. Sideways moves only into related
+      // industries, and only if that move makes sense at this level.
+      const gated = (CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }]).filter((v) => {
+        const track = getCareerTrack(v.employer).id;
+        const hasMajor = state.majors.includes(getTrackMajor(track)?.id || "");
+        const sameTrack = track === homeTrack;
+        if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, track)) return false;
+        if (tier < MAJOR_GATE_TIER) return true;
+        if (hasMajor) return true;
+        // No degree: climb on experience, but only inside your own industry.
+        return sameTrack && tenure >= TRACK_EXPERIENCE_GATE;
+      });
       if (gated.length === 0) return state;
       const variants = gated;
       // Shuffle, then take distinct titles and distinct employers so no offer repeats either.
