@@ -98,7 +98,7 @@ export default function AssetGallery() {
                 </p>
                 <p className="text-xs text-primary mb-1">{selectedDef.tiers[Math.max(1, selectedTier) - 1].benefit}</p>
                 <p className="text-[11px] text-muted-foreground mb-4">
-                  Lifestyle costs {formatMoney(derived.livingCosts)}/day total. Better choices accelerate promotions and school.
+                  Lifestyle costs {formatMoney(derived.livingCosts)}/day total. Finer choices buy hours of your week back.
                 </p>
 
                 {/* Tiers — tap a row to choose it */}

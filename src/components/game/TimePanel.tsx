@@ -158,7 +158,7 @@ export default function TimePanel() {
         </div>
         <p className="text-[11px] text-muted-foreground mb-3">
           Courses, certifications, coaching and conferences for your career. This raises career progress to{" "}
-          {derived.focus.toFixed(2)}×. Your Lifestyle choices also improve career and school progress.
+          {derived.focus.toFixed(2)}×.
         </p>
         <input
           type="range"
