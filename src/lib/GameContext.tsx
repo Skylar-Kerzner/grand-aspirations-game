@@ -349,6 +349,7 @@ function createFresh(): GameState {
     jobIndex: 0,
     currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
     careerOffers: [],
+    jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
     xp: 0, education: 0, studying: null,
     studyHours: 0, trainingBudget: 0,
     lastShiftDay: -1,
