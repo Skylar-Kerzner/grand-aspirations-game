@@ -78,8 +78,8 @@ export default function BusinessList() {
           const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
           const tierName = concept?.tierNames[tierIdx] || def.tierNames[tierIdx];
           const tierImage = owned
-            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices)) || getImage(concept?.image || "") || getImage(def.tierImages[tierIdx])
-            : getImage(def.tierImages[tierIdx]);
+            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices)) || getImage(concept?.image || "")
+            : "";
           const displayName = owned ? ventureNameAtTier(def.id, tierIdx, biz.choices) : def.name;
           const income = businessIncomeOf(state, def.id);
           const networkBonus = getBusinessNetworkBonus(state, def.id);
@@ -192,9 +192,8 @@ export default function BusinessList() {
                     : undefined;
                   const tierImage = ownedHere
                     ? getImage(ventureImageAtTier(selectedDef.id, tierIdx, selectedBiz.choices)) ||
-                      getImage(conceptHere?.image || "") ||
-                      getImage(selectedDef.tierImages[tierIdx])
-                    : getImage(selectedDef.tierImages[tierIdx]);
+                      getImage(conceptHere?.image || "")
+                    : "";
                   const tierName = conceptHere?.tierNames[tierIdx] || selectedDef.tierNames[tierIdx];
                   return (
                     <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
@@ -276,7 +275,9 @@ export default function BusinessList() {
                   {selectedDef.tierNames.map((name, i) => {
                     const threshold = BUSINESS_TIER_THRESHOLDS[i];
                     const reached = selectedBiz.level >= threshold;
-                    const tierImg = getImage(selectedDef.tierImages[i]);
+                    const tierImg = selectedBiz.choices
+                      ? getImage(ventureImageAtTier(selectedDef.id, i, selectedBiz.choices))
+                      : "";
                     return (
                       <div
                         key={i}

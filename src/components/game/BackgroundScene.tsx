@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
-import { ASSETS, BUSINESSES, getBusinessTierIndex } from "@/lib/gameData";
+import { ASSETS, BUSINESSES, getBusinessTierIndex, ventureImageAtTier } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 interface SceneLayer {
@@ -25,7 +25,13 @@ export default function BackgroundScene() {
   const owned = BUSINESSES.filter((b) => (state.businesses[b.id]?.level || 0) > 0);
   const flagship = owned[owned.length - 1];
   const flagshipImg = flagship
-    ? getImage(flagship.tierImages[getBusinessTierIndex(state.businesses[flagship.id].level)])
+    ? getImage(
+        ventureImageAtTier(
+          flagship.id,
+          getBusinessTierIndex(state.businesses[flagship.id].level),
+          state.businesses[flagship.id].choices,
+        ),
+      )
     : "";
 
   const workImg = getImage(derived.job.scene);
