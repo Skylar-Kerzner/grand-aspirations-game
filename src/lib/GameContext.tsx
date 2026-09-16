@@ -4,7 +4,7 @@ import {
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
-  DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_INCOME, BUSINESS_ATTENTION_RISK,
+  DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
@@ -66,7 +66,7 @@ export interface GameState {
   majors: string[]; // completed major ids — each opens a career track
   studying: { majorId: string; daysLeft: number } | null;
   studyHours: number;     // of the 40 weekly hours, how many go to school
-  businessHours: number;  // of the 40 weekly hours, how many go to your ventures
+  businessHours: Record<string, number>; // hours a week personally spent in each venture
   trainingBudget: number; // dollars per day spent on courses and coaching
   lastShiftDay: number;
   businesses: Record<string, BusinessState>;
@@ -87,7 +87,7 @@ export type GameAction =
   | { type: "TICK" }
   | { type: "WORK" }
   | { type: "SET_STUDY_HOURS"; hours: number }
-  | { type: "SET_BUSINESS_HOURS"; hours: number }
+  | { type: "SET_BUSINESS_HOURS"; id: string; hours: number }
   | { type: "SET_TRAINING"; amount: number }
   | { type: "SET_LIFESTYLE"; id: string; tier: number }
   | { type: "GENERATE_JOB_OFFERS" }
@@ -156,13 +156,19 @@ export function getTaxRate(state: GameState): number {
   return state.consultants.includes("lobbyist") ? LOBBYIST_TAX_RATE : TAX_RATE;
 }
 
-export function getWorkHours(state: GameState): number {
-  return Math.max(0, WEEK_HOURS - state.studyHours - state.businessHours);
+/** Total hours a week currently committed to your ventures. */
+export function getTotalBusinessHours(state: GameState): number {
+  return Math.min(WEEK_HOURS, Object.values(state.businessHours).reduce((s, h) => s + (h || 0), 0));
 }
 
-/** Share of your 40-hour week currently spent working in your own ventures. */
-export function getBusinessAttention(state: GameState): number {
-  return Math.max(0, Math.min(1, state.businessHours / WEEK_HOURS));
+export function getWorkHours(state: GameState): number {
+  return Math.max(0, WEEK_HOURS - state.studyHours - getTotalBusinessHours(state));
+}
+
+/** How close to full performance this venture runs, from the hours you give it. */
+export function getBusinessAttentionOf(state: GameState, id: string): number {
+  const hours = state.businessHours[id] || 0;
+  return BUSINESS_ATTENTION_FLOOR + (1 - BUSINESS_ATTENTION_FLOOR) * Math.min(1, hours / BUSINESS_ATTENTION_FULL_HOURS);
 }
 
 export function getLifestyleTier(state: GameState, id: string) {
@@ -307,7 +313,7 @@ export function getBusinessSteadyIncomeOf(state: GameState, id: string): number 
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
   return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
-    * (1 + BUSINESS_ATTENTION_INCOME * getBusinessAttention(state));
+    * getBusinessAttentionOf(state, id);
 }
 
 /** What this single venture would fetch if sold today. */
