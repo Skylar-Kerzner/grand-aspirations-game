@@ -71,7 +71,7 @@ export interface BusinessDef {
   name: string;
   sector: string;
   baseCost: number;
-  annualROI: number; // profit per year as a share of capital invested — constant across levels
+  annualROI: number; // baseline profit per year as a share of capital invested
   costMultiplier: number;
   managerShare: number; // fraction of revenue paid to manager per day
   unlockLevelOfPrev: number; // levels required in the previous business
@@ -81,25 +81,30 @@ export interface BusinessDef {
 }
 
 export const BUSINESS_TIER_THRESHOLDS = [1, 8, 20, 40];
+export const BUSINESS_NETWORK_MILESTONES = [
+  { level: 8, bonus: 0.1 },
+  { level: 20, bonus: 0.2 },
+  { level: 40, bonus: 0.35 },
+];
 
 export const BUSINESSES: BusinessDef[] = [
   {
     id: "coffee", name: "Coffee Shop", sector: "Food & Beverage",
-    baseCost: 6000, annualROI: 0.34, costMultiplier: 1.16, managerShare: 0.14, unlockLevelOfPrev: 0,
+    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, managerShare: 0.14, unlockLevelOfPrev: 0,
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
     tierImages: ["coffee-t1", "coffee-t2", "coffee-t3", "coffee-t4"],
   },
   {
     id: "restaurant", name: "Restaurant", sector: "Food & Beverage",
-    baseCost: 60000, annualROI: 0.32, costMultiplier: 1.16, managerShare: 0.13, unlockLevelOfPrev: 8,
+    baseCost: 60000, annualROI: 0.3, costMultiplier: 1.16, managerShare: 0.13, unlockLevelOfPrev: 8,
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Neighbourhood Bistro", "Fine Dining Room", "Culinary Empire"],
     tierImages: ["restaurant-t1", "restaurant-t2", "restaurant-t3", "restaurant-t4"],
   },
   {
     id: "tech", name: "Tech Startup", sector: "Technology",
-    baseCost: 600000, annualROI: 0.32, costMultiplier: 1.15, managerShare: 0.12, unlockLevelOfPrev: 8,
+    baseCost: 600000, annualROI: 0.3, costMultiplier: 1.15, managerShare: 0.12, unlockLevelOfPrev: 8,
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Series A Office", "Tech Campus", "Tech Giant HQ"],
     tierImages: ["tech-t1", "tech-t2", "tech-t3", "tech-t4"],
@@ -120,21 +125,21 @@ export const BUSINESSES: BusinessDef[] = [
   },
   {
     id: "themepark", name: "Theme Park", sector: "Entertainment",
-    baseCost: 600000000, annualROI: 0.29, costMultiplier: 1.12, managerShare: 0.09, unlockLevelOfPrev: 8,
+    baseCost: 600000000, annualROI: 0.3, costMultiplier: 1.12, managerShare: 0.09, unlockLevelOfPrev: 8,
     description: "Create worlds of wonder.",
     tierNames: ["Travelling Carnival", "Family Fun Park", "Destination Theme Park", "Entertainment Empire"],
     tierImages: ["themepark-t1", "themepark-t2", "themepark-t3", "themepark-t4"],
   },
   {
     id: "media", name: "Media Network", sector: "Media",
-    baseCost: 6000000000, annualROI: 0.29, costMultiplier: 1.12, managerShare: 0.09, unlockLevelOfPrev: 8,
+    baseCost: 6000000000, annualROI: 0.3, costMultiplier: 1.12, managerShare: 0.09, unlockLevelOfPrev: 8,
     description: "Own the attention itself.",
     tierNames: ["Podcast Studio", "Streaming Channel", "Broadcast Network", "Global Media Conglomerate"],
     tierImages: ["media-t1", "media-t2", "media-t3", "media-t4"],
   },
   {
     id: "city", name: "City Development", sector: "Infrastructure",
-    baseCost: 60000000000, annualROI: 0.28, costMultiplier: 1.11, managerShare: 0.08, unlockLevelOfPrev: 8,
+    baseCost: 60000000000, annualROI: 0.3, costMultiplier: 1.11, managerShare: 0.08, unlockLevelOfPrev: 8,
     description: "Build the skyline everyone else lives in.",
     tierNames: ["City Block", "Mixed-Use District", "Waterfront Downtown", "Sovereign Metropolis"],
     tierImages: ["city-t1", "city-t2", "city-t3", "city-t4"],
