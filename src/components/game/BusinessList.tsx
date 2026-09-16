@@ -22,6 +22,8 @@ import {
   getBusinessConcept,
   getBusinessLocation,
   ventureName,
+  ventureNameAtTier,
+  ventureImageAtTier,
   businessFortuneLabel,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
@@ -62,7 +64,7 @@ export default function BusinessList() {
     ? state.businesses[selected] || { level: 0, condition: 1 }
     : null;
   const ventureTitle = selected && selectedBiz && selectedBiz.level > 0 && selectedBiz.choices
-    ? ventureName(selected, selectedBiz.choices)
+    ? ventureNameAtTier(selected, getBusinessTierIndex(selectedBiz.level), selectedBiz.choices)
     : selectedDef?.name || "";
 
   return (
@@ -72,12 +74,13 @@ export default function BusinessList() {
           const biz = state.businesses[def.id] || { level: 0, condition: 1 };
           const unlocked = isBusinessUnlocked(state, def.id);
           const tierIdx = getBusinessTierIndex(biz.level);
-          const tierName = def.tierNames[tierIdx];
-          const conceptImage = biz.level > 0 && biz.choices
-            ? getImage(getBusinessConcept(def.id, biz.choices.concept || "")?.image || "")
-            : "";
-          const tierImage = tierIdx === 0 && conceptImage ? conceptImage : getImage(def.tierImages[tierIdx]);
-          const displayName = biz.level > 0 && biz.choices ? ventureName(def.id, biz.choices) : def.name;
+          const owned = biz.level > 0 && !!biz.choices;
+          const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
+          const tierName = concept?.tierNames[tierIdx] || def.tierNames[tierIdx];
+          const tierImage = owned
+            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices)) || getImage(concept?.image || "") || getImage(def.tierImages[tierIdx])
+            : getImage(def.tierImages[tierIdx]);
+          const displayName = owned ? ventureNameAtTier(def.id, tierIdx, biz.choices) : def.name;
           const income = businessIncomeOf(state, def.id);
           const networkBonus = getBusinessNetworkBonus(state, def.id);
           const condition = conditionLabel(biz.condition ?? 1);
@@ -183,11 +186,16 @@ export default function BusinessList() {
               <div className="w-full max-w-lg">
                 {(() => {
                   const tierIdx = getBusinessTierIndex(selectedBiz.level);
-                  const conceptImage = selectedBiz.level > 0 && selectedBiz.choices
-                    ? getImage(getBusinessConcept(selectedDef.id, selectedBiz.choices.concept || "")?.image || "")
-                    : "";
-                  const tierImage = tierIdx === 0 && conceptImage ? conceptImage : getImage(selectedDef.tierImages[tierIdx]);
-                  const tierName = selectedDef.tierNames[tierIdx];
+                  const ownedHere = selectedBiz.level > 0 && !!selectedBiz.choices;
+                  const conceptHere = ownedHere
+                    ? getBusinessConcept(selectedDef.id, selectedBiz.choices?.concept || "")
+                    : undefined;
+                  const tierImage = ownedHere
+                    ? getImage(ventureImageAtTier(selectedDef.id, tierIdx, selectedBiz.choices)) ||
+                      getImage(conceptHere?.image || "") ||
+                      getImage(selectedDef.tierImages[tierIdx])
+                    : getImage(selectedDef.tierImages[tierIdx]);
+                  const tierName = conceptHere?.tierNames[tierIdx] || selectedDef.tierNames[tierIdx];
                   return (
                     <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
                       {selectedBiz.level > 0 && tierImage ? (
@@ -212,7 +220,7 @@ export default function BusinessList() {
                 <h2 className="text-xl font-bold tracking-tight leading-tight">{ventureTitle}</h2>
                 <p className="text-sm text-muted-foreground mb-1">
                   {selectedBiz.level > 0
-                    ? `${selectedDef.name} · ${selectedDef.tierNames[getBusinessTierIndex(selectedBiz.level)]} · Level ${selectedBiz.level}`
+                    ? `${selectedDef.name} · Level ${selectedBiz.level}`
                     : selectedDef.description}
                 </p>
                 <p className="text-[11px] text-muted-foreground mb-1">
@@ -358,19 +366,22 @@ export default function BusinessList() {
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       {selectedBiz.level > 0 ? "You'd run it as:" : "You'd open:"}{" "}
-                      <span className="text-foreground font-medium">{ventureName(selectedDef.id, choices)}</span>
+                      <span className="text-foreground font-medium">
+                        {ventureNameAtTier(selectedDef.id, getBusinessTierIndex(selectedBiz.level + 1), choices)}
+                      </span>
                     </p>
                   </div>
                 )}
 
                 {selectedBiz.level > 0 && selectedBiz.choices && (
                   <div className="surface-card rounded-lg p-3 my-4">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">How it turned out</p>
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Overall business success</p>
                     <p className="text-sm font-semibold mt-1">
                       {businessFortuneLabel(selectedBiz.fortune ?? 1)} —{" "}
-                      {((selectedBiz.fortune ?? 1) * 100).toFixed(0)}% of a typical venture
+                      {((selectedBiz.fortune ?? 1) * selectedDef.annualROI * 100).toFixed(0)}% return on capital
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-1">{ventureName(selectedDef.id, selectedBiz.choices)}</p>
+
                   </div>
                 )}
 

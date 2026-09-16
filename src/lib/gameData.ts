@@ -538,6 +538,7 @@ export interface BusinessConcept {
   name: string;        // the venture's name when opened
   description: string;
   image: string;       // artwork key for this concept
+  tierNames: [string, string, string, string]; // stage names in this concept's own words
 }
 export interface BusinessLocation {
   id: string;
@@ -547,44 +548,68 @@ export interface BusinessLocation {
 /** Fun identity choices per business. Every concept carries the same odds — the dice roll is identical. */
 export const BUSINESS_CONCEPTS: Record<string, BusinessConcept[]> = {
   coffee: [
-    { id: "espresso", name: "Corner Espresso Bar", description: "Sharp pulls, regulars who never leave.", image: "coffee-espresso" },
-    { id: "matcha", name: "Matcha House", description: "Whisked to order, photogenic by design.", image: "coffee-matcha" },
-    { id: "nitro", name: "Nitro Brew Lab", description: "Cold, creamy, poured from the tap.", image: "coffee-nitro" },
+    { id: "espresso", name: "Corner Espresso Bar", description: "Sharp pulls, regulars who never leave.", image: "coffee-espresso",
+      tierNames: ["Espresso Cart", "Corner Espresso Bar", "Espresso Bar Chain", "Global Espresso Empire"] },
+    { id: "matcha", name: "Matcha House", description: "Whisked to order, photogenic by design.", image: "coffee-matcha",
+      tierNames: ["Matcha Stand", "Matcha House", "Matcha House Chain", "Global Matcha Empire"] },
+    { id: "nitro", name: "Nitro Brew Lab", description: "Cold, creamy, poured from the tap.", image: "coffee-nitro",
+      tierNames: ["Nitro Tap Cart", "Nitro Brew Lab", "Nitro Brew Chain", "Global Nitro Empire"] },
   ],
   restaurant: [
-    { id: "trattoria", name: "Family Trattoria", description: "Red sauce, checked cloths, loud tables.", image: "restaurant-trattoria" },
-    { id: "tasting", name: "Chef's Tasting Counter", description: "Twelve seats, one menu, no substitutions.", image: "restaurant-tasting" },
-    { id: "ramen", name: "Late-Night Ramen Bar", description: "Steam, stools and a 2am crowd.", image: "restaurant-ramen" },
+    { id: "trattoria", name: "Family Trattoria", description: "Red sauce, checked cloths, loud tables.", image: "restaurant-trattoria",
+      tierNames: ["Pasta Stall", "Family Trattoria", "Grand Trattoria", "Trattoria Empire"] },
+    { id: "tasting", name: "Chef's Tasting Counter", description: "Twelve seats, one menu, no substitutions.", image: "restaurant-tasting",
+      tierNames: ["Supper Club Pop-Up", "Chef's Tasting Counter", "Michelin Tasting Room", "Global Tasting Group"] },
+    { id: "ramen", name: "Late-Night Ramen Bar", description: "Steam, stools and a 2am crowd.", image: "restaurant-ramen",
+      tierNames: ["Ramen Cart", "Late-Night Ramen Bar", "Ramen Hall", "Ramen Empire"] },
   ],
   tech: [
-    { id: "app", name: "Campus App Startup", description: "Built by dropouts, pitched in hoodies.", image: "tech-app" },
-    { id: "ai", name: "AI Tooling Studio", description: "Sells the shovels for the gold rush.", image: "tech-ai" },
-    { id: "security", name: "Cybersecurity Firm", description: "Quiet work, paranoid clients, big contracts.", image: "tech-security" },
+    { id: "app", name: "Campus App Startup", description: "Built by dropouts, pitched in hoodies.", image: "tech-app",
+      tierNames: ["Dorm-Room App", "Campus App Startup", "App Campus", "Global App Giant"] },
+    { id: "ai", name: "AI Tooling Studio", description: "Sells the shovels for the gold rush.", image: "tech-ai",
+      tierNames: ["Two-Person AI Bench", "AI Tooling Studio", "AI Research Campus", "Global AI Giant"] },
+    { id: "security", name: "Cybersecurity Firm", description: "Quiet work, paranoid clients, big contracts.", image: "tech-security",
+      tierNames: ["Freelance Security Desk", "Cybersecurity Firm", "Security Operations Campus", "Global Security Giant"] },
   ],
   hotel: [
-    { id: "boutique", name: "Boutique Inn", description: "Twelve rooms, one very opinionated host.", image: "hotel-boutique" },
-    { id: "resort", name: "Beach Resort", description: "Pools, umbrellas, all-inclusive everything.", image: "hotel-resort" },
-    { id: "design", name: "Design Hotel", description: "Concrete, brass and a rooftop bar.", image: "hotel-design" },
+    { id: "boutique", name: "Boutique Inn", description: "Twelve rooms, one very opinionated host.", image: "hotel-boutique",
+      tierNames: ["Guest House", "Boutique Inn", "Boutique Hotel Collection", "Global Boutique Empire"] },
+    { id: "resort", name: "Beach Resort", description: "Pools, umbrellas, all-inclusive everything.", image: "hotel-resort",
+      tierNames: ["Beach Motel", "Beach Resort", "Flagship Mega Resort", "Global Resort Empire"] },
+    { id: "design", name: "Design Hotel", description: "Concrete, brass and a rooftop bar.", image: "hotel-design",
+      tierNames: ["Design Loft Rooms", "Design Hotel", "Design Hotel Collection", "Global Design Empire"] },
   ],
   fashion: [
-    { id: "streetwear", name: "Streetwear Label", description: "Drops that sell out in minutes.", image: "fashion-streetwear" },
-    { id: "vintage", name: "Vintage Boutique", description: "One-of-one pieces with a past.", image: "fashion-vintage" },
-    { id: "atelier", name: "Haute Atelier", description: "Made to measure, priced accordingly.", image: "fashion-atelier" },
+    { id: "streetwear", name: "Streetwear Label", description: "Drops that sell out in minutes.", image: "fashion-streetwear",
+      tierNames: ["Market Drop Stall", "Streetwear Label", "Streetwear Flagship", "Global Streetwear House"] },
+    { id: "vintage", name: "Vintage Boutique", description: "One-of-one pieces with a past.", image: "fashion-vintage",
+      tierNames: ["Vintage Stall", "Vintage Boutique", "Vintage Department Store", "Global Vintage House"] },
+    { id: "atelier", name: "Haute Atelier", description: "Made to measure, priced accordingly.", image: "fashion-atelier",
+      tierNames: ["Tailor's Room", "Haute Atelier", "Couture Maison", "Global Couture House"] },
   ],
   themepark: [
-    { id: "boardwalk", name: "Boardwalk Park", description: "Ferris wheel, fried dough, sea air.", image: "themepark-boardwalk" },
-    { id: "water", name: "Water Park", description: "Slides, wave pools and lifeguards everywhere.", image: "themepark-water" },
-    { id: "adventure", name: "Adventure Park", description: "Coasters over the treeline.", image: "themepark-adventure" },
+    { id: "boardwalk", name: "Boardwalk Park", description: "Ferris wheel, fried dough, sea air.", image: "themepark-boardwalk",
+      tierNames: ["Boardwalk Rides", "Boardwalk Park", "Boardwalk Resort Park", "Boardwalk Entertainment Empire"] },
+    { id: "water", name: "Water Park", description: "Slides, wave pools and lifeguards everywhere.", image: "themepark-water",
+      tierNames: ["Splash Pad", "Water Park", "Destination Water Resort", "Global Water Park Empire"] },
+    { id: "adventure", name: "Adventure Park", description: "Coasters over the treeline.", image: "themepark-adventure",
+      tierNames: ["Zipline Course", "Adventure Park", "Destination Adventure Park", "Global Adventure Empire"] },
   ],
   media: [
-    { id: "podcast", name: "Podcast Studio", description: "Two mics and an interview that goes viral.", image: "media-podcast" },
-    { id: "streaming", name: "Streaming Network", description: "Bingeable series, global audience.", image: "media-streaming" },
-    { id: "news", name: "News Channel", description: "Live coverage, breaking everything.", image: "media-news" },
+    { id: "podcast", name: "Podcast Studio", description: "Two mics and an interview that goes viral.", image: "media-podcast",
+      tierNames: ["Closet Podcast Booth", "Podcast Studio", "Podcast Network", "Global Audio Empire"] },
+    { id: "streaming", name: "Streaming Network", description: "Bingeable series, global audience.", image: "media-streaming",
+      tierNames: ["Web Series Channel", "Streaming Network", "Streaming Studio Lot", "Global Streaming Empire"] },
+    { id: "news", name: "News Channel", description: "Live coverage, breaking everything.", image: "media-news",
+      tierNames: ["Local News Desk", "News Channel", "National News Network", "Global News Empire"] },
   ],
   city: [
-    { id: "blocks", name: "Mixed-Use Blocks", description: "Shops below, apartments above.", image: "city-blocks" },
-    { id: "waterfront", name: "Waterfront District", description: "Boardwalks, marinas, sunset crowds.", image: "city-waterfront" },
-    { id: "green", name: "Green Suburb", description: "Lawns, lanes and good schools.", image: "city-green" },
+    { id: "blocks", name: "Mixed-Use Blocks", description: "Shops below, apartments above.", image: "city-blocks",
+      tierNames: ["Single City Block", "Mixed-Use Blocks", "Mixed-Use District", "Metropolis of Blocks"] },
+    { id: "waterfront", name: "Waterfront District", description: "Boardwalks, marinas, sunset crowds.", image: "city-waterfront",
+      tierNames: ["Marina Strip", "Waterfront District", "Waterfront Downtown", "Sovereign Waterfront Metropolis"] },
+    { id: "green", name: "Green Suburb", description: "Lawns, lanes and good schools.", image: "city-green",
+      tierNames: ["Garden Lane", "Green Suburb", "Green Township", "Sovereign Green City"] },
   ],
 };
 
@@ -614,6 +639,24 @@ export function ventureName(businessId: string, choices?: Record<string, string>
   return location ? `${concept.name} in ${location.name}` : concept.name;
 }
 
+/** The venture's name at a given stage, e.g. "Matcha House Chain in Manhattan". */
+export function ventureNameAtTier(businessId: string, tierIdx: number, choices?: Record<string, string>): string {
+  const concept = getBusinessConcept(businessId, choices?.concept || "");
+  const def = BUSINESSES.find((b) => b.id === businessId);
+  if (!concept) return def?.tierNames[tierIdx] || def?.name || "";
+  const location = getBusinessLocation(businessId, choices?.location || "");
+  const stage = concept.tierNames[tierIdx] || concept.name;
+  return location ? `${stage} in ${location.name}` : stage;
+}
+
+/** Artwork key for a venture at a given stage. Falls back to the generic tier art. */
+export function ventureImageAtTier(businessId: string, tierIdx: number, choices?: Record<string, string>): string {
+  const concept = getBusinessConcept(businessId, choices?.concept || "");
+  const def = BUSINESSES.find((b) => b.id === businessId);
+  if (!concept) return def?.tierImages[tierIdx] || "";
+  return tierIdx === 1 ? concept.image : `${concept.image}-t${tierIdx + 1}`;
+}
+
 /** How much of the sale price you actually walk away with. */
 export const BUSINESS_SALE_DISCOUNT = 0.9;
 
@@ -622,20 +665,23 @@ export const BUSINESS_UPGRADE_REROLL = 0.4;
 
 /** Every venture rolls the same dice, whatever identity you give it. */
 export function rollBusinessFortune(): number {
-  // Box-Muller normal draw, symmetric around 1
+  // Lognormal draw: most ventures land near typical, a few flop hard and a
+  // rare one runs away completely. Roughly 15% to 600% of a typical venture.
   const u = Math.max(1e-9, Math.random());
   const v = Math.random();
   const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-  return Math.min(2.2, Math.max(0.45, 1 + z * 0.25));
+  return Math.min(6, Math.max(0.15, 0.78 * Math.exp(z * 0.8)));
 }
 
 export function businessFortuneLabel(f: number): string {
-  if (f >= 1.5) return "A runaway success";
-  if (f >= 1.2) return "Doing very well";
+  if (f >= 3) return "A once-in-a-lifetime hit";
+  if (f >= 2) return "A runaway success";
+  if (f >= 1.4) return "Doing very well";
   if (f >= 1.05) return "Above expectations";
-  if (f >= 0.95) return "About as expected";
-  if (f >= 0.75) return "Underperforming";
-  return "A bad bet";
+  if (f >= 0.8) return "About as expected";
+  if (f >= 0.5) return "Underperforming";
+  if (f >= 0.3) return "A bad bet";
+  return "A disaster";
 }
 
 // ---------- helpers ----------

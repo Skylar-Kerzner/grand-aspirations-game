@@ -11,3 +11,7 @@
 - [x] Rework business open choices: flavor-only (name/image), same risk for all, fun combos like matcha in Manhattan
 - [x] Let players re-choose concept/location on each business tier-up (alongside the luck reroll)
 
+- [x] Widen business luck range to roughly 15%-600% (was ~80-120%)
+- [x] Rename 'How it turned out' to 'Overall business success'; drift fortune 0.9-1.1x each level up
+- [x] Show business success as return on capital (fortune x 30% baseline) instead of a percent-of-typical
+- [x] Give every venture concept its own picture at each stage
