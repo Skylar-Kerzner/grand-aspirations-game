@@ -647,20 +647,23 @@ export const BUSINESS_UPGRADE_REROLL = 0.4;
 
 /** Every venture rolls the same dice, whatever identity you give it. */
 export function rollBusinessFortune(): number {
-  // Box-Muller normal draw, symmetric around 1
+  // Lognormal draw: most ventures land near typical, a few flop hard and a
+  // rare one runs away completely. Roughly 15% to 600% of a typical venture.
   const u = Math.max(1e-9, Math.random());
   const v = Math.random();
   const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-  return Math.min(2.2, Math.max(0.45, 1 + z * 0.25));
+  return Math.min(6, Math.max(0.15, 0.78 * Math.exp(z * 0.8)));
 }
 
 export function businessFortuneLabel(f: number): string {
-  if (f >= 1.5) return "A runaway success";
-  if (f >= 1.2) return "Doing very well";
+  if (f >= 3) return "A once-in-a-lifetime hit";
+  if (f >= 2) return "A runaway success";
+  if (f >= 1.4) return "Doing very well";
   if (f >= 1.05) return "Above expectations";
-  if (f >= 0.95) return "About as expected";
-  if (f >= 0.75) return "Underperforming";
-  return "A bad bet";
+  if (f >= 0.8) return "About as expected";
+  if (f >= 0.5) return "Underperforming";
+  if (f >= 0.3) return "A bad bet";
+  return "A disaster";
 }
 
 // ---------- helpers ----------
