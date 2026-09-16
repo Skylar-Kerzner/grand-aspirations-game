@@ -633,8 +633,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.xp < getJob(state).xpToPromote) return state;
       if (state.education < next.education) return state;
       const variants = CAREER_VARIANTS[state.jobIndex + 1] || [{ title: next.title, employer: next.employer }];
-      const careerOffers = [0, 1, 2].map((slot) => {
-        const variant = variants[(slot + Math.floor(Math.random() * variants.length)) % variants.length];
+      // Shuffle, then take distinct titles and distinct employers so no offer repeats either.
+      const pool = [...variants].sort(() => Math.random() - 0.5);
+      const picked: typeof variants = [];
+      for (const v of pool) {
+        if (picked.length >= 3) break;
+        if (picked.some((p) => p.title === v.title || p.employer === v.employer)) continue;
+        picked.push(v);
+      }
+      const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
         return { ...variant, dailyPay: Math.round(next.dailyPay * factor) };
       }).sort((a, b) => a.dailyPay - b.dailyPay);
