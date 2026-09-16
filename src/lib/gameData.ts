@@ -7,6 +7,9 @@
 export const DAYS_PER_YEAR = 365;
 export const TAX_RATE = 0.22;
 export const WEEK_HOURS = 40;
+// What an hour of your own attention is worth to each venture you own.
+export const BUSINESS_ATTENTION_INCOME = 0.8; // up to +80% takings at a full 40 hours
+export const BUSINESS_ATTENTION_RISK = 0.5;   // swings shrink by up to half at a full 40 hours
 
 // ---------- Education ----------
 export interface MajorDef {

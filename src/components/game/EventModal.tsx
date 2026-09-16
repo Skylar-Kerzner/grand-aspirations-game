@@ -38,7 +38,12 @@ export default function EventModal() {
             <h2 className={`mb-2 text-xl font-semibold ${openEvent.tone === "good" ? "text-primary" : openEvent.tone === "bad" ? "text-destructive" : "text-foreground"}`}>
               {openEvent.title}
             </h2>
-            <p className="mb-5 text-sm leading-relaxed text-muted-foreground">{openEvent.text}</p>
+            <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{openEvent.text}</p>
+            {openEvent.effect && (
+              <p className={`mb-5 text-sm font-medium ${openEvent.tone === "bad" ? "text-destructive" : "text-primary"}`}>
+                {openEvent.effect}
+              </p>
+            )}
             <Button className="w-full" onClick={() => setOpenEvent(null)}>Continue</Button>
           </motion.div>
         </motion.div>

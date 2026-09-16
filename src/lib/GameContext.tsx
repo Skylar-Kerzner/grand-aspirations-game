@@ -8,6 +8,7 @@ import {
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
+import { formatMoney } from "./formatters";
 
 const SAVE_KEY = "empire-tycoon-save-v4";
 const LEGACY_SAVE_KEY = "empire-tycoon-save-v3";
@@ -23,7 +24,7 @@ export interface LoanState { drawn: number; remaining: number; dailyPayment: num
 export interface InvestmentState { value: number; basis: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number }
 
-export interface GameEvent { day: number; title: string; text: string; tone: "good" | "bad" | "neutral" }
+export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
 
 export interface Stats {
   salaryEarned: number;
@@ -65,6 +66,7 @@ export interface GameState {
   majors: string[]; // completed major ids — each opens a career track
   studying: { majorId: string; daysLeft: number } | null;
   studyHours: number;     // of the 40 weekly hours, how many go to school
+  businessHours: number;  // of the 40 weekly hours, how many go to your ventures
   trainingBudget: number; // dollars per day spent on courses and coaching
   lastShiftDay: number;
   businesses: Record<string, BusinessState>;
@@ -85,6 +87,7 @@ export type GameAction =
   | { type: "TICK" }
   | { type: "WORK" }
   | { type: "SET_STUDY_HOURS"; hours: number }
+  | { type: "SET_BUSINESS_HOURS"; hours: number }
   | { type: "SET_TRAINING"; amount: number }
   | { type: "SET_LIFESTYLE"; id: string; tier: number }
   | { type: "GENERATE_JOB_OFFERS" }
@@ -154,7 +157,12 @@ export function getTaxRate(state: GameState): number {
 }
 
 export function getWorkHours(state: GameState): number {
-  return Math.max(0, WEEK_HOURS - state.studyHours);
+  return Math.max(0, WEEK_HOURS - state.studyHours - state.businessHours);
+}
+
+/** Share of your 40-hour week currently spent working in your own ventures. */
+export function getBusinessAttention(state: GameState): number {
+  return Math.max(0, Math.min(1, state.businessHours / WEEK_HOURS));
 }
 
 export function getLifestyleTier(state: GameState, id: string) {
@@ -298,7 +306,8 @@ export function getBusinessSteadyIncomeOf(state: GameState, id: string): number 
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1);
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
+    * (1 + BUSINESS_ATTENTION_INCOME * getBusinessAttention(state));
 }
 
 /** What this single venture would fetch if sold today. */
@@ -427,7 +436,7 @@ function createFresh(): GameState {
     careerOffers: [],
     jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
     xp: 0, majors: [], studying: null,
-    studyHours: 0, trainingBudget: 0,
+    studyHours: 0, businessHours: 0, trainingBudget: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
     loansRepaid: [], consultants: [],
@@ -527,7 +536,15 @@ function rollEvent(state: GameState, days: number): GameState {
     s.xp = 0;
   }
 
-  s.events = [{ day: Math.floor(s.day), title: def.title, text: def.text, tone: def.tone }, ...s.events].slice(0, 30);
+  const parts: string[] = [];
+  if (delta !== 0) parts.push(`${delta > 0 ? "+" : "-"}${formatMoney(Math.abs(delta))} cash`);
+  if (def.xpFlat) parts.push(`+${def.xpFlat} experience`);
+  if (def.businessBoostDays) parts.push(`Venture profits doubled for ${def.businessBoostDays} days`);
+  if (def.livingCostShift && def.livingCostShiftDays) parts.push(`Living costs ${def.livingCostShift >= 1 ? "+" : ""}${Math.round((def.livingCostShift - 1) * 100)}% for ${def.livingCostShiftDays} days`);
+  if (def.payShift && def.payShiftDays) parts.push(`Pay ${def.payShift >= 1 ? "+" : ""}${Math.round((def.payShift - 1) * 100)}% for ${def.payShiftDays} days`);
+  if (def.jobLoss && state.jobIndex > 0) parts.push(`Your new position pays ${formatMoney(s.currentJob.dailyPay)} a day`);
+
+  s.events = [{ day: Math.floor(s.day), title: def.title, text: def.text, effect: parts.join(" · "), tone: def.tone }, ...s.events].slice(0, 30);
   return s;
 }
 
@@ -585,12 +602,14 @@ function advance(state: GameState, days: number, now: number): GameState {
       const noise = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * dailyVol;
       condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + noise;
       if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk * relief) {
-        condition *= 0.35 + Math.random() * 0.25;
+        const shock = 0.35 + Math.random() * 0.25;
+        condition *= shock;
         if (shockEvents.length < 3) {
           shockEvents.push({
             day: Math.floor(s.day) + d,
             title: `Setback at ${def.name}`,
-            text: `At your ${def.name.toLowerCase()}, ${BUSINESS_SHOCK_TEXTS[Math.floor(Math.random() * BUSINESS_SHOCK_TEXTS.length)]}. Takings will be down until trade recovers.`,
+            text: `At your ${def.name.toLowerCase()}, ${BUSINESS_SHOCK_TEXTS[Math.floor(Math.random() * BUSINESS_SHOCK_TEXTS.length)]}.`,
+            effect: `Takings drop ${Math.round((1 - shock) * 100)}% until trade recovers.`,
             tone: "bad",
           });
         }
