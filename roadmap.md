@@ -1,0 +1,3 @@
+- [ ] Finish recurring Lifestyle system with five categories and progression benefits
+- [ ] Show newly triggered surprise events in modals
+- [ ] Verify game behavior and presentation
