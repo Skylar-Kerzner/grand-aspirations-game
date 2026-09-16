@@ -237,7 +237,6 @@ export interface BusinessDef {
   unlockLevelOfPrev: number; // levels required in the previous business
   description: string;
   tierNames: string[];
-  tierImages: string[];
 }
 
 export const BUSINESS_TIER_THRESHOLDS = [1, 8, 20, 40];
