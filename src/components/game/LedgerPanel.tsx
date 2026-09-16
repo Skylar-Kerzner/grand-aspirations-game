@@ -9,7 +9,7 @@ export default function LedgerPanel() {
   const days = Math.max(1, state.day);
 
   const earned =
-    s.salaryEarned + s.shiftEarned + s.businessEarned + s.investmentGains + s.eventGains;
+    s.salaryEarned + s.shiftEarned + s.businessEarned + s.investmentGains + s.eventGains + s.businessSold;
   const spent =
     s.livingSpent + s.trainingSpent + s.retainerSpent + s.assetSpent +
     s.businessSpent + s.educationSpent + s.consultantSpent + s.loanInterestPaid +
@@ -41,6 +41,7 @@ export default function LedgerPanel() {
         <Line label="Extra shifts" value={s.shiftEarned} days={days} />
         <Line label="Businesses" value={s.businessEarned} days={days} />
         <Line label="Investments" value={s.investmentGains} days={days} />
+        <Line label="Business sales" value={s.businessSold} days={days} />
         <Line label="Luck and events" value={s.eventGains} days={days} />
       </Section>
 

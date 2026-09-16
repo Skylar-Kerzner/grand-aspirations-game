@@ -497,6 +497,80 @@ export const EVENTS: EventDef[] = [
 
 export const EVENT_CHANCE_PER_DAY = 0.012;
 
+// ---------- Opening a business: location, market, product ----------
+export interface BusinessChoiceOption {
+  id: string;
+  name: string;
+  description: string;
+  bias: number;   // shifts the expected quality of the venture
+  spread: number; // how much luck is involved
+}
+export interface BusinessChoiceGroup {
+  id: string;
+  label: string;
+  options: BusinessChoiceOption[];
+}
+
+export const BUSINESS_CHOICE_GROUPS: BusinessChoiceGroup[] = [
+  {
+    id: "location", label: "Location",
+    options: [
+      { id: "sidestreet", name: "Quiet side street", description: "Cheap rent, modest footfall. Rarely a disaster.", bias: -0.04, spread: 0.07 },
+      { id: "highstreet", name: "Busy high street", description: "Plenty of passing trade, plenty of competition.", bias: 0.07, spread: 0.2 },
+      { id: "district", name: "Financial district", description: "Big spenders, brutal rent. Boom or bust.", bias: 0.16, spread: 0.36 },
+    ],
+  },
+  {
+    id: "market", label: "Market",
+    options: [
+      { id: "locals", name: "Local regulars", description: "Loyal, predictable, never spectacular.", bias: 0, spread: 0.08 },
+      { id: "visitors", name: "Tourists and visitors", description: "Volume trade that comes and goes.", bias: 0.06, spread: 0.26 },
+      { id: "luxury", name: "Luxury clientele", description: "Few customers, enormous tickets.", bias: 0.14, spread: 0.4 },
+    ],
+  },
+  {
+    id: "product", label: "Product",
+    options: [
+      { id: "classic", name: "Tried and tested", description: "Exactly what people expect.", bias: 0, spread: 0.06 },
+      { id: "signature", name: "A signature twist", description: "Familiar, with a reason to talk about it.", bias: 0.07, spread: 0.22 },
+      { id: "novel", name: "Something nobody has done", description: "A genuine gamble either way.", bias: 0.18, spread: 0.5 },
+    ],
+  },
+];
+
+/** How much of the sale price you actually walk away with. */
+export const BUSINESS_SALE_DISCOUNT = 0.9;
+
+export function findBusinessChoiceOption(groupId: string, optionId: string) {
+  return BUSINESS_CHOICE_GROUPS.find((g) => g.id === groupId)?.options.find((o) => o.id === optionId);
+}
+
+/** Roll the lasting fortune of a new venture from the choices made when opening it. */
+export function rollBusinessFortune(choices: Record<string, string>): number {
+  let bias = 0;
+  let spread = 0;
+  for (const group of BUSINESS_CHOICE_GROUPS) {
+    const option = findBusinessChoiceOption(group.id, choices[group.id]);
+    if (!option) continue;
+    bias += option.bias;
+    spread += option.spread;
+  }
+  // Box-Muller normal draw
+  const u = Math.max(1e-9, Math.random());
+  const v = Math.random();
+  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  return Math.min(2.2, Math.max(0.45, 1 + bias + z * spread));
+}
+
+export function businessFortuneLabel(f: number): string {
+  if (f >= 1.5) return "A runaway success";
+  if (f >= 1.2) return "Doing very well";
+  if (f >= 1.05) return "Above expectations";
+  if (f >= 0.95) return "About as expected";
+  if (f >= 0.75) return "Underperforming";
+  return "A bad bet";
+}
+
 // ---------- helpers ----------
 export function getBusinessTierIndex(level: number): number {
   if (level >= 40) return 3;

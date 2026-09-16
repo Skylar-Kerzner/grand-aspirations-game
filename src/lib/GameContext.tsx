@@ -3,7 +3,7 @@ import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
-  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, LOAN_EQUITY_REQUIREMENT,
+  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, rollBusinessFortune, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
 } from "./gameData";
 
@@ -11,7 +11,12 @@ const SAVE_KEY = "empire-tycoon-save-v4";
 const LEGACY_SAVE_KEY = "empire-tycoon-save-v3";
 const MAX_OFFLINE_DAYS = 240;
 
-export interface BusinessState { level: number; condition: number }
+export interface BusinessState {
+  level: number;
+  condition: number;
+  fortune?: number;                    // lasting quality of this particular venture
+  choices?: Record<string, string>;    // location / market / product chosen when opening
+}
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number }
@@ -32,6 +37,7 @@ export interface Stats {
   ccInterestPaid: number;
   assetSpent: number;
   businessSpent: number;
+  businessSold: number;
   educationSpent: number;
   consultantSpent: number;
   retainerSpent: number;
@@ -82,7 +88,8 @@ export type GameAction =
   | { type: "GENERATE_JOB_OFFERS" }
   | { type: "ACCEPT_JOB_OFFER"; index: number }
   | { type: "STUDY"; majorId: string }
-  | { type: "BUY_BUSINESS"; id: string }
+  | { type: "BUY_BUSINESS"; id: string; choices?: Record<string, string> }
+  | { type: "SELL_BUSINESS"; id: string }
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
   | { type: "TAKE_LOAN"; id: string; amount: number }
@@ -96,7 +103,7 @@ function emptyStats(): Stats {
   return {
     salaryEarned: 0, shiftEarned: 0, businessEarned: 0, investmentGains: 0,
     eventGains: 0, eventLosses: 0, taxesPaid: 0, livingSpent: 0, trainingSpent: 0,
-    loanInterestPaid: 0, ccInterestPaid: 0, assetSpent: 0, businessSpent: 0,
+    loanInterestPaid: 0, ccInterestPaid: 0, assetSpent: 0, businessSpent: 0, businessSold: 0,
     educationSpent: 0, consultantSpent: 0, retainerSpent: 0, managerSpent: 0,
     investDeposited: 0, investWithdrawn: 0,
     jobEarned: {}, jobDays: {}, shifts: {}, investEarnedById: {}, businessEarnedById: {},
@@ -229,7 +236,20 @@ export function getBusinessSteadyIncomeOf(state: GameState, id: string): number 
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * businessMultiplier(state);
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * businessMultiplier(state) * (biz.fortune ?? 1);
+}
+
+/** What this single venture would fetch if sold today. */
+export function getBusinessValueOf(state: GameState, id: string): number {
+  const def = BUSINESSES.find((b) => b.id === id);
+  const biz = state.businesses[id];
+  if (!def || !biz || biz.level === 0) return 0;
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1)
+    * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+}
+
+export function getBusinessSalePrice(state: GameState, id: string): number {
+  return getBusinessValueOf(state, id) * BUSINESS_SALE_DISCOUNT;
 }
 
 export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
@@ -305,7 +325,7 @@ export function getBusinessValue(state: GameState): number {
   for (const [id, biz] of Object.entries(state.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
     if (!def || biz.level === 0) continue;
-    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
   }
   return total;
 }
@@ -726,10 +746,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const cur = state.businesses[action.id] || { level: 0, condition: 1 };
       const cost = upgradeCostFor(state, action.id);
       if (state.cash < cost) return state;
+      const opening = cur.level === 0;
+      if (opening && !action.choices) return state;
+      const next: BusinessState = opening
+        ? {
+            level: 1,
+            condition: 1,
+            choices: action.choices,
+            fortune: rollBusinessFortune(action.choices || {}),
+          }
+        : { ...cur, level: cur.level + 1 };
       return {
         ...state, cash: state.cash - cost,
-        businesses: { ...state.businesses, [action.id]: { ...cur, level: cur.level + 1 } },
+        businesses: { ...state.businesses, [action.id]: next },
         stats: { ...state.stats, businessSpent: state.stats.businessSpent + cost },
+      };
+    }
+
+    case "SELL_BUSINESS": {
+      const biz = state.businesses[action.id];
+      if (!biz || biz.level === 0) return state;
+      const proceeds = getBusinessSalePrice(state, action.id);
+      return {
+        ...state, cash: state.cash + proceeds,
+        businesses: { ...state.businesses, [action.id]: { level: 0, condition: 1 } },
+        stats: { ...state.stats, businessSold: state.stats.businessSold + proceeds },
       };
     }
 
