@@ -1,15 +1,20 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, EDUCATION, JOBS, WEEK_HOURS, getCareerTrack } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, getCareerTrack, getTrackMajor } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
   const job = derived.job;
   const next = derived.nextJob;
   const xpPct = Math.min(100, (state.xp / (derived.xpNeeded || 1)) * 100);
-  const educationOk = next ? state.education >= next.education : true;
-  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && educationOk && state.careerOffers.length === 0;
+  const nextTier = state.jobIndex + 1;
+  const gatedTier = !!next && nextTier >= MAJOR_GATE_TIER;
+  // Tracks whose offers are open to the player at the next level
+  const openTracks = Object.values(CAREER_TRACKS).filter(
+    (t) => !gatedTier || state.majors.includes(getTrackMajor(t.id)?.id || ""),
+  );
+  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && openTracks.length > 0 && state.careerOffers.length === 0;
 
   return (
     <div className="space-y-6">
@@ -41,14 +46,21 @@ export default function CareerPanel() {
         {next ? (
           <>
             <div className="flex justify-between text-[11px] text-muted-foreground mb-1 mt-3">
-              <span>Experience toward {next.title}</span>
+              <span>Experience toward the next level</span>
               <span className="font-mono-nums">{Math.floor(state.xp)} / {derived.xpNeeded}</span>
             </div>
             <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-3">
               <motion.div className="h-full bg-primary" animate={{ width: `${xpPct}%` }} transition={{ duration: 0.3 }} />
             </div>
-            {!educationOk && (
-              <p className="text-[11px] text-muted-foreground mb-2">Requires {EDUCATION[next.education].name}.</p>
+            {gatedTier && openTracks.length === 0 && (
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Advancement from here requires a degree. Choose a major below — each one opens a different career path.
+              </p>
+            )}
+            {gatedTier && openTracks.length > 0 && (
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Your {openTracks.length === 1 ? "major opens" : "majors open"}: {openTracks.map((t) => t.name).join(", ")}.
+              </p>
             )}
             {state.careerOffers.length === 0 ? (
               <motion.button
