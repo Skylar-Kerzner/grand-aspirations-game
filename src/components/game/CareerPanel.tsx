@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { useGame } from "@/lib/GameContext";
+import { useGame, getTrackTenure } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, getCareerTrack, getTrackMajor } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, getCareerTrack, getTrackMajor, TRACK_EXPERIENCE_GATE, isAdjacentTrack } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
@@ -10,10 +10,16 @@ export default function CareerPanel() {
   const xpPct = Math.min(100, (state.xp / (derived.xpNeeded || 1)) * 100);
   const nextTier = state.jobIndex + 1;
   const gatedTier = !!next && nextTier >= MAJOR_GATE_TIER;
+  const homeTrack = getCareerTrack(job.employer).id;
+  const tenure = getTrackTenure(state);
   // Tracks whose offers are open to the player at the next level
-  const openTracks = Object.values(CAREER_TRACKS).filter(
-    (t) => !gatedTier || state.majors.includes(getTrackMajor(t.id)?.id || ""),
-  );
+  const openTracks = Object.values(CAREER_TRACKS).filter((t) => {
+    const hasMajor = state.majors.includes(getTrackMajor(t.id)?.id || "");
+    const sameTrack = t.id === homeTrack;
+    if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, t.id)) return false;
+    if (!gatedTier) return true;
+    return hasMajor || (sameTrack && tenure >= TRACK_EXPERIENCE_GATE);
+  });
   const canSeekOffers = !!next && state.xp >= derived.xpNeeded && openTracks.length > 0 && state.careerOffers.length === 0;
 
   return (
