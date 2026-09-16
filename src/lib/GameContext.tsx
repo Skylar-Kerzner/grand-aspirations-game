@@ -235,7 +235,20 @@ export function getBusinessSteadyIncomeOf(state: GameState, id: string): number 
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * businessMultiplier(state);
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * businessMultiplier(state) * (biz.fortune ?? 1);
+}
+
+/** What this single venture would fetch if sold today. */
+export function getBusinessValueOf(state: GameState, id: string): number {
+  const def = BUSINESSES.find((b) => b.id === id);
+  const biz = state.businesses[id];
+  if (!def || !biz || biz.level === 0) return 0;
+  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1)
+    * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+}
+
+export function getBusinessSalePrice(state: GameState, id: string): number {
+  return getBusinessValueOf(state, id) * BUSINESS_SALE_DISCOUNT;
 }
 
 export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
@@ -311,7 +324,7 @@ export function getBusinessValue(state: GameState): number {
   for (const [id, biz] of Object.entries(state.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
     if (!def || biz.level === 0) continue;
-    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
   }
   return total;
 }
