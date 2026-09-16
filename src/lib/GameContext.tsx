@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useMemo } from
 import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, TRACK_CONTINUITY_BONUS,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
+  TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, rollBusinessFortune, LOAN_EQUITY_REQUIREMENT,
@@ -130,6 +131,22 @@ export function getTrackTenure(state: GameState): number {
     count++;
   }
   return count;
+}
+
+/** How many days you have continuously served your current industry. */
+export function getTrackExperienceDays(state: GameState): number {
+  const home = getCareerTrack(state.currentJob.employer).id;
+  let first = state.jobHistory.length - 1;
+  for (let i = state.jobHistory.length - 1; i >= 0; i--) {
+    if (getCareerTrack(state.jobHistory[i].employer).id !== home) break;
+    first = i;
+  }
+  return Math.max(0, Math.floor(state.day) - state.jobHistory[first].startDay);
+}
+
+/** Pay premium on same-industry offers earned through years of service. */
+export function getTrackExperienceBonus(state: GameState): number {
+  return Math.min(TRACK_EXPERIENCE_CAP, (getTrackExperienceDays(state) / DAYS_PER_YEAR) * TRACK_EXPERIENCE_STEP);
 }
 
 export function getTaxRate(state: GameState): number {
@@ -712,8 +729,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, track)) return false;
         if (tier < MAJOR_GATE_TIER) return true;
         if (hasMajor) return true;
-        // No degree: climb on experience, but only inside your own industry.
-        return sameTrack && tenure >= TRACK_EXPERIENCE_GATE;
+        // No degree: climb on experience — held positions or years served in your own industry.
+        return sameTrack && (tenure >= TRACK_EXPERIENCE_GATE || getTrackExperienceDays(state) >= TRACK_EXPERIENCE_YEARS_GATE * DAYS_PER_YEAR);
       });
       if (gated.length === 0) return state;
       const variants = gated;
@@ -734,9 +751,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
         const track = trackPayMultiplier(variant.employer, state.jobIndex + 1);
         const sameTrack = getCareerTrack(variant.employer).id === homeTrack;
-        // Staying put compounds: loyalty plus everything you have already served.
+        // Staying put compounds: loyalty, positions held and years served in the industry.
         const loyalty = sameTrack
-          ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP)
+          ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
           : 1 - TRACK_SWITCH_PENALTY;
         return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty) };
       }).sort(() => Math.random() - 0.5);
@@ -779,7 +796,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             level: 1,
             condition: 1,
             choices: action.choices,
-            fortune: rollBusinessFortune(action.choices || {}),
+            fortune: rollBusinessFortune(),
           }
         : {
             // Growing the venture puts part of its fortune back on the table:
@@ -788,7 +805,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             level: cur.level + 1,
             fortune:
               (cur.fortune ?? 1) * (1 - BUSINESS_UPGRADE_REROLL) +
-              rollBusinessFortune(cur.choices || {}) * BUSINESS_UPGRADE_REROLL,
+              rollBusinessFortune() * BUSINESS_UPGRADE_REROLL,
           };
       return {
         ...state, cash: state.cash - cost,

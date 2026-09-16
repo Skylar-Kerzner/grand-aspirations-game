@@ -17,8 +17,11 @@ import {
   BUSINESSES,
   getBusinessTierIndex,
   BUSINESS_TIER_THRESHOLDS,
-  BUSINESS_CHOICE_GROUPS,
-  findBusinessChoiceOption,
+  BUSINESS_CONCEPTS,
+  BUSINESS_LOCATIONS,
+  getBusinessConcept,
+  getBusinessLocation,
+  ventureName,
   businessFortuneLabel,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
@@ -46,9 +49,10 @@ export default function BusinessList() {
   const openBusiness = (id: string) => {
     setSelected(id);
     setConfirmSell(false);
-    setChoices(
-      Object.fromEntries(BUSINESS_CHOICE_GROUPS.map((g) => [g.id, g.options[0].id])),
-    );
+    setChoices({
+      concept: BUSINESS_CONCEPTS[id]?.[0].id || "",
+      location: BUSINESS_LOCATIONS[id]?.[0].id || "",
+    });
   };
 
 
@@ -65,7 +69,11 @@ export default function BusinessList() {
           const unlocked = isBusinessUnlocked(state, def.id);
           const tierIdx = getBusinessTierIndex(biz.level);
           const tierName = def.tierNames[tierIdx];
-          const tierImage = getImage(def.tierImages[tierIdx]);
+          const conceptImage = biz.level > 0 && biz.choices
+            ? getImage(getBusinessConcept(def.id, biz.choices.concept || "")?.image || "")
+            : "";
+          const tierImage = tierIdx === 0 && conceptImage ? conceptImage : getImage(def.tierImages[tierIdx]);
+          const displayName = biz.level > 0 && biz.choices ? ventureName(def.id, biz.choices) : def.name;
           const income = businessIncomeOf(state, def.id);
           const networkBonus = getBusinessNetworkBonus(state, def.id);
           const condition = conditionLabel(biz.condition ?? 1);
@@ -80,10 +88,10 @@ export default function BusinessList() {
               }`}
             >
               <div className="aspect-[4/3] bg-secondary relative">
-                {tierImage && (biz.level > 0 || unlocked) ? (
+                    {tierImage && (biz.level > 0 || unlocked) ? (
                   <img
                     src={tierImage}
-                    alt={biz.level > 0 ? tierName : def.name}
+                    alt={biz.level > 0 ? displayName : def.name}
                     loading="lazy"
                     className={`w-full h-full object-cover ${biz.level > 0 ? "" : "opacity-40 grayscale"}`}
                   />
@@ -105,7 +113,7 @@ export default function BusinessList() {
                 )}
               </div>
               <div className="p-3">
-                <h3 className="font-semibold text-sm">{def.name}</h3>
+                <h3 className="font-semibold text-sm leading-tight">{displayName}</h3>
                 <p className="text-[11px] text-muted-foreground">
                   {!unlocked
                     ? `Needs ${BUSINESSES[idx - 1]?.name} at level ${def.unlockLevelOfPrev}`
@@ -171,8 +179,14 @@ export default function BusinessList() {
               <div className="w-full max-w-lg">
                 {(() => {
                   const tierIdx = getBusinessTierIndex(selectedBiz.level);
-                  const tierImage = getImage(selectedDef.tierImages[tierIdx]);
+                  const conceptImage = selectedBiz.level > 0 && selectedBiz.choices
+                    ? getImage(getBusinessConcept(selectedDef.id, selectedBiz.choices.concept || "")?.image || "")
+                    : "";
+                  const tierImage = tierIdx === 0 && conceptImage ? conceptImage : getImage(selectedDef.tierImages[tierIdx]);
                   const tierName = selectedDef.tierNames[tierIdx];
+                  const ventureTitle = selectedBiz.level > 0 && selectedBiz.choices
+                    ? ventureName(selectedDef.id, selectedBiz.choices)
+                    : selectedDef.name;
                   return (
                     <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
                       {selectedBiz.level > 0 && tierImage ? (
@@ -291,33 +305,57 @@ export default function BusinessList() {
                 {selectedBiz.level === 0 && (
                   <div className="surface-card rounded-lg p-3 my-4 space-y-4">
                     <p className="text-[11px] text-muted-foreground">
-                      Decide how you open it. Safer choices trade close to expectations; bolder ones
-                      can be far better or far worse — and you only find out once the doors are open.
+                      Give the venture an identity. Every concept rolls the same dice — the odds are
+                      identical, so pick the one you like. You find out how it went once the doors open.
                     </p>
-                    {BUSINESS_CHOICE_GROUPS.map((group) => (
-                      <div key={group.id}>
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-2">
-                          {group.label}
-                        </p>
-                        <div className="space-y-1.5">
-                          {group.options.map((option) => {
-                            const active = choices[group.id] === option.id;
-                            return (
-                              <button
-                                key={option.id}
-                                onClick={() => setChoices((c) => ({ ...c, [group.id]: option.id }))}
-                                className={`w-full text-left rounded-lg px-3 py-2 border transition-game ${
-                                  active ? "border-primary bg-primary/10" : "border-border"
-                                }`}
-                              >
-                                <p className="text-sm">{option.name}</p>
-                                <p className="text-[11px] text-muted-foreground">{option.description}</p>
-                              </button>
-                            );
-                          })}
-                        </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-2">Concept</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(BUSINESS_CONCEPTS[selectedDef.id] || []).map((option) => {
+                          const active = choices.concept === option.id;
+                          const img = getImage(option.image);
+                          return (
+                            <button
+                              key={option.id}
+                              onClick={() => setChoices((c) => ({ ...c, concept: option.id }))}
+                              className={`text-left rounded-lg overflow-hidden border transition-game ${
+                                active ? "border-primary" : "border-border"
+                              }`}
+                            >
+                              <div className="aspect-[4/3] bg-secondary">
+                                {img && <img src={img} alt={option.name} loading="lazy" className="w-full h-full object-cover" />}
+                              </div>
+                              <div className="p-1.5">
+                                <p className={`text-[11px] leading-tight ${active ? "text-primary" : ""}`}>{option.name}</p>
+                                <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">{option.description}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
-                    ))}
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-2">Location</p>
+                      <div className="flex gap-2">
+                        {(BUSINESS_LOCATIONS[selectedDef.id] || []).map((loc) => {
+                          const active = choices.location === loc.id;
+                          return (
+                            <button
+                              key={loc.id}
+                              onClick={() => setChoices((c) => ({ ...c, location: loc.id }))}
+                              className={`px-3 py-1.5 rounded-lg border text-xs transition-game ${
+                                active ? "border-primary bg-primary/10 text-primary" : "border-border"
+                              }`}
+                            >
+                              {loc.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      You'd open: <span className="text-foreground font-medium">{ventureName(selectedDef.id, choices)}</span>
+                    </p>
                   </div>
                 )}
 
@@ -328,13 +366,7 @@ export default function BusinessList() {
                       {businessFortuneLabel(selectedBiz.fortune ?? 1)} —{" "}
                       {((selectedBiz.fortune ?? 1) * 100).toFixed(0)}% of a typical venture
                     </p>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      {BUSINESS_CHOICE_GROUPS.map((group) =>
-                        findBusinessChoiceOption(group.id, selectedBiz.choices?.[group.id] || "")?.name,
-                      )
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">{ventureName(selectedDef.id, selectedBiz.choices)}</p>
                   </div>
                 )}
 

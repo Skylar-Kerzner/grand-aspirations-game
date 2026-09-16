@@ -8,3 +8,4 @@
 - [x] Fix housing images to match tier descriptions
 - [x] Make lifestyle tier rows themselves clickable instead of separate buttons
 - [x] Business upgrades partially reroll fortune so a good roll isn't permanent
+- [ ] Rework business open choices: flavor-only (name/image), same risk for all, fun combos like matcha in Manhattan
