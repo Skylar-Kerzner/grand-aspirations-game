@@ -450,14 +450,14 @@ function advance(state: GameState, days: number, now: number): GameState {
 
   // Education in progress — study speed follows the hours you allocate
   let studying = s.studying;
-  let education = s.education;
+  let majors = s.majors;
   if (studying) {
     const rate = (s.studyHours / 40) * getSchoolProgressMultiplier(s);
     const left = studying.daysLeft - days * rate;
-    if (rate > 0 && left <= 0) { education = Math.max(education, studying.level); studying = null; }
+    if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
   }
-  s = { ...s, studying, education };
+  s = { ...s, studying, majors };
 
   // Salary
   const job = getJob(s);
@@ -657,8 +657,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const next = JOBS[state.jobIndex + 1];
       if (!next) return state;
       if (state.xp < getJob(state).xpToPromote) return state;
-      if (state.education < next.education) return state;
-      const variants = CAREER_VARIANTS[state.jobIndex + 1] || [{ title: next.title, employer: next.employer }];
+      const tier = state.jobIndex + 1;
+      // Past the gate tier, a track's offers require its major.
+      const gated = (CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }]).filter(
+        (v) => tier < MAJOR_GATE_TIER || state.majors.includes(getTrackMajor(getCareerTrack(v.employer).id)?.id || ""),
+      );
+      if (gated.length === 0) return state;
+      const variants = gated;
       // Shuffle, then take distinct titles and distinct employers so no offer repeats either.
       const pool = [...variants].sort(() => Math.random() - 0.5);
       const picked: typeof variants = [];
@@ -685,7 +690,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "ACCEPT_JOB_OFFER": {
       const offer = state.careerOffers[action.index];
       const next = JOBS[state.jobIndex + 1];
-      if (!offer || !next || state.education < next.education) return state;
+      if (!offer || !next) return state;
       return {
         ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0,
         jobHistory: [...state.jobHistory, { ...offer, startDay: Math.floor(state.day) }],
