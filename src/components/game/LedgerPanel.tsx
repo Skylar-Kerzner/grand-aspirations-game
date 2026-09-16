@@ -59,20 +59,25 @@ export default function LedgerPanel() {
       </Section>
 
       <Section title="Career history">
-        {JOBS.filter((j) => (s.jobEarned[j.id] || 0) > 0).map((j) => (
-          <div key={j.id} className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              {j.title}
-              <span className="block text-[10px]">
-                {Math.round(s.jobDays[j.id] || 0)} days · {s.shifts[j.id] || 0} extra shifts
+        {state.jobHistory.map((h, i) => {
+          const id = JOBS[Math.min(i, JOBS.length - 1)].id;
+          const isCurrent = i === state.jobHistory.length - 1;
+          return (
+            <div key={`${h.title}-${h.startDay}-${i}`} className="flex justify-between gap-3 text-sm">
+              <span className="text-muted-foreground min-w-0">
+                {h.title}
+                <span className="block text-[10px]">
+                  {h.employer} · from day {h.startDay} · {formatMoney(h.dailyPay)}/day
+                </span>
+                <span className="block text-[10px]">
+                  {Math.round(s.jobDays[id] || 0)} days worked · {s.shifts[id] || 0} extra shifts
+                  {isCurrent ? " · current" : ""}
+                </span>
               </span>
-            </span>
-            <span className="font-mono-nums text-primary">{formatCompact(s.jobEarned[j.id])}</span>
-          </div>
-        ))}
-        {Object.keys(s.jobEarned).length === 0 && (
-          <p className="text-[11px] text-muted-foreground">Nothing earned yet.</p>
-        )}
+              <span className="font-mono-nums text-primary shrink-0">{formatCompact(s.jobEarned[id] || 0)}</span>
+            </div>
+          );
+        })}
       </Section>
 
       <Section title="Return on what you own">

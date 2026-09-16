@@ -52,6 +52,7 @@ export interface GameState {
   jobIndex: number;
   currentJob: CareerOffer;
   careerOffers: CareerOffer[];
+  jobHistory: (CareerOffer & { startDay: number })[];
   xp: number;
   education: number;
   studying: { level: number; daysLeft: number } | null;
@@ -348,6 +349,7 @@ function createFresh(): GameState {
     jobIndex: 0,
     currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
     careerOffers: [],
+    jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
     xp: 0, education: 0, studying: null,
     studyHours: 0, trainingBudget: 0,
     lastShiftDay: -1,
@@ -370,6 +372,14 @@ function createInitialState(): GameState {
         ...fresh, ...parsed,
         currentJob: parsed.currentJob || { title: savedJob.title, employer: savedJob.employer, dailyPay: savedJob.dailyPay },
         careerOffers: parsed.careerOffers || [],
+        jobHistory: parsed.jobHistory && parsed.jobHistory.length
+          ? parsed.jobHistory
+          : [{
+              title: (parsed.currentJob || savedJob).title,
+              employer: (parsed.currentJob || savedJob).employer,
+              dailyPay: (parsed.currentJob || savedJob).dailyPay,
+              startDay: 0,
+            }],
         assets: {
           house: legacyAssets.house || 1,
           food: legacyAssets.food || (parsed.food === "chef" ? 4 : parsed.food === "eatout" ? 3 : parsed.food === "groceries" ? 2 : 1),
@@ -422,6 +432,7 @@ function rollEvent(state: GameState, days: number): GameState {
     s.jobIndex -= 1;
     const fallback = JOBS[s.jobIndex];
     s.currentJob = { title: fallback.title, employer: fallback.employer, dailyPay: fallback.dailyPay };
+    s.jobHistory = [...s.jobHistory, { ...s.currentJob, startDay: Math.floor(s.day) }];
     s.careerOffers = [];
     s.xp = 0;
   }
@@ -633,8 +644,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.xp < getJob(state).xpToPromote) return state;
       if (state.education < next.education) return state;
       const variants = CAREER_VARIANTS[state.jobIndex + 1] || [{ title: next.title, employer: next.employer }];
-      const careerOffers = [0, 1, 2].map((slot) => {
-        const variant = variants[(slot + Math.floor(Math.random() * variants.length)) % variants.length];
+      // Shuffle, then take distinct titles and distinct employers so no offer repeats either.
+      const pool = [...variants].sort(() => Math.random() - 0.5);
+      const picked: typeof variants = [];
+      for (const v of pool) {
+        if (picked.length >= 3) break;
+        if (picked.some((p) => p.title === v.title || p.employer === v.employer)) continue;
+        picked.push(v);
+      }
+      const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
         return { ...variant, dailyPay: Math.round(next.dailyPay * factor) };
       }).sort((a, b) => a.dailyPay - b.dailyPay);
@@ -645,7 +663,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const offer = state.careerOffers[action.index];
       const next = JOBS[state.jobIndex + 1];
       if (!offer || !next || state.education < next.education) return state;
-      return { ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0 };
+      return {
+        ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0,
+        jobHistory: [...state.jobHistory, { ...offer, startDay: Math.floor(state.day) }],
+      };
     }
 
     case "STUDY": {

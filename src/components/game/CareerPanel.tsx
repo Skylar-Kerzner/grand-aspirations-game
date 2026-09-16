@@ -186,31 +186,6 @@ export default function CareerPanel() {
         </div>
       </div>
 
-      {/* Ladder — only what you can see from here */}
-      <div>
-        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Career ladder</h3>
-        <div className="surface-card rounded-xl p-4 space-y-2">
-          {JOBS.slice(0, state.jobIndex + 3).map((j, i) => (
-            <div
-              key={j.id}
-              className={`flex justify-between text-sm py-1 ${i < Math.min(JOBS.length, state.jobIndex + 3) - 1 ? "border-b border-border" : ""}`}
-            >
-              <div>
-                <p className={i <= state.jobIndex ? "text-foreground" : "text-muted-foreground"}>{j.title}</p>
-                <p className="text-[11px] text-muted-foreground">{j.employer}</p>
-              </div>
-              <span className="font-mono-nums text-xs text-muted-foreground self-center">
-                {i === state.jobIndex
-                  ? `${formatMoney(job.dailyPay)}/day`
-                  : `${formatMoney(j.dailyPay * CAREER_SALARY_RANGE.min)}–${formatMoney(j.dailyPay * CAREER_SALARY_RANGE.max)}`}
-              </span>
-            </div>
-          ))}
-          {state.jobIndex + 3 < JOBS.length && (
-            <p className="text-[11px] text-muted-foreground pt-1">More opens up as you climb.</p>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
