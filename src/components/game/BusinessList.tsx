@@ -72,7 +72,7 @@ export default function BusinessList() {
       <div className="grid grid-cols-2 gap-3">
         {BUSINESSES.map((def, idx) => {
           const biz = state.businesses[def.id] || { level: 0, condition: 1 };
-          const unlocked = isBusinessUnlocked(state, def.id);
+          const knowledge = getIndustryKnowledge(state, def.id);
           const tierIdx = getBusinessTierIndex(biz.level);
           const owned = biz.level > 0 && !!biz.choices;
           const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
@@ -88,14 +88,12 @@ export default function BusinessList() {
           return (
             <motion.div
               key={def.id}
-              whileTap={unlocked ? { scale: 0.98 } : undefined}
-              onClick={() => unlocked && openBusiness(def.id)}
-              className={`surface-card rounded-xl overflow-hidden transition-game ${
-                unlocked ? "cursor-pointer" : "opacity-50"
-              }`}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => openBusiness(def.id)}
+              className="surface-card rounded-xl overflow-hidden transition-game cursor-pointer"
             >
               <div className="aspect-[4/3] bg-secondary relative">
-                    {tierImage && (biz.level > 0 || unlocked) ? (
+                    {tierImage ? (
                   <img
                     src={tierImage}
                     alt={biz.level > 0 ? displayName : def.name}
