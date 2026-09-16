@@ -10,12 +10,16 @@ import {
   getBusinessNetworkBonus,
   getNextBusinessNetworkMilestone,
   getBusinessUpgradeIncomeGain,
+  getBusinessSalePrice,
 } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
 import {
   BUSINESSES,
   getBusinessTierIndex,
   BUSINESS_TIER_THRESHOLDS,
+  BUSINESS_CHOICE_GROUPS,
+  findBusinessChoiceOption,
+  businessFortuneLabel,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
