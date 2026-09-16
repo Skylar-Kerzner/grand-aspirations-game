@@ -28,3 +28,4 @@
 - [ ] Events: unlock gates by net worth/business/investment/career status; specific flavor texts tied to holdings
 - [ ] Education/tracks: offers must make sense with completed major; clear messaging on adjacent-track moves
 - [x] School hours slider hidden unless enrolled in a program
+- [x] Venture hours curve: 25% potential at 0h, ~50% at 1h, 100% at 15h; capital + annual return shown per venture in the Time tab
