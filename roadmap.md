@@ -16,4 +16,4 @@
 - [x] Show business success as return on capital (fortune x 30% baseline) instead of a percent-of-typical
 - [x] Give every venture concept its own picture at each stage
 
-- [ ] Tier-up reroll: keep more old fortune when concept and city stay the same, less when both change (with subtext)
+- [x] Tier-up reroll: keep more old fortune when concept and city stay the same, less when both change (with subtext)
