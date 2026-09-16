@@ -403,7 +403,7 @@ export default function BusinessList() {
                       {selectedBiz.level > 0 && (
                         <p className="text-center text-[11px] text-muted-foreground mb-2">
                           Expanding puts part of its luck back on the table — a great venture can come back
-                          to earth, and a poor one can turn around.
+                          to earth, and a poor one can turn around. You can rebrand above before you do.
                         </p>
                       )}
 
