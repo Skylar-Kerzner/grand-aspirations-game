@@ -401,7 +401,8 @@ export default function BusinessList() {
                           ? "Adds income once you see how it trades"
                           : `Adds ${formatRate(addedIncome)} across your businesses`}
                       </p>
-                      {selectedBiz.level > 0 && (
+                      {selectedBiz.level > 0 &&
+                        getBusinessTierIndex(selectedBiz.level + 1) !== getBusinessTierIndex(selectedBiz.level) && (
                         <p className="text-center text-[11px] text-muted-foreground mb-2">
                           Moving up a tier puts part of its luck back on the table — a great venture can come
                           back to earth, and a poor one can turn around.
