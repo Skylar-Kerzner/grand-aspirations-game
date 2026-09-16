@@ -381,6 +381,7 @@ export default function BusinessList() {
                       {((selectedBiz.fortune ?? 1) * 100).toFixed(0)}% of a typical venture
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-1">{ventureName(selectedDef.id, selectedBiz.choices)}</p>
+
                   </div>
                 )}
 
