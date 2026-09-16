@@ -74,7 +74,16 @@ export default function CareerPanel() {
                     <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
                   </button>
                 ))}
-                <p className="text-[10px] text-muted-foreground text-center">Accept one, or earn the next experience target to search again.</p>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => dispatch({ type: "GENERATE_JOB_OFFERS" })}
+                  disabled={state.xp < derived.xpNeeded}
+                  className="w-full h-9 rounded-lg surface-button text-xs transition-game disabled:opacity-40"
+                >
+                  {state.xp >= derived.xpNeeded
+                    ? "Search again"
+                    : `Search again at ${Math.ceil(derived.xpNeeded - state.xp)} more experience`}
+                </motion.button>
               </div>
             )}
           </>

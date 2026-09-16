@@ -287,6 +287,12 @@ export function getLoanPayments(state: GameState): number {
   return total;
 }
 
+export function getCreditCardPayment(state: GameState): number {
+  if (state.ccDebt <= 0) return 0;
+  const balanceAfterInterest = state.ccDebt * (1 + CC_APR / DAYS_PER_YEAR);
+  return Math.min(balanceAfterInterest, balanceAfterInterest * CC_MIN_PAYMENT_RATE);
+}
+
 export function getCareerProgressMultiplier(state: GameState): number {
   const training = Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE);
   const lifestyle = ASSETS.reduce((sum, def) => sum + (getLifestyleTier(state, def.id)?.careerBonus || 0), 0);
@@ -808,6 +814,7 @@ export interface DerivedState {
   operatingCosts: number;
   loanPayments: number;
   ccInterestPerDay: number;
+  ccPaymentPerDay: number;
   netPerDay: number;
   investmentTotal: number;
   loanTotal: number;
@@ -838,6 +845,7 @@ function calculateDerived(state: GameState): DerivedState {
   const loanPayments = getLoanPayments(state);
   const trainingCost = Math.max(0, state.trainingBudget);
   const ccInterestPerDay = (state.ccDebt * CC_APR) / DAYS_PER_YEAR;
+  const ccPaymentPerDay = getCreditCardPayment(state);
 
   let loanTotal = 0;
   for (const l of Object.values(state.loans)) loanTotal += l.remaining;
@@ -852,14 +860,14 @@ function calculateDerived(state: GameState): DerivedState {
 
   const businessValue = getBusinessValue(state);
   const incomePerDay = salaryPerDay + businessPerDay + investmentPerDay;
-  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccInterestPerDay;
+  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay;
 
   const job = getJob(state);
   return {
     // you owe the principal, not the future interest
     netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt,
     salaryPerDay, businessPerDay, investmentPerDay, incomePerDay,
-    livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, netPerDay,
+    livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
     investmentTotal, loanTotal, assetValue, businessValue, businessCapital,
     shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,
