@@ -63,12 +63,14 @@ export default function CareerPanel() {
             </div>
             {gatedTier && openTracks.length === 0 && (
               <p className="text-[11px] text-muted-foreground mb-2">
-                Advancement from here requires a degree. Choose a major below — each one opens a different career path.
+                To climb further, either stay in {getCareerTrack(job.employer).name} until you have{" "}
+                {TRACK_EXPERIENCE_GATE} positions behind you, or study a major below to open another path.
               </p>
             )}
-            {gatedTier && openTracks.length > 0 && (
+            {openTracks.length > 0 && (
               <p className="text-[11px] text-muted-foreground mb-2">
-                Your {openTracks.length === 1 ? "major opens" : "majors open"}: {openTracks.map((t) => t.name).join(", ")}.
+                Open to you now: {openTracks.map((t) => t.name).join(", ")}. Moving to another industry costs you
+                a step in pay, so it only pays off when the new path climbs higher.
               </p>
             )}
             {state.careerOffers.length === 0 ? (
