@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, EDUCATION, JOBS, WEEK_HOURS, getCareerTrack, trackPayMultiplier } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, EDUCATION, JOBS, WEEK_HOURS, getCareerTrack } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
@@ -78,10 +78,7 @@ export default function CareerPanel() {
                     <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
                     <span className="block text-[11px] text-primary mt-1">{getCareerTrack(offer.employer).name}</span>
                     <span className="block text-[11px] text-muted-foreground">
-                      {getCareerTrack(offer.employer).outlook} Top roles on this path pay around{" "}
-                      {formatCompact(
-                        JOBS[JOBS.length - 1].dailyPay * trackPayMultiplier(offer.employer, JOBS.length - 1),
-                      )}/day.
+                      {getCareerTrack(offer.employer).outlook}
                     </span>
                   </button>
                 ))}
