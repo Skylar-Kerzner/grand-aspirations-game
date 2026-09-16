@@ -234,10 +234,16 @@ export interface BusinessDef {
   annualROI: number; // baseline profit per year as a share of capital invested
   costMultiplier: number;
   risk: number; // annual volatility of profit; higher means bigger swings and more shocks
-  unlockLevelOfPrev: number; // levels required in the previous business
+  track: string; // career industry whose experience helps you run it
   description: string;
   tierNames: string[];
 }
+
+/** Knowing a venture's industry from your working life makes you run it better. */
+export const INDUSTRY_MAJOR_BONUS = 0.08;
+export const INDUSTRY_YEAR_STEP = 0.02;
+export const INDUSTRY_YEAR_CAP = 0.16;
+export const INDUSTRY_RISK_RELIEF = 0.2;
 
 export const BUSINESS_TIER_THRESHOLDS = [1, 8, 20, 40];
 export const BUSINESS_NETWORK_MILESTONES = [
@@ -249,49 +255,49 @@ export const BUSINESS_NETWORK_MILESTONES = [
 export const BUSINESSES: BusinessDef[] = [
   {
     id: "coffee", name: "Coffee Shop", sector: "Food & Beverage",
-    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.55, unlockLevelOfPrev: 0,
+    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.55, track: "hospitality",
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
   },
   {
     id: "restaurant", name: "Restaurant", sector: "Food & Beverage",
-    baseCost: 60000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.5, unlockLevelOfPrev: 8,
+    baseCost: 60000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.5, track: "hospitality",
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Neighbourhood Bistro", "Fine Dining Room", "Culinary Empire"],
   },
   {
     id: "tech", name: "Tech Startup", sector: "Technology",
-    baseCost: 600000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.6, unlockLevelOfPrev: 8,
+    baseCost: 600000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.6, track: "tech",
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Series A Office", "Tech Campus", "Tech Giant HQ"],
   },
   {
     id: "hotel", name: "Hotel", sector: "Hospitality",
-    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.4, unlockLevelOfPrev: 8,
+    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.4, track: "hospitality",
     description: "Luxury accommodations worldwide.",
     tierNames: ["Roadside Motel", "Boutique Hotel", "Luxury Resort", "Grand Hotel Empire"],
   },
   {
     id: "fashion", name: "Fashion Brand", sector: "Retail",
-    baseCost: 60000000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.38, unlockLevelOfPrev: 8,
+    baseCost: 60000000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.38, track: "hospitality",
     description: "Define style itself.",
     tierNames: ["Market Stall", "Flagship Boutique", "Department Store", "Fashion House"],
   },
   {
     id: "themepark", name: "Theme Park", sector: "Entertainment",
-    baseCost: 600000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.32, unlockLevelOfPrev: 8,
+    baseCost: 600000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.32, track: "operations",
     description: "Create worlds of wonder.",
     tierNames: ["Travelling Carnival", "Family Fun Park", "Destination Theme Park", "Entertainment Empire"],
   },
   {
     id: "media", name: "Media Network", sector: "Media",
-    baseCost: 6000000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.3, unlockLevelOfPrev: 8,
+    baseCost: 6000000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.3, track: "tech",
     description: "Own the attention itself.",
     tierNames: ["Podcast Studio", "Streaming Channel", "Broadcast Network", "Global Media Conglomerate"],
   },
   {
     id: "city", name: "City Development", sector: "Infrastructure",
-    baseCost: 60000000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.24, unlockLevelOfPrev: 8,
+    baseCost: 60000000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.24, track: "corporate",
     description: "Build the skyline everyone else lives in.",
     tierNames: ["City Block", "Mixed-Use District", "Waterfront Downtown", "Sovereign Metropolis"],
   },
