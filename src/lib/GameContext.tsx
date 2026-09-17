@@ -29,8 +29,25 @@ export interface BusinessState {
 }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number; lockedUntil?: number; drift?: number; regimeUntil?: number }
-/** Money borrowed to study. Nothing is due while enrolled or during the grace period. */
-export interface StudentLoanState { balance: number; borrowed: number; repaid: number; dueFrom: number }
+/**
+ * Money borrowed to study. `balance` is federal debt — quiet while enrolled and for
+ * six months after. `privateBalance` is bank debt, which accrues from day one.
+ */
+export interface StudentLoanState {
+  balance: number;
+  borrowed: number;
+  repaid: number;
+  dueFrom: number;
+  /** Blended fixed rate on the federal balance. */
+  rate?: number;
+  /** Lifetime federal principal drawn in each statutory pot. */
+  undergradBorrowed?: number;
+  gradBorrowed?: number;
+  privateBalance?: number;
+  privateBorrowed?: number;
+  privateRepaid?: number;
+  privateDueFrom?: number;
+}
 export interface CareerOffer { title: string; employer: string; dailyPay: number; level?: number; note?: string }
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
