@@ -115,13 +115,122 @@ export interface JobDef {
 
 export interface CareerVariant { title: string; employer: string }
 
-/**
- * Clinical jobs do not follow a smooth executive ladder: residency pays less
- * than advanced nursing, while qualified physicians jump sharply afterward.
- * These broad U.S. salary bands also stop loyalty and interview bonuses from
- * turning ordinary frontline roles into executive compensation.
- */
+/** Broad current U.S. annual cash-compensation bands for every playable role. */
 export const ROLE_ANNUAL_SALARY_BANDS: Record<string, { min: number; max: number }> = {
+  // Hospitality and retail
+  "Dishwasher": { min: 26000, max: 38000 },
+  "Barista": { min: 28000, max: 42000 },
+  "Shift Supervisor": { min: 36000, max: 52000 },
+  "Assistant Manager": { min: 42000, max: 65000 },
+  "Store Manager": { min: 55000, max: 90000 },
+  "General Manager": { min: 70000, max: 125000 },
+  "Area Manager": { min: 85000, max: 145000 },
+  "Regional Manager": { min: 105000, max: 180000 },
+  "Group Operations Manager": { min: 125000, max: 220000 },
+  "Head of Retail Operations": { min: 150000, max: 275000 },
+  "Retail Director": { min: 170000, max: 325000 },
+  "Managing Director of Hotels": { min: 200000, max: 450000 },
+  "Chief Commercial Officer": { min: 300000, max: 1000000 },
+  "Chief Executive Officer": { min: 400000, max: 2500000 },
+
+  // Operations and manufacturing
+  "Warehouse Hand": { min: 32000, max: 50000 },
+  "Machine Operator": { min: 38000, max: 60000 },
+  "Line Supervisor": { min: 52000, max: 80000 },
+  "Service Technician": { min: 48000, max: 78000 },
+  "Operations Coordinator": { min: 52000, max: 82000 },
+  "Production Scheduler": { min: 60000, max: 95000 },
+  "Plant Supervisor": { min: 70000, max: 110000 },
+  "Logistics Manager": { min: 85000, max: 140000 },
+  "Plant Manager": { min: 105000, max: 180000 },
+  "Head of Manufacturing": { min: 150000, max: 300000 },
+  "Operations Director": { min: 145000, max: 280000 },
+  "Division President": { min: 250000, max: 750000 },
+  "Chief Operating Officer": { min: 350000, max: 1500000 },
+  "Chairman & Chief Executive": { min: 500000, max: 3000000 },
+
+  // Corporate and consulting
+  "Office Runner": { min: 30000, max: 45000 },
+  "Receptionist": { min: 34000, max: 52000 },
+  "Office Administrator": { min: 42000, max: 65000 },
+  "Executive Assistant": { min: 55000, max: 95000 },
+  "Business Analyst": { min: 65000, max: 105000 },
+  "Commercial Analyst": { min: 75000, max: 120000 },
+  "Category Manager": { min: 85000, max: 145000 },
+  "Commercial Manager": { min: 100000, max: 170000 },
+  "Strategy Manager": { min: 120000, max: 200000 },
+  "Head of Corporate Development": { min: 175000, max: 350000 },
+  "Vice President": { min: 200000, max: 500000 },
+  "Senior Vice President": { min: 300000, max: 800000 },
+  "Managing Partner": { min: 450000, max: 2000000 },
+  "Chairman of the Board": { min: 250000, max: 1500000 },
+
+  // Technology
+  "IT Support Trainee": { min: 35000, max: 52000 },
+  "Helpdesk Technician": { min: 42000, max: 65000 },
+  "Desktop Support Analyst": { min: 50000, max: 78000 },
+  "Junior Developer": { min: 65000, max: 105000 },
+  "Software Developer": { min: 85000, max: 145000 },
+  "Software Engineer": { min: 105000, max: 180000 },
+  "Product Engineer": { min: 120000, max: 205000 },
+  "Senior Software Engineer": { min: 145000, max: 260000 },
+  "Engineering Lead": { min: 165000, max: 300000 },
+  "Director of Engineering": { min: 210000, max: 425000 },
+  "Vice President of Product": { min: 250000, max: 600000 },
+  "Chief Technology Officer": { min: 350000, max: 1500000 },
+  "President": { min: 400000, max: 1800000 },
+  "Founding Chief Executive": { min: 250000, max: 3000000 },
+
+  // Finance and investing
+  "Filing Clerk": { min: 32000, max: 48000 },
+  "Mail Room Clerk": { min: 33000, max: 50000 },
+  "Bank Teller": { min: 34000, max: 52000 },
+  "Claims Assistant": { min: 40000, max: 62000 },
+  "Underwriting Associate": { min: 60000, max: 95000 },
+  "Junior Analyst": { min: 70000, max: 120000 },
+  "Research Analyst": { min: 85000, max: 160000 },
+  "Portfolio Associate": { min: 110000, max: 225000 },
+  "Risk Manager": { min: 120000, max: 210000 },
+  "Senior Quant": { min: 180000, max: 450000 },
+  "Director of Investments": { min: 200000, max: 500000 },
+  "Head of Capital Markets": { min: 300000, max: 1000000 },
+  "Head of Private Equity": { min: 500000, max: 2500000 },
+  "Chief Investment Officer": { min: 500000, max: 3000000 },
+  "Founder": { min: 0, max: 5000000 },
+
+  // Arts and entertainment — intentionally wide because work and fame are volatile
+  "Background Extra": { min: 12000, max: 45000 },
+  "Stagehand": { min: 35000, max: 70000 },
+  "Production Assistant": { min: 32000, max: 55000 },
+  "Repertory Actor": { min: 30000, max: 75000 },
+  "Supporting Screen Actor": { min: 40000, max: 120000 },
+  "Series Regular": { min: 80000, max: 300000 },
+  "Recording Artist": { min: 40000, max: 250000 },
+  "Lead Actor": { min: 120000, max: 600000 },
+  "Headline Performer": { min: 150000, max: 1000000 },
+  "Leading Film Actor": { min: 300000, max: 2500000 },
+  "Box-Office Star": { min: 1000000, max: 8000000 },
+  "Actor-Producer": { min: 750000, max: 6000000 },
+  "Studio Headliner": { min: 1500000, max: 10000000 },
+  "Studio Chief Executive": { min: 1000000, max: 8000000 },
+
+  // Education and public service
+  "Playground Monitor": { min: 22000, max: 38000 },
+  "Teaching Assistant": { min: 28000, max: 48000 },
+  "Substitute Teacher": { min: 32000, max: 55000 },
+  "Classroom Teacher": { min: 48000, max: 85000 },
+  "Senior Teacher": { min: 60000, max: 100000 },
+  "Head of Department": { min: 70000, max: 115000 },
+  "Deputy Principal": { min: 85000, max: 135000 },
+  "Principal": { min: 100000, max: 165000 },
+  "District Superintendent": { min: 140000, max: 260000 },
+  "College Dean": { min: 130000, max: 250000 },
+  "University Provost": { min: 180000, max: 400000 },
+  "University President": { min: 250000, max: 1000000 },
+  "State Education Commissioner": { min: 160000, max: 300000 },
+  "National Education Secretary": { min: 200000, max: 275000 },
+
+  // Health and medicine
   "Hospital Porter": { min: 30000, max: 45000 },
   "Care Assistant": { min: 32000, max: 50000 },
   "Phlebotomist": { min: 38000, max: 58000 },

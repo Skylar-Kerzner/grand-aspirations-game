@@ -50,3 +50,4 @@
 - [x] Lead net displays with actual operating net from the last seven game days; retain current daily pace
 - [x] Make career pay a five-day workweek and show annual salary consistently
 - [x] Keep frontline medical salaries within realistic U.S. ranges
+- [x] Audit and constrain salaries for every role in all eight career fields

@@ -805,7 +805,10 @@ function createInitialState(): GameState {
           dailyPay: clampRoleDailyPay(offer.title, offer.dailyPay),
         })),
         jobHistory: parsed.jobHistory && parsed.jobHistory.length
-          ? parsed.jobHistory
+          ? parsed.jobHistory.map((job) => ({
+              ...job,
+              dailyPay: clampRoleDailyPay(job.title, job.dailyPay),
+            }))
           : [{
               title: (parsed.currentJob || savedJob).title,
               employer: (parsed.currentJob || savedJob).employer,
