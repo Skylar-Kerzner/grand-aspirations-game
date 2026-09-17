@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, assetLook, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
+  BUSINESSES, ASSETS, assetLook, lookSwitchCost, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS, trackPerkScale, type InvestmentDef,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
@@ -1130,13 +1130,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = ASSETS.find((asset) => asset.id === action.id);
       if (!def || action.tier < 1 || action.tier > def.tiers.length) return state;
       const looksHere = [...(state.assetLooks[action.id] || def.tiers.map(() => -1))];
-      // A look is settled once and for all: moving back to a step you have
-      // lived at returns you to the same place, not a fresh pick.
-      if (action.look !== undefined && (looksHere[action.tier - 1] ?? -1) < 0) {
-        looksHere[action.tier - 1] = action.look;
+      // The first look at a step is free. Changing your mind later means
+      // moving costs: paid up front, or the switch does not happen.
+      let cash = state.cash;
+      if (action.look !== undefined) {
+        const current = looksHere[action.tier - 1] ?? -1;
+        if (current < 0) {
+          looksHere[action.tier - 1] = action.look;
+        } else if (current !== action.look) {
+          const fee = lookSwitchCost(def.tiers[action.tier - 1]);
+          if (cash < fee) return state;
+          cash -= fee;
+          looksHere[action.tier - 1] = action.look;
+        }
       }
       const next = {
         ...state,
+        cash,
         assets: { ...state.assets, [action.id]: action.tier },
         assetLooks: { ...state.assetLooks, [action.id]: looksHere },
       };
