@@ -15,14 +15,18 @@ export const BUSINESS_ATTENTION_FULL_HOURS = 15;  // hours a week in one venture
 export const BUSINESS_ATTENTION_CURVE = 0.45;     // concave: the first hour jumps to half potential, the rest approaches full slowly
 
 // ---------- Education ----------
+export type ProgramKind = "short" | "undergrad" | "graduate" | "professional";
+
 export interface MajorDef {
   id: string;
   name: string;
   track: string; // career track this study opens up
-  level: number; // 1 short course, 2 diploma, 3 full degree
+  level: number; // 1 short course, 2 bachelor's, 3 graduate study
   cost: number;
   days: number; // full-time study days (40 hrs/week) before it completes
   description: string;
+  /** Which federal borrowing bucket this program falls into. */
+  kind: ProgramKind;
 }
 
 /**
