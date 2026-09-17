@@ -1292,6 +1292,18 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     investments[id] = { ...holding, value: newValue };
   }
 
+  // Every payment splits into the interest it covers and the principal it clears,
+  // so cash out and net worth change can be read apart.
+  let interestPaidTotal = 0;
+  let principalPaidTotal = 0;
+  let interestAccruedTotal = 0;
+  const splitPayment = (accrued: number, paid: number) => {
+    const onInterest = Math.min(paid, Math.max(0, accrued));
+    interestPaidTotal += onInterest;
+    principalPaidTotal += Math.max(0, paid - onInterest);
+    interestAccruedTotal += Math.max(0, accrued - onInterest);
+  };
+
   // Loan servicing — interest accrues on the remaining balance only
   const loans: Record<string, LoanState> = {};
   const loansRepaid = [...s.loansRepaid];
@@ -1302,11 +1314,13 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     if (!def) { loans[id] = loan; continue; }
     const dailyRate = def.annualRate / DAYS_PER_YEAR;
     const grown = loan.remaining * Math.pow(1 + dailyRate, days);
-    stats.loanInterestPaid += grown - loan.remaining;
+    const accrued = grown - loan.remaining;
+    stats.loanInterestPaid += accrued;
     let remaining = grown;
     const due = Math.min(loan.dailyPayment * days, remaining);
     cash -= due;
     loanPaymentsActual += due;
+    splitPayment(accrued, due);
     remaining -= due;
     if (remaining <= 0.5) {
       if (!loansRepaid.includes(id)) loansRepaid.push(id);
@@ -1323,30 +1337,36 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
   if (studentLoan.balance > 0) {
     const rate = studentLoan.rate ?? FEDERAL_RATE_UNDERGRAD;
     const grown = studentLoan.balance * Math.pow(1 + rate / DAYS_PER_YEAR, days);
-    stats.loanInterestPaid += grown - studentLoan.balance;
+    const accrued = grown - studentLoan.balance;
+    stats.loanInterestPaid += accrued;
     let balance = grown;
     if (!s.studying && s.day >= studentLoan.dueFrom) {
       const due = Math.min(getFederalLoanPayment({ ...s, studentLoan: { ...studentLoan, balance } }) * days, balance);
       cash -= due;
       studentPaymentActual += due;
+      splitPayment(accrued, due);
       balance -= due;
       studentLoan = { ...studentLoan, balance: Math.max(0, balance), repaid: studentLoan.repaid + due };
     } else {
+      splitPayment(accrued, 0);
       studentLoan = { ...studentLoan, balance };
     }
   }
   if ((studentLoan.privateBalance || 0) > 0) {
     const start = studentLoan.privateBalance || 0;
     const grown = start * Math.pow(1 + PRIVATE_RATE / DAYS_PER_YEAR, days);
-    stats.loanInterestPaid += grown - start;
+    const accrued = grown - start;
+    stats.loanInterestPaid += accrued;
     let balance = grown;
     if (!s.studying && s.day >= (studentLoan.privateDueFrom || 0)) {
       const due = Math.min(getPrivateLoanPayment({ ...s, studentLoan: { ...studentLoan, privateBalance: balance } }) * days, balance);
       cash -= due;
       studentPaymentActual += due;
+      splitPayment(accrued, due);
       balance -= due;
       studentLoan = { ...studentLoan, privateBalance: Math.max(0, balance), privateRepaid: (studentLoan.privateRepaid || 0) + due };
     } else {
+      splitPayment(accrued, 0);
       studentLoan = { ...studentLoan, privateBalance: balance };
     }
   }
@@ -1354,10 +1374,11 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
   // Credit card: anything you cannot cover becomes revolving debt
   let ccDebt = s.ccDebt;
   let ccPaymentActual = 0;
+  let ccInterest = 0;
   if (ccDebt > 0) {
-    const interest = ccDebt * (Math.pow(1 + CC_APR / DAYS_PER_YEAR, days) - 1);
-    ccDebt += interest;
-    stats.ccInterestPaid += interest;
+    ccInterest = ccDebt * (Math.pow(1 + CC_APR / DAYS_PER_YEAR, days) - 1);
+    ccDebt += ccInterest;
+    stats.ccInterestPaid += ccInterest;
   }
   if (cash < 0) { ccDebt += -cash; cash = 0; }
   else if (ccDebt > 0) {
@@ -1366,6 +1387,8 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     ccDebt -= pay;
     ccPaymentActual = pay;
   }
+  splitPayment(ccInterest, ccPaymentActual);
+
 
   // Over the limit: you get cut off and forced down to the cheapest life
   let assets = s.assets;
