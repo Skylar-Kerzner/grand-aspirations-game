@@ -449,11 +449,15 @@ export default function BusinessList() {
                       const peak = selectedBiz.fortunePeak ?? now;
                       const roi = getBusinessROIAt(state, selectedDef.id, 1);
                       const peakRoi = now > 0 ? roi * (peak / now) : roi;
-                      const pointsOff = (peakRoi - roi) * 100;
-                      if (pointsOff > 0.5) {
+                      // Work from the rounded figures shown on screen so the
+                      // arithmetic always adds up for the player.
+                      const shownRoi = Math.round(roi * 100);
+                      const shownPeak = Math.round(peakRoi * 100);
+                      const pointsOff = shownPeak - shownRoi;
+                      if (pointsOff >= 1) {
                         return (
                           <p className="text-[11px] text-destructive mt-1">
-                            Cooling — {pointsOff.toFixed(0)} points below its peak of {(peakRoi * 100).toFixed(0)}% as competition catches up.
+                            Cooling — {pointsOff} {pointsOff === 1 ? "point" : "points"} below its peak of {shownPeak}% as competition catches up.
                           </p>
                         );
                       }
