@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
-import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
+import { formatMoney, formatCompact, periodLabel } from "@/lib/formatters";
 import { LOANS, CONSULTANTS, LOAN_EQUITY_REQUIREMENT, amortizedPayment } from "@/lib/gameData";
 
 export default function FinancePanel() {
@@ -25,10 +25,6 @@ export default function FinancePanel() {
             <span className={`font-mono-nums font-semibold ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
               {derived.recentNet >= 0 ? "+" : ""}{formatMoney(derived.recentNet)}
             </span>
-          </div>
-          <div className="flex justify-between text-[11px] text-muted-foreground">
-            <span>Current pace</span>
-            <span className="font-mono-nums">{formatRate(derived.netPerDay)}</span>
           </div>
         </div>
       </div>
