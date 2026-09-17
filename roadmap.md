@@ -37,7 +37,8 @@
 - [x] School hours forced to zero whenever not enrolled (work hours, graduation, save loading, enrolling resets to 20h)
 
 - [ ] Show job level (e.g. Level 5 of 14) throughout the game — career panel, offers, review history
-- [ ] Review business/investment return volatility realism and propose changes
+- [x] Review business/investment return volatility realism and propose changes
+- [x] Rebalance businesses: 18% baseline, scale decay, fortune drift, build-out, illiquid sales
 - [ ] Add reset game button with confirmation modal
 - [ ] Fix $0 job offers
 
