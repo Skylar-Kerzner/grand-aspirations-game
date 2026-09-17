@@ -785,6 +785,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     day: s.day + days,
     businesses, investments, loans, loansRepaid,
     trainingMomentum,
+    trainingBudget: prepRate,
     stats, lastTick: now,
   };
   next = rollEvent(next, days);
