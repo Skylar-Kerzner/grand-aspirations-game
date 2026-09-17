@@ -22,6 +22,9 @@ export default function FinancePanel() {
           <Row label="Interview prep" value={formatRate(-derived.trainingCost)} tone="neg" />
           <Row label="Consultant retainers" value={formatRate(-derived.operatingCosts)} tone="neg" />
           <Row label="Loan payments" value={formatRate(-derived.loanPayments)} tone="neg" />
+          {derived.studentDebt > 0.5 && (
+            <Row label="Student loan payment" value={formatRate(-derived.studentLoanPayment)} tone="neg" />
+          )}
           {state.ccDebt > 0.5 && (
             <Row label="Credit card payment" value={formatRate(-derived.ccPaymentPerDay)} tone="neg" />
           )}
@@ -55,6 +58,32 @@ export default function FinancePanel() {
           Pay off now · {formatCompact(Math.min(state.cash, state.ccDebt))}
         </motion.button>
       </div>
+
+      {/* Student debt */}
+      {(state.studentLoan?.balance || 0) > 0.5 && (
+        <div className="surface-card rounded-xl p-4">
+          <div className="flex justify-between items-baseline mb-1">
+            <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Student loan</h3>
+            <span className="font-mono-nums text-sm">{formatMoney(state.studentLoan.balance)}</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-3">
+            6% a year, nothing due while you are enrolled or for six months after you finish, then spread over ten years.
+            {derived.studentLoanPayment > 0
+              ? ` You are paying ${formatMoney(derived.studentLoanPayment)} a day.`
+              : state.studying
+                ? " Payments are paused while you study, but interest keeps building."
+                : ` Payments start on day ${Math.ceil(state.studentLoan.dueFrom)}.`}
+          </p>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => dispatch({ type: "REPAY_STUDENT_LOAN" })}
+            disabled={state.cash <= 0}
+            className="w-full h-9 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
+          >
+            Pay off now · {formatCompact(Math.min(state.cash, state.studentLoan.balance))}
+          </motion.button>
+        </div>
+      )}
 
       {/* Loans */}
       <div>
