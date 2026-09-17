@@ -52,19 +52,34 @@ export default function FinancePanel() {
       </div>
 
       {/* Student debt */}
-      {(state.studentLoan?.balance || 0) > 0.5 && (
+      {derived.studentDebt > 0.5 && (
         <div className="surface-card rounded-xl p-4">
-          <div className="flex justify-between items-baseline mb-1">
-            <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Student loan</h3>
-            <span className="font-mono-nums text-sm">{formatMoney(state.studentLoan.balance)}</span>
+          <div className="flex justify-between items-baseline mb-2">
+            <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Student debt</h3>
+            <span className="font-mono-nums text-sm">{formatMoney(derived.studentDebt)}</span>
           </div>
-          <p className="text-[11px] text-muted-foreground mb-3">
-            6% a year, nothing due while you are enrolled or for six months after you finish, then spread over ten years.
+          {(state.studentLoan?.balance || 0) > 0.5 && (
+            <div className="flex justify-between items-baseline text-xs mb-1">
+              <span className="text-muted-foreground">
+                Government loan · {(((state.studentLoan?.rate ?? 0.065) * 100)).toFixed(2)}%
+              </span>
+              <span className="font-mono-nums">{formatMoney(state.studentLoan.balance)}</span>
+            </div>
+          )}
+          {(state.studentLoan?.privateBalance || 0) > 0.5 && (
+            <div className="flex justify-between items-baseline text-xs mb-1">
+              <span className="text-muted-foreground">Bank loan · 12%</span>
+              <span className="font-mono-nums">{formatMoney(state.studentLoan!.privateBalance!)}</span>
+            </div>
+          )}
+          <p className="text-[11px] text-muted-foreground mt-2 mb-3">
+            Government loans wait until six months after you finish; bank loans start the day you finish and charge
+            interest the whole way through. Both are spread over ten years.
             {derived.studentLoanPayment > 0
               ? ` You are paying ${formatMoney(derived.studentLoanPayment)} a day.`
               : state.studying
                 ? " Payments are paused while you study, but interest keeps building."
-                : ` Payments start on day ${Math.ceil(state.studentLoan.dueFrom)}.`}
+                : ` Payments start on day ${Math.ceil(state.studentLoan?.dueFrom || 0)}.`}
           </p>
           <motion.button
             whileTap={{ scale: 0.97 }}
@@ -72,7 +87,7 @@ export default function FinancePanel() {
             disabled={state.cash <= 0}
             className="w-full h-9 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
           >
-            Pay off now · {formatCompact(Math.min(state.cash, state.studentLoan.balance))}
+            Pay off now · {formatCompact(Math.min(state.cash, derived.studentDebt))}
           </motion.button>
         </div>
       )}

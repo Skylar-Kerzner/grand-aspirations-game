@@ -11,7 +11,9 @@ import {
   BUSINESS_BASELINE_ROI, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   WEEKDAY_RHYTHM, BUSINESS_SEASON_REVERSION, BUSINESS_SEASON_VOL, BUSINESS_SEASON_MIN, BUSINESS_SEASON_MAX, BUSINESS_WASHOUT_CHANCE, BUSINESS_BUMPER_CHANCE,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
-  BASE_TIME_BUDGET, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS, studentLoanCap,
+  BASE_TIME_BUDGET, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS,
+  FEDERAL_CAPS, federalCapFor, federalRateFor, federalBucketFor, FEDERAL_RATE_UNDERGRAD,
+  PRIVATE_RATE, PRIVATE_TERM_DAYS, PRIVATE_INCOME_MULTIPLE, PRIVATE_NET_WORTH_SHARE, type MajorDef,
 } from "./gameData";
 import { formatMoney } from "./formatters";
 
@@ -29,8 +31,25 @@ export interface BusinessState {
 }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number; lockedUntil?: number; drift?: number; regimeUntil?: number }
-/** Money borrowed to study. Nothing is due while enrolled or during the grace period. */
-export interface StudentLoanState { balance: number; borrowed: number; repaid: number; dueFrom: number }
+/**
+ * Money borrowed to study. `balance` is federal debt — quiet while enrolled and for
+ * six months after. `privateBalance` is bank debt, which accrues from day one.
+ */
+export interface StudentLoanState {
+  balance: number;
+  borrowed: number;
+  repaid: number;
+  dueFrom: number;
+  /** Blended fixed rate on the federal balance. */
+  rate?: number;
+  /** Lifetime federal principal drawn in each statutory pot. */
+  undergradBorrowed?: number;
+  gradBorrowed?: number;
+  privateBalance?: number;
+  privateBorrowed?: number;
+  privateRepaid?: number;
+  privateDueFrom?: number;
+}
 export interface CareerOffer { title: string; employer: string; dailyPay: number; level?: number; note?: string }
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
@@ -556,25 +575,88 @@ export function getLoanPayments(state: GameState): number {
   return total;
 }
 
-/** What your student debt costs you a day. Nothing while enrolled or in the grace period. */
-export function getStudentLoanPayment(state: GameState): number {
-  const loan = state.studentLoan;
-  if (!loan || loan.balance <= 0) return 0;
-  if (state.studying || state.day < loan.dueFrom) return 0;
-  return Math.min(loan.balance, amortizedPayment(loan.balance, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS));
+export const EMPTY_STUDENT_LOAN: StudentLoanState = {
+  balance: 0, borrowed: 0, repaid: 0, dueFrom: 0, rate: FEDERAL_RATE_UNDERGRAD,
+  undergradBorrowed: 0, gradBorrowed: 0,
+  privateBalance: 0, privateBorrowed: 0, privateRepaid: 0, privateDueFrom: 0,
+};
+
+export function getStudentLoan(state: GameState): StudentLoanState {
+  return { ...EMPTY_STUDENT_LOAN, ...(state.studentLoan || {}) };
 }
 
-/** How much more you could borrow to study, given how far you have got. */
-export function getStudentLoanHeadroom(state: GameState): number {
-  const highest = Math.max(
-    1,
-    ...state.majors.map((id) => MAJORS.find((m) => m.id === id)?.level || 1),
-  );
-  // Enrolling in a higher program raises what lenders will put up.
-  const studyingLevel = state.studying
-    ? MAJORS.find((m) => m.id === state.studying?.majorId)?.level || 1
-    : 1;
-  return Math.max(0, studentLoanCap(Math.max(highest, studyingLevel)) - (state.studentLoan?.balance || 0));
+/** What your federal student debt costs you a day. Quiet while enrolled or in grace. */
+export function getFederalLoanPayment(state: GameState): number {
+  const loan = getStudentLoan(state);
+  if (loan.balance <= 0) return 0;
+  if (state.studying || state.day < loan.dueFrom) return 0;
+  return Math.min(loan.balance, amortizedPayment(loan.balance, loan.rate ?? FEDERAL_RATE_UNDERGRAD, STUDENT_LOAN_TERM_DAYS));
+}
+
+/** Bank debt: interest runs from day one, payments begin the day you finish. */
+export function getPrivateLoanPayment(state: GameState): number {
+  const loan = getStudentLoan(state);
+  const balance = loan.privateBalance || 0;
+  if (balance <= 0) return 0;
+  if (state.studying || state.day < (loan.privateDueFrom || 0)) return 0;
+  return Math.min(balance, amortizedPayment(balance, PRIVATE_RATE, PRIVATE_TERM_DAYS));
+}
+
+export function getStudentLoanPayment(state: GameState): number {
+  return getFederalLoanPayment(state) + getPrivateLoanPayment(state);
+}
+
+export function getStudentDebt(state: GameState): number {
+  const loan = getStudentLoan(state);
+  return loan.balance + (loan.privateBalance || 0);
+}
+
+/** Government money still available for a given program, under the 2026 caps. */
+export function getFederalRoomFor(state: GameState, def: MajorDef): number {
+  const loan = getStudentLoan(state);
+  const undergrad = loan.undergradBorrowed || 0;
+  const grad = loan.gradBorrowed || 0;
+  const bucket = federalBucketFor(def.kind);
+  // Professional caps are combined with any earlier graduate borrowing.
+  const used = bucket === "undergrad" ? undergrad : grad;
+  const bucketRoom = federalCapFor(def.kind) - used;
+  const lifetimeRoom = FEDERAL_CAPS.lifetime - (undergrad + grad);
+  return Math.max(0, Math.min(bucketRoom, lifetimeRoom));
+}
+
+/** Everything you owe right now, used when a bank sizes a private loan. */
+function getTotalDebt(state: GameState): number {
+  let loanTotal = 0;
+  for (const l of Object.values(state.loans)) loanTotal += l.remaining;
+  return loanTotal + state.ccDebt + getStudentDebt(state);
+}
+
+/** What a private lender will put up: they look at your pay and your assets, not your degree. */
+export function getPrivateLoanRoom(state: GameState): number {
+  const annualPay = getGrossSalary(state) * DAYS_PER_YEAR;
+  const assets = state.cash + getInvestmentTotal(state) + getBusinessValue(state);
+  const capacity = annualPay * PRIVATE_INCOME_MULTIPLE + assets * PRIVATE_NET_WORTH_SHARE;
+  return Math.max(0, capacity - getTotalDebt(state));
+}
+
+/** How a program's fees would be funded: government first, a bank for the rest. */
+export function getStudyFunding(state: GameState, def: MajorDef, cost: number) {
+  const federal = Math.min(cost, getFederalRoomFor(state, def));
+  const shortfall = Math.max(0, cost - federal);
+  const privateRoom = getPrivateLoanRoom(state);
+  return { federal, private: Math.min(shortfall, privateRoom), shortfall, privateRoom, covered: shortfall <= privateRoom + 0.5 };
+}
+
+/** You need the degree below before the one above. */
+export function getStudyPrereqNote(state: GameState, def: MajorDef): string | null {
+  if (def.level < 3) return null;
+  const hasBachelors = state.majors.some((id) => {
+    const m = MAJORS.find((x) => x.id === id);
+    return !!m && m.level === 2 && (m.track === def.track || isAdjacentTrack(m.track, def.track));
+  });
+  if (hasBachelors) return null;
+  const own = MAJORS.find((m) => m.track === def.track && m.level === 2);
+  return `Needs a bachelor's first — ${own?.name || "a related degree"} or one from a related industry.`;
 }
 
 export function getCreditCardPayment(state: GameState): number {
@@ -718,9 +800,15 @@ function createInitialState(): GameState {
             })];
           }),
         ),
+        // Older saves carried a single balance — treat it as federal debt.
         studentLoan: parsed.studentLoan && typeof parsed.studentLoan === "object"
-          ? parsed.studentLoan
-          : { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
+          ? {
+              ...EMPTY_STUDENT_LOAN,
+              ...parsed.studentLoan,
+              undergradBorrowed: parsed.studentLoan.undergradBorrowed
+                ?? (parsed.studentLoan.gradBorrowed !== undefined ? 0 : parsed.studentLoan.borrowed || 0),
+            }
+          : { ...EMPTY_STUDENT_LOAN },
         businesses: Object.fromEntries(
           Object.entries(parsed.businesses || {}).map(([id, biz]) => [
             id,
@@ -1012,21 +1100,38 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     }
   }
 
-  // Student debt — interest always accrues, payments only start after the grace period
-  let studentLoan = s.studentLoan || { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 };
+  // Student debt — interest always accrues. Federal payments wait out the grace
+  // period; private payments start the day you finish studying.
+  let studentLoan = getStudentLoan(s);
   let studentPaymentActual = 0;
   if (studentLoan.balance > 0) {
-    const grown = studentLoan.balance * Math.pow(1 + STUDENT_LOAN_RATE / DAYS_PER_YEAR, days);
+    const rate = studentLoan.rate ?? FEDERAL_RATE_UNDERGRAD;
+    const grown = studentLoan.balance * Math.pow(1 + rate / DAYS_PER_YEAR, days);
     stats.loanInterestPaid += grown - studentLoan.balance;
     let balance = grown;
     if (!s.studying && s.day >= studentLoan.dueFrom) {
-      const due = Math.min(getStudentLoanPayment({ ...s, studentLoan: { ...studentLoan, balance } }) * days, balance);
+      const due = Math.min(getFederalLoanPayment({ ...s, studentLoan: { ...studentLoan, balance } }) * days, balance);
       cash -= due;
       studentPaymentActual += due;
       balance -= due;
       studentLoan = { ...studentLoan, balance: Math.max(0, balance), repaid: studentLoan.repaid + due };
     } else {
       studentLoan = { ...studentLoan, balance };
+    }
+  }
+  if ((studentLoan.privateBalance || 0) > 0) {
+    const start = studentLoan.privateBalance || 0;
+    const grown = start * Math.pow(1 + PRIVATE_RATE / DAYS_PER_YEAR, days);
+    stats.loanInterestPaid += grown - start;
+    let balance = grown;
+    if (!s.studying && s.day >= (studentLoan.privateDueFrom || 0)) {
+      const due = Math.min(getPrivateLoanPayment({ ...s, studentLoan: { ...studentLoan, privateBalance: balance } }) * days, balance);
+      cash -= due;
+      studentPaymentActual += due;
+      balance -= due;
+      studentLoan = { ...studentLoan, privateBalance: Math.max(0, balance), privateRepaid: (studentLoan.privateRepaid || 0) + due };
+    } else {
+      studentLoan = { ...studentLoan, privateBalance: balance };
     }
   }
 
@@ -1291,22 +1396,36 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = MAJORS.find((m) => m.id === action.majorId);
       if (!def || state.studying) return state;
       if (state.majors.includes(def.id)) return state;
+      if (getStudyPrereqNote(state, def)) return state;
       // Teaching lives get their fees subsidised.
       const discount = getCareerTrack(state.currentJob.employer).studyBonus ? 0.25 : 0;
       const cost = Math.round(def.cost * (1 - discount));
-      const loan = state.studentLoan || { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 };
+      const loan = getStudentLoan(state);
       if (action.financed) {
-        const headroom = getStudentLoanHeadroom({ ...state, studying: { majorId: def.id, daysLeft: def.days } });
-        if (cost > headroom) return state;
+        const funding = getStudyFunding(state, def, cost);
+        if (!funding.covered) return state;
+        const fedRate = federalRateFor(def.kind);
+        const newFederal = loan.balance + funding.federal;
+        const blended = newFederal > 0
+          ? (loan.balance * (loan.rate ?? FEDERAL_RATE_UNDERGRAD) + funding.federal * fedRate) / newFederal
+          : fedRate;
+        const bucket = federalBucketFor(def.kind);
+        const finishDay = state.day + def.days;
         return {
           ...state,
           studyHours: 20,
           studying: { majorId: def.id, daysLeft: def.days },
           studentLoan: {
             ...loan,
-            balance: loan.balance + cost,
-            borrowed: loan.borrowed + cost,
-            dueFrom: state.day + def.days + STUDENT_LOAN_GRACE_DAYS,
+            balance: newFederal,
+            borrowed: loan.borrowed + funding.federal,
+            rate: blended,
+            undergradBorrowed: (loan.undergradBorrowed || 0) + (bucket === "undergrad" ? funding.federal : 0),
+            gradBorrowed: (loan.gradBorrowed || 0) + (bucket === "graduate" ? funding.federal : 0),
+            privateBalance: (loan.privateBalance || 0) + funding.private,
+            privateBorrowed: (loan.privateBorrowed || 0) + funding.private,
+            dueFrom: finishDay + STUDENT_LOAN_GRACE_DAYS,
+            privateDueFrom: finishDay,
           },
           stats: { ...state.stats, educationSpent: state.stats.educationSpent + cost },
         };
@@ -1321,13 +1440,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "REPAY_STUDENT_LOAN": {
-      const loan = state.studentLoan;
-      if (!loan || loan.balance <= 0) return state;
-      const pay = Math.min(state.cash, action.amount ?? loan.balance, loan.balance);
+      const loan = getStudentLoan(state);
+      const total = loan.balance + (loan.privateBalance || 0);
+      if (total <= 0) return state;
+      let pay = Math.min(state.cash, action.amount ?? total, total);
       if (pay <= 0) return state;
+      // Clear the expensive bank debt first.
+      const toPrivate = Math.min(pay, loan.privateBalance || 0);
+      pay -= toPrivate;
+      const toFederal = Math.min(pay, loan.balance);
       return {
-        ...state, cash: state.cash - pay,
-        studentLoan: { ...loan, balance: loan.balance - pay, repaid: loan.repaid + pay },
+        ...state, cash: state.cash - (toPrivate + toFederal),
+        studentLoan: {
+          ...loan,
+          balance: loan.balance - toFederal,
+          repaid: loan.repaid + toFederal,
+          privateBalance: (loan.privateBalance || 0) - toPrivate,
+          privateRepaid: (loan.privateRepaid || 0) + toPrivate,
+        },
       };
     }
 
@@ -1573,7 +1703,7 @@ function calculateDerived(state: GameState): DerivedState {
 
   let loanTotal = 0;
   for (const l of Object.values(state.loans)) loanTotal += l.remaining;
-  const studentDebt = state.studentLoan?.balance || 0;
+  const studentDebt = getStudentDebt(state);
   const studentLoanPayment = getStudentLoanPayment(state);
 
   const assetValue = 0; // lifestyle choices are recurring services, not owned assets
