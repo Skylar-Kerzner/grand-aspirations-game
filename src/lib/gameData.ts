@@ -70,7 +70,7 @@ export const MAJORS: MajorDef[] = [
   // Health & Medicine
   { id: "med-1", name: "Paramedic Certificate", track: "medicine", level: 1, cost: 3200, days: 45, description: "Emergency care in the field. Opens junior roles in Health & Medicine.", kind: "short" },
   { id: "med-2", name: "Bachelor of Nursing", track: "medicine", level: 2, cost: 58000, days: 200, description: "A four-year clinical degree. Opens senior roles in Health & Medicine.", kind: "undergrad" },
-  { id: "med-3", name: "Doctor of Medicine (MD)", track: "medicine", level: 3, cost: 320000, days: 400, description: "Medical school and residency. Opens consultants', surgeons' and chief medical roles.", kind: "professional" },
+  { id: "med-3", name: "Medical School (MD)", track: "medicine", level: 3, cost: 320000, days: 400, description: "Medical school. Opens residency, consultants', surgeons' and chief medical roles.", kind: "professional" },
 ];
 
 /** The highest-level qualification for a track (its full degree). */
