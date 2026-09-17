@@ -12,6 +12,10 @@ import {
   getNextBusinessNetworkMilestone,
   getBusinessUpgradeIncomeGain,
   getBusinessSalePrice,
+  getBusinessSaleDiscount,
+  getBusinessValueOf,
+  getBuildDaysLeft,
+  getSaleDaysLeft,
   getBusinessAttentionOf,
 } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
@@ -30,7 +34,12 @@ import {
   BUSINESS_ATTENTION_FLOOR,
   BUSINESS_ATTENTION_FULL_HOURS,
   getBusinessCapital,
+  marginalBusinessROI,
+  businessBuildDays,
+  BUSINESS_MAX_LEVEL,
+  BUSINESS_SALE_DAYS,
 } from "@/lib/gameData";
+
 import { getImage } from "@/lib/gameImages";
 import { Lock } from "lucide-react";
 
