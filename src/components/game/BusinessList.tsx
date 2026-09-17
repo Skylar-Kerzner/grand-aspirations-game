@@ -7,6 +7,7 @@ import {
   businessIncomeOf,
   upgradeCostFor,
   getBusinessEffectiveROI,
+  getBusinessROIAt,
   getBusinessNetworkBonus,
   getNextBusinessNetworkMilestone,
   getBusinessUpgradeIncomeGain,
@@ -122,21 +123,21 @@ export default function BusinessList() {
               </div>
               <div className="p-3">
                 <h3 className="font-semibold text-sm leading-tight">{displayName}</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  {biz.level > 0 ? tierName : def.sector}
-                </p>
-                {knowledge.returnBonus > 0 && (
-                  <p className="text-[10px] text-primary mt-1">
-                    {knowledge.track?.name}: +{(knowledge.returnBonus * 100).toFixed(0)}% return
-                  </p>
+                {biz.level === 0 && (
+                  <p className="text-[11px] text-muted-foreground">{def.sector}</p>
                 )}
                 {biz.level > 0 && (
-                  <div className="mt-1">
+                  <div className="mt-1 space-y-0.5">
                     <p className="font-mono-nums text-[11px] text-primary">{formatRate(income)}</p>
+                    <p className="font-mono-nums text-[10px] text-muted-foreground">
+                      At {BUSINESS_ATTENTION_FULL_HOURS}h: {(getBusinessROIAt(state, def.id, 1) * 100).toFixed(0)}% a year
+                    </p>
+                    <p className="font-mono-nums text-[10px] text-muted-foreground">
+                      Now, at {state.businessHours[def.id] || 0}h: {(getBusinessEffectiveROI(state, def.id) * 100).toFixed(0)}% a year
+                    </p>
                     {networkBonus > 0 && (
                       <p className="text-[10px] text-primary">+{(networkBonus * 100).toFixed(0)}% network</p>
                     )}
-                    <p className={`text-[10px] ${condition.tone}`}>{condition.text}</p>
                   </div>
                 )}
                 {biz.level === 0 && (
@@ -230,10 +231,7 @@ export default function BusinessList() {
                   {state.businessHours[selectedDef.id] || 0}h a week
                   {getBusinessNetworkBonus(state, selectedDef.id) > 0
                     ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
-                    : ` · up to ${(
-                        (selectedBiz.fortune ?? 1) * selectedDef.annualROI
-                        * (1 + getIndustryKnowledge(state, selectedDef.id).returnBonus) * 100
-                      ).toFixed(0)}% annual return on capital at 15 hours a week`}
+                    : ` · up to ${(getBusinessROIAt(state, selectedDef.id, 1) * 100).toFixed(0)}% annual return on capital at ${BUSINESS_ATTENTION_FULL_HOURS} hours a week`}
                 </p>
                 {(() => {
                   const k = getIndustryKnowledge(state, selectedDef.id);
@@ -426,7 +424,7 @@ export default function BusinessList() {
                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Overall business success</p>
                     <p className="text-sm font-semibold mt-1">
                       {businessFortuneLabel(selectedBiz.fortune ?? 1)} —{" "}
-                      {((selectedBiz.fortune ?? 1) * selectedDef.annualROI * 100).toFixed(0)}% return on capital
+                      {(getBusinessROIAt(state, selectedDef.id, 1) * 100).toFixed(0)}% return on capital
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-1">
                       That return is the potential at 15h of your week — give it less time and it earns a share of it.
