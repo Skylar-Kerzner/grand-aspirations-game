@@ -30,6 +30,7 @@ export interface BusinessState {
   level: number;
   condition: number;                   // the slow trading trend — this is what moves the value
   takings?: number;                    // how today's takings compared with a normal day
+  takingsHist?: number[];              // the last 7 days' takings, so a weekly average can be shown
   season?: number;                     // slow multi-week wave in trade (good and bad runs cluster)
   fortune?: number;                    // how well this particular business is doing — it drifts
   fortunePeak?: number;                // the best it has ever run at, so cooling can be shown
@@ -552,6 +553,24 @@ export function getBusinessIncomeAt(state: GameState, id: string, attention: num
   // Today's actual rate: steady income x trading trend x today's takings,
   // so the income you watch swings with the day's trade.
   return getBusinessSteadyIncomeAt(state, id, attention) * (biz.condition ?? 1) * (biz.takings ?? 1);
+}
+
+/** Average of the last 7 days' takings — steadier than today's swing. */
+export function getBusinessAvgTakings(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz) return 1;
+  if (biz.takingsHist && biz.takingsHist.length > 0) {
+    const sum = biz.takingsHist.reduce((total, day) => total + day, 0);
+    return sum / biz.takingsHist.length;
+  }
+  return biz.takings ?? 1;
+}
+
+/** Income at a chosen attention level over a typical recent day (7-day average takings). */
+export function getBusinessIncomeAvgAt(state: GameState, id: string, attention: number): number {
+  const biz = state.businesses[id];
+  if (!biz || biz.level === 0) return 0;
+  return getBusinessSteadyIncomeAt(state, id, attention) * (biz.condition ?? 1) * getBusinessAvgTakings(state, id);
 }
 
 /** The size actually trading today: a build-out earns nothing until it opens. */
@@ -1129,6 +1148,7 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     let condition = biz.condition ?? 1;
     let gain = 0;
     let lastTakings = biz.takings ?? 1;
+    const takingsHist = [...(biz.takingsHist ?? [])];
     let fortune = biz.fortune ?? 1;
 
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
@@ -1152,6 +1172,8 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
       const rawDay = rhythm[weekday] * season * luck;
       lastTakings = Math.max(BUSINESS_DAILY_FLOOR, 1 + (rawDay - 1) * BUSINESS_DAILY_SWING);
       gain += steady * condition * lastTakings;
+      takingsHist.push(lastTakings);
+      if (takingsHist.length > 7) takingsHist.shift();
       // the season drifts slowly and reverts toward normal over about a month
       season = 1 + (season - 1) * (1 - BUSINESS_SEASON_REVERSION) + (Math.random() + Math.random() - 1) * BUSINESS_SEASON_VOL;
       season = Math.min(BUSINESS_SEASON_MAX, Math.max(BUSINESS_SEASON_MIN, season));
