@@ -55,7 +55,7 @@ export default function InvestmentPanel() {
                   <>
                     <p className="text-[11px] text-muted-foreground">Min {formatCompact(def.minInvestment)}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {(def.annualReturn * 100).toFixed(1)}%/yr · {def.risk}
+                      {def.unknownReturn ? "Unknown" : `${(def.annualReturn * 100).toFixed(1)}%/yr`} · {def.risk}
                     </p>
                   </>
                 )}
@@ -65,12 +65,23 @@ export default function InvestmentPanel() {
             {isExpanded && (
               <div className="mt-3 pt-3 border-t border-border">
                 <p className="text-[11px] text-muted-foreground mb-2">
-                  A typical year: {(def.annualReturn * 100).toFixed(1)}%
-                  {def.annualVolatility > 0 && (
+                  {def.unknownReturn ? (
                     <>
-                      , though a bad one can take about{" "}
-                      {Math.round((1 - Math.exp(Math.log(1 + def.annualReturn) - 1.28 * def.annualVolatility)) * 100)}% off ·
-                      a typical day moves about ±{((def.annualVolatility / Math.sqrt(365)) * 100).toFixed(2)}%
+                      Nobody can tell you what a year here looks like. Whatever you hold settles into its own
+                      pace — good or bad — and the market turns every few years · a typical day moves about ±
+                      {((def.annualVolatility / Math.sqrt(365)) * 100).toFixed(2)}%
+                      {def.tradeSpread ? <> · {(def.tradeSpread * 100).toFixed(0)}% goes in fees each way</> : null}
+                    </>
+                  ) : (
+                    <>
+                      A typical year: {(def.annualReturn * 100).toFixed(1)}%
+                      {def.annualVolatility > 0 && (
+                        <>
+                          , though a bad one can take about{" "}
+                          {Math.round((1 - Math.exp(Math.log(1 + def.annualReturn) - 1.28 * def.annualVolatility)) * 100)}% off ·
+                          a typical day moves about ±{((def.annualVolatility / Math.sqrt(365)) * 100).toFixed(2)}%
+                        </>
+                      )}
                     </>
                   )}
                   {(state.stats.investEarnedById[def.id] || 0) !== 0 && (
