@@ -877,9 +877,9 @@ function advance(state: GameState, days: number, now: number): GameState {
       // A hidden pace, drawn when you bought in and quietly redrawn when the
       // market turns — so a good run is real, but never something you can count on.
       if (holding.drift === undefined) {
-        holding = { ...holding, drift: rollDrift(def), regimeUntil: nextRegime(def, day) };
-      } else if ((holding.regimeUntil ?? 0) <= day) {
-        holding = { ...holding, drift: rollDrift(def, holding.drift), regimeUntil: nextRegime(def, day) };
+        holding = { ...holding, drift: rollDrift(def), regimeUntil: nextRegime(def, s.day + days) };
+      } else if ((holding.regimeUntil ?? 0) <= s.day) {
+        holding = { ...holding, drift: rollDrift(def, holding.drift), regimeUntil: nextRegime(def, s.day + days) };
       }
     }
     const mu = investmentDrift(def, holding) * mult;
