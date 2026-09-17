@@ -32,24 +32,36 @@ export const MAJOR_GATE_TIER = 4;
 export const MAJORS: MajorDef[] = [
   // Operations & Industry
   { id: "ops-1", name: "Trade Short Course", track: "operations", level: 1, cost: 1200, days: 20, description: "A few weeks of practical training. Opens junior roles in Operations & Industry." },
-  { id: "trade", name: "Trade Certificate", track: "operations", level: 2, cost: 6000, days: 75, description: "A licensed skill. Opens senior roles in Operations & Industry." },
-  { id: "ops-3", name: "Industrial Engineering Degree", track: "operations", level: 3, cost: 42000, days: 220, description: "Opens the top of Operations & Industry." },
+  { id: "trade", name: "Bachelor of Industrial Technology", track: "operations", level: 2, cost: 26000, days: 150, description: "A four-year degree. Opens senior roles in Operations & Industry." },
+  { id: "ops-3", name: "Master of Industrial Engineering", track: "operations", level: 3, cost: 62000, days: 220, description: "Graduate study. Opens the top of Operations & Industry." },
   // Hospitality & Retail
   { id: "hosp-1", name: "Service & Barista Course", track: "hospitality", level: 1, cost: 900, days: 18, description: "The basics of the floor. Opens junior roles in Hospitality & Retail." },
-  { id: "hospitality", name: "Hospitality Diploma", track: "hospitality", level: 2, cost: 9000, days: 90, description: "Opens senior roles in Hospitality & Retail." },
-  { id: "hosp-3", name: "Hotel Management Degree", track: "hospitality", level: 3, cost: 48000, days: 240, description: "Opens the top of Hospitality & Retail." },
+  { id: "hospitality", name: "Bachelor of Hospitality Management", track: "hospitality", level: 2, cost: 24000, days: 150, description: "A four-year degree. Opens senior roles in Hospitality & Retail." },
+  { id: "hosp-3", name: "Master of Hotel Management", track: "hospitality", level: 3, cost: 68000, days: 220, description: "Graduate study. Opens the top of Hospitality & Retail." },
   // Corporate Leadership
   { id: "corp-1", name: "Business Fundamentals Course", track: "corporate", level: 1, cost: 2500, days: 30, description: "Accounts, contracts, people. Opens junior corporate roles." },
-  { id: "business", name: "Business Administration Diploma", track: "corporate", level: 2, cost: 22000, days: 140, description: "Opens senior corporate roles." },
-  { id: "corp-3", name: "MBA", track: "corporate", level: 3, cost: 120000, days: 280, description: "Opens the executive table in Corporate Leadership." },
+  { id: "business", name: "Bachelor of Business Administration", track: "corporate", level: 2, cost: 46000, days: 170, description: "A four-year degree. Opens senior corporate roles." },
+  { id: "corp-3", name: "MBA", track: "corporate", level: 3, cost: 150000, days: 260, description: "Graduate study. Opens the executive table in Corporate Leadership." },
   // Technology
   { id: "tech-1", name: "Coding Bootcamp", track: "tech", level: 1, cost: 4000, days: 35, description: "Enough to ship real work. Opens junior technology roles." },
-  { id: "cs", name: "Software Engineering Diploma", track: "tech", level: 2, cost: 26000, days: 150, description: "Opens senior technology roles." },
-  { id: "tech-3", name: "Computer Science Degree", track: "tech", level: 3, cost: 110000, days: 290, description: "Opens the top of Technology, research and architecture." },
+  { id: "cs", name: "BSc Computer Science", track: "tech", level: 2, cost: 52000, days: 175, description: "A four-year degree. Opens senior technology roles." },
+  { id: "tech-3", name: "MSc Computer Science", track: "tech", level: 3, cost: 140000, days: 250, description: "Graduate study. Opens the top of Technology, research and architecture." },
   // Finance & Investing
   { id: "fin-1", name: "Financial Markets Course", track: "finance", level: 1, cost: 5000, days: 40, description: "Markets, instruments, risk. Opens junior finance roles." },
-  { id: "finance", name: "Finance Diploma", track: "finance", level: 2, cost: 45000, days: 180, description: "Opens senior finance roles — analysts and traders." },
-  { id: "fin-3", name: "Quantitative Finance Degree", track: "finance", level: 3, cost: 220000, days: 320, description: "Opens the top of Finance & Investing — quant, portfolio and fund roles." },
+  { id: "finance", name: "BSc Finance", track: "finance", level: 2, cost: 60000, days: 180, description: "A four-year degree. Opens senior finance roles — analysts and traders." },
+  { id: "fin-3", name: "Master of Quantitative Finance", track: "finance", level: 3, cost: 260000, days: 300, description: "Graduate study. Opens the top of Finance & Investing — quant, portfolio and fund roles." },
+  // Arts & Entertainment
+  { id: "arts-1", name: "Acting & Performance Workshop", track: "arts", level: 1, cost: 1500, days: 25, description: "Scene work, auditions, an agent's phone number. Opens junior roles in Arts & Entertainment." },
+  { id: "arts-2", name: "Bachelor of Fine Arts", track: "arts", level: 2, cost: 38000, days: 170, description: "A four-year conservatory degree. Opens senior roles in Arts & Entertainment." },
+  { id: "arts-3", name: "Master of Fine Arts", track: "arts", level: 3, cost: 95000, days: 230, description: "Graduate study. Opens leading roles and the top of Arts & Entertainment." },
+  // Education & Public Service
+  { id: "edu-1", name: "Teaching Assistant Certificate", track: "education", level: 1, cost: 800, days: 20, description: "Classroom basics. Opens junior roles in Education & Public Service." },
+  { id: "edu-2", name: "Bachelor of Education", track: "education", level: 2, cost: 19000, days: 160, description: "A four-year degree and a teaching licence. Opens senior roles in Education & Public Service." },
+  { id: "edu-3", name: "Master of Education", track: "education", level: 3, cost: 44000, days: 200, description: "Graduate study. Opens principals' offices and district leadership." },
+  // Health & Medicine
+  { id: "med-1", name: "Paramedic Certificate", track: "medicine", level: 1, cost: 3200, days: 45, description: "Emergency care in the field. Opens junior roles in Health & Medicine." },
+  { id: "med-2", name: "Bachelor of Nursing", track: "medicine", level: 2, cost: 58000, days: 200, description: "A four-year clinical degree. Opens senior roles in Health & Medicine." },
+  { id: "med-3", name: "Doctor of Medicine (MD)", track: "medicine", level: 3, cost: 320000, days: 400, description: "Medical school and residency. Opens consultants', surgeons' and chief medical roles." },
 ];
 
 /** The highest-level qualification for a track (its full degree). */
