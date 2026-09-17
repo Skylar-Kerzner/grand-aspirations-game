@@ -115,8 +115,8 @@ export default function TimePanel() {
             const condition = state.businesses[def.id]?.condition ?? 1;
             const fullROI = getBusinessROIAt(state, def.id, 1);
             const currentROI = getBusinessEffectiveROI(state, def.id);
-            const currentPerWeek = businessIncomeOf(state, def.id) * 7;
-            const fullPerWeek = getBusinessIncomeAt(state, def.id, 1) * 7;
+            const currentPerWeek = getBusinessIncomeAvgAt(state, def.id, attention) * 7;
+            const fullPerWeek = getBusinessIncomeAvgAt(state, def.id, 1) * 7;
             return (
               <div key={def.id} className="surface-card rounded-xl p-4">
                 <div className="flex justify-between items-baseline mb-1">
