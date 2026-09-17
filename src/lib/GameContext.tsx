@@ -864,7 +864,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     cash: Math.max(0, cash), ccDebt,
     assets, events,
     day: s.day + days,
-    businesses, investments, loans, loansRepaid,
+    businesses, investments, loans, loansRepaid, studentLoan,
     trainingMomentum,
     trainingBudget: prepRate,
     stats, lastTick: now,
