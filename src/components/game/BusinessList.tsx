@@ -34,7 +34,6 @@ import {
   BUSINESS_ATTENTION_FLOOR,
   BUSINESS_ATTENTION_FULL_HOURS,
   getBusinessCapital,
-  marginalBusinessROI,
   businessBuildDays,
   BUSINESS_MAX_LEVEL,
   BUSINESS_SALE_DAYS,
@@ -478,8 +477,6 @@ export default function BusinessList() {
                   const saleLeft = getSaleDaysLeft(state, selectedDef.id);
                   const listed = !!selectedBiz.listedUntil;
                   const maxed = selectedBiz.level >= BUSINESS_MAX_LEVEL;
-                  const nextRate = marginalBusinessROI(selectedDef, selectedBiz.level + 1);
-                  const lastRate = marginalBusinessROI(selectedDef, Math.max(1, selectedBiz.level));
                   const buildDays = businessBuildDays(selectedBiz.level + 1);
                   return (
                     <>
@@ -530,9 +527,9 @@ export default function BusinessList() {
                             </p>
                           )}
                           {!maxed && selectedBiz.level > 0 && (
-                            <p className={`text-center text-[11px] mb-2 ${nextRate < lastRate * 0.9 ? "text-destructive" : "text-muted-foreground"}`}>
-                              This expansion earns {(nextRate * 100).toFixed(0)}% a year on the money put in — the last
-                              one earns {(lastRate * 100).toFixed(0)}%. Size costs you return.
+                            <p className="text-center text-[11px] text-muted-foreground mb-2">
+                              Each expansion earns a little less on its money than the one before — size costs
+                              you return, even though the extra profit is real.
                             </p>
                           )}
                         </>
