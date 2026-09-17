@@ -82,7 +82,6 @@ export default function BusinessList() {
           const tierIdx = getBusinessTierIndex(biz.level);
           const owned = biz.level > 0 && !!biz.choices;
           const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
-          const tierName = concept?.tierNames[tierIdx] || def.tierNames[tierIdx];
           const tierImage = owned ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices)) : "";
           const displayName = owned ? ventureNameAtTier(def.id, tierIdx, biz.choices) : def.name;
           const income = businessIncomeOf(state, def.id);
