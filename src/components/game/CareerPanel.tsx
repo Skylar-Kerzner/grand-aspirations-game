@@ -9,7 +9,7 @@ export default function CareerPanel() {
   const [showPaths, setShowPaths] = useState(false);
   const loanHeadroom = getStudentLoanHeadroom(state);
   const job = derived.job;
-  const next = derived.nextJob;
+  
   const homeTrack = getCareerTrack(job.employer).id;
   const tenure = getTrackTenure(state);
   const years = getTrackExperienceDays(state) / DAYS_PER_YEAR;
@@ -20,10 +20,6 @@ export default function CareerPanel() {
     ? Math.floor(state.day) - state.jobHistory[state.jobHistory.length - 1].startDay
     : 0;
   const settled = daysInJob >= JOB_HOP_SETTLED_DAYS;
-  const neededLevel = requiredCredentialLevel(state.jobIndex + 1);
-  const qualifiedTracks = openTracks.filter((t) => getTrackCredential(state, t.id).effective >= neededLevel);
-  const canSeekOffers = !!next && state.careerOffers.length === 0 && qualifiedTracks.length > 0;
-  const levelWord = ["", "short course", "bachelor's degree", "graduate degree"][neededLevel] || "graduate degree";
 
   return (
     <div className="space-y-6">
