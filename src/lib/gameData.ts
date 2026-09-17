@@ -241,12 +241,44 @@ export const TRACK_EXPERIENCE_CAP = 0.24;
 /** Years of service in one industry that can stand in for held positions at the no-degree gate. */
 export const TRACK_EXPERIENCE_YEARS_GATE = 3;
 
-/** Moving sideways into another industry costs you: you arrive as an outsider. */
-export const TRACK_SWITCH_PENALTY = 0.22;
+/**
+ * Moving sideways into another industry costs you: you arrive as an outsider.
+ * Most of that cost is now paid in rank — you start at the level you have earned
+ * in that field — so the pay penalty on top of it is small.
+ */
+export const TRACK_SWITCH_PENALTY = 0.08;
 /** Jumping into an unrelated industry costs more still. */
-export const TRACK_FAR_SWITCH_PENALTY = 0.38;
+export const TRACK_FAR_SWITCH_PENALTY = 0.15;
 /** A degree in the industry you are moving into softens the landing. */
-export const TRACK_SWITCH_DEGREE_RELIEF = 0.14;
+export const TRACK_SWITCH_DEGREE_RELIEF = 0.06;
+
+/**
+ * The highest career level each qualification level opens in its own industry,
+ * mirroring requiredCredentialLevel: no schooling stops at level 3, a short
+ * course at 6, a bachelor's at 9, and only a graduate degree reaches the top.
+ */
+export const CREDENTIAL_LEVEL_CEILING = [3, 6, 9, 13];
+
+/** Career levels earned per year worked inside an industry. */
+export const LEVELS_PER_YEAR_IN_TRACK = 0.5;
+
+/**
+ * How much of your seniority elsewhere an industry is willing to credit.
+ * General leadership takes outsiders seriously; clinical and technical
+ * fields barely count it at all.
+ */
+export const TRACK_TRANSFER_SHARE: Record<string, number> = {
+  corporate: 0.6,
+  operations: 0.4,
+  hospitality: 0.4,
+  finance: 0.3,
+  education: 0.3,
+  arts: 0.25,
+  tech: 0.25,
+  medicine: 0.1,
+};
+/** A related industry credits a little more of what you already are. */
+export const TRACK_TRANSFER_ADJACENT_BONUS = 0.15;
 
 /** Leaving a job before this many days served is treated as job hopping. */
 export const JOB_HOP_SETTLED_DAYS = 365;
