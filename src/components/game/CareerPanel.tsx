@@ -172,14 +172,66 @@ export default function CareerPanel() {
         </motion.button>
       </div>
 
+      {/* Career paths — how each industry pays over a working life */}
+      <div className="surface-card rounded-xl p-4">
+        <div className="flex justify-between items-baseline mb-1">
+          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Career paths</h3>
+          <button
+            onClick={() => setShowPaths((v) => !v)}
+            className="text-[11px] text-primary hover:underline"
+          >
+            {showPaths ? "Hide" : "Compare all eight"}
+          </button>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Some fields pay well from the first day and level off. Others ask for years and a graduate degree,
+          then pay for the rest of your life. Each also changes your week, your costs and what you understand
+          as an owner and investor.
+        </p>
+        {showPaths && (
+          <div className="space-y-3 mt-3">
+            {openTracks.map((track) => {
+              const shape = track.curve <= -0.5
+                ? "Pays from day one, flattens early"
+                : track.curve < 0.2
+                  ? "Steady climb, moderate ceiling"
+                  : track.curve < 0.8
+                    ? "Slow start, strong later years"
+                    : "Modest for years, then a very high ceiling";
+              return (
+                <div key={track.id} className="rounded-lg p-3 surface-button">
+                  <div className="flex justify-between items-baseline gap-3">
+                    <h4 className="font-semibold text-sm">{track.name}</h4>
+                    <span className="text-[11px] text-primary shrink-0">{shape}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">{track.outlook}</p>
+                  <p className="text-[11px] text-muted-foreground">Mid-career: {track.middle}</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {track.perks.map((perk) => (
+                      <li key={perk} className="text-[11px] text-primary">{perk}</li>
+                    ))}
+                  </ul>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Study: {getTrackPrograms(track.id).map((p) => p.name).join(" · ")}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-      {/* Education — short courses, diplomas and degrees, one per industry */}
+      {/* Education — short courses, bachelor's and graduate degrees, one per industry */}
       <div>
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Education</h3>
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
-          Every industry has a short course, a diploma and a full degree. Junior roles ask for the course,
-          senior roles for the diploma, and the very top of an industry only opens with its degree. Years
-          worked in an industry can stand in for the first two, never for the degree.
+          Every industry has a short course, a bachelor's degree and a graduate degree. Junior roles ask for the
+          course, senior roles for the bachelor's, and the very top of an industry only opens with graduate study.
+          Years worked in an industry can stand in for the first two, never for the graduate degree.
+        </p>
+        <p className="text-[11px] text-muted-foreground mb-3 px-1">
+          You can pay for a program outright or take a student loan: 6% a year, nothing due while you study or
+          for six months after, then ten years of payments. You can still borrow {formatCompact(loanHeadroom)}.
         </p>
         <div className="space-y-4">
           {openTracks.map((track) => {
