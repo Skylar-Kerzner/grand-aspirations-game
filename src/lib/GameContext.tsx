@@ -777,12 +777,23 @@ function advance(state: GameState, days: number, now: number): GameState {
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
     // The slow trend: months-long swings in how the venture is doing.
     const trendVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
-    // Day-to-day takings: weather, footfall, a quiet Tuesday. Big, but it averages out.
+    // Day-to-day takings: weekly rhythm x season x luck. Big, but it averages out.
     const noiseScale = def.dailyNoise * relief;
+    const rhythm = WEEKDAY_RHYTHM[def.track === "hospitality" || def.id === "themepark" ? "weekend" : "weekday"];
+    let season = Math.min(BUSINESS_SEASON_MAX, Math.max(BUSINESS_SEASON_MIN, biz.season ?? 1));
     for (let d = 0; d < days; d++) {
-      const dayNoise = 1 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * noiseScale;
-      lastTakings = Math.max(0, dayNoise);
+      const weekday = Math.floor(s.day + d) % 7;
+      const r = Math.random();
+      const luck = r < BUSINESS_WASHOUT_CHANCE
+        ? 0.15 + Math.random() * 0.2
+        : r > 1 - BUSINESS_BUMPER_CHANCE
+          ? 2 + Math.random()
+          : 1 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * noiseScale;
+      lastTakings = Math.max(0, rhythm[weekday] * season * luck);
       gain += steady * condition * lastTakings;
+      // the season drifts slowly and reverts toward normal over about a month
+      season = 1 + (season - 1) * (1 - BUSINESS_SEASON_REVERSION) + (Math.random() + Math.random() - 1) * BUSINESS_SEASON_VOL;
+      season = Math.min(BUSINESS_SEASON_MAX, Math.max(BUSINESS_SEASON_MIN, season));
       // mean-reverting drift around normal trading conditions
       const drift = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * trendVol;
       condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + drift;
@@ -803,7 +814,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     }
     bizGross += gain;
     stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
-    businesses[id] = { ...biz, condition, takings: lastTakings };
+    businesses[id] = { ...biz, condition, takings: lastTakings, season };
   }
   const bizTax = bizGross * taxRate;
   cash += bizGross - bizTax;
