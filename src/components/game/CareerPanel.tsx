@@ -102,8 +102,18 @@ export default function CareerPanel() {
                     <button
                       key={`${offer.employer}-${index}`}
                       onClick={() => dispatch({ type: "ACCEPT_JOB_OFFER", index })}
-                      className="w-full surface-button rounded-lg p-3 text-left transition-game"
+                      className="w-full surface-button rounded-lg overflow-hidden text-left transition-game"
                     >
+                      <span className="block relative aspect-[16/6] w-full">
+                        <img
+                          src={getImage(workplaceImage(offer.employer, level))}
+                          alt={`The room you would work in as ${offer.title} at ${offer.employer}`}
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                        <span className="absolute inset-0 bg-gradient-to-t from-surface to-transparent" />
+                      </span>
+                      <span className="block p-3">
                       <span className="flex justify-between gap-3 text-sm font-semibold">
                         <span>{offer.title}</span>
                         <span className="font-mono-nums text-primary shrink-0">{formatMoney(offer.dailyPay)}/day</span>
