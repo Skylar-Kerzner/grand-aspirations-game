@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame, getTimeBudget, getLifestyleHours, getAssetLook, isAssetLookChosen } from "@/lib/GameContext";
+import { useGame, getTimeBudget, getLifestyleHours, getAssetLook, isAssetLookChosen, trackPerk } from "@/lib/GameContext";
 import { formatMoney, periodLabel } from "@/lib/formatters";
 import { ASSETS, BASE_TIME_BUDGET, assetLooks, lookSwitchCost } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
@@ -21,6 +21,7 @@ export default function AssetGallery() {
   const selectedTier = selected ? Math.max(1, state.assets[selected] || 1) : 0;
   const budget = getTimeBudget(state);
   const lifestyleHours = getLifestyleHours(state);
+  const careerHours = trackPerk(state, "hoursBonus");
   const period = periodLabel(derived.recentCashFlowDays);
 
   return (
@@ -29,7 +30,8 @@ export default function AssetGallery() {
       <div className="surface-card rounded-xl p-4 mb-3">
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Your week</h3>
         <p className="font-mono-nums text-lg">
-          {BASE_TIME_BUDGET}h base {lifestyleHours >= 0 ? "+" : "−"} {Math.abs(lifestyleHours)}h lifestyle = {budget}h
+          {BASE_TIME_BUDGET}h base {lifestyleHours >= 0 ? "+" : "−"} {Math.abs(lifestyleHours)}h lifestyle
+          {careerHours !== 0 && <> {careerHours >= 0 ? "+" : "−"} {Math.abs(careerHours)}h career</>} = {budget}h
         </p>
         <p className="text-[11px] text-muted-foreground mt-1">
           Every lifestyle choice is a standing daily cost that either costs you hours or buys them back.
