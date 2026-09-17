@@ -796,8 +796,12 @@ export const BUSINESS_SEASON_MIN = 0.65;
 export const BUSINESS_SEASON_MAX = 1.5;
 
 // Rare standout days: a washout (weather, closure) or a bumper day (event, rush).
-export const BUSINESS_WASHOUT_CHANCE = 0.02;
-export const BUSINESS_BUMPER_CHANCE = 0.02;
+export const BUSINESS_WASHOUT_CHANCE = 0.035;
+export const BUSINESS_BUMPER_CHANCE = 0.035;
+// How wide a single day's trading can swing around normal. A bad enough day
+// loses money once wages, rent and stock are paid, so takings can go negative.
+export const BUSINESS_DAILY_SWING = 1.9;
+export const BUSINESS_DAILY_FLOOR = -0.8;
 // Chance per day, scaled by a business's risk, of a serious setback.
 export const BUSINESS_SHOCK_CHANCE = 0.002;
 export const BUSINESS_SHOCK_TEXTS = [

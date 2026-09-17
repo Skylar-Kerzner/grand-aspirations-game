@@ -14,6 +14,7 @@ import {
   BUSINESS_FORTUNE_ANCHOR, BUSINESS_FORTUNE_DECAY_UP, BUSINESS_FORTUNE_DECAY_DOWN, BUSINESS_FORTUNE_NOISE,
 
   WEEKDAY_RHYTHM, BUSINESS_SEASON_REVERSION, BUSINESS_SEASON_VOL, BUSINESS_SEASON_MIN, BUSINESS_SEASON_MAX, BUSINESS_WASHOUT_CHANCE, BUSINESS_BUMPER_CHANCE,
+  BUSINESS_DAILY_SWING, BUSINESS_DAILY_FLOOR,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
   BASE_TIME_BUDGET, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS,
   FEDERAL_CAPS, federalCapFor, federalRateFor, federalBucketFor, FEDERAL_RATE_UNDERGRAD,
@@ -1138,7 +1139,9 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
         : r > 1 - BUSINESS_BUMPER_CHANCE
           ? 1 + (1 + Math.random()) * standoutScale
           : 1 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * noiseScale;
-      lastTakings = Math.max(0, rhythm[weekday] * season * luck);
+      // widen the day's swing around normal; a poor day can run at a loss
+      const rawDay = rhythm[weekday] * season * luck;
+      lastTakings = Math.max(BUSINESS_DAILY_FLOOR, 1 + (rawDay - 1) * BUSINESS_DAILY_SWING);
       gain += steady * condition * lastTakings;
       // the season drifts slowly and reverts toward normal over about a month
       season = 1 + (season - 1) * (1 - BUSINESS_SEASON_REVERSION) + (Math.random() + Math.random() - 1) * BUSINESS_SEASON_VOL;
