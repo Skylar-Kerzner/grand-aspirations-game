@@ -1214,17 +1214,9 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
       fortunePeak: Math.max(biz.fortunePeak ?? biz.fortune ?? 1, fortune),
     };
     const endDay = s.day + days;
-    // A build-out finishes and the new capacity starts trading.
+    // A build-out finishes and the new capacity starts trading — no fanfare,
+    // the card simply shows the expanded business earning again.
     if (updated.buildUntil && endDay >= updated.buildUntil) {
-      if (shockEvents.length < 4) {
-        shockEvents.push({
-          day: Math.floor(updated.buildUntil),
-          title: `${def.name} reopens`,
-          text: `The building work at your ${def.name.toLowerCase()} is finished and the new space is trading.`,
-          effect: "The money put in is now earning.",
-          tone: "good",
-        });
-      }
       updated = { ...updated, buildUntil: undefined, buildFromLevel: undefined };
     }
     // A buyer turns up for a business that was put on the market.
