@@ -532,6 +532,8 @@ function createInitialState(): GameState {
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
 
       };
+      // Retired mechanic: old saves may still carry experience points.
+      delete (merged as Record<string, unknown>).xp;
       const offlineDays = Math.min((Date.now() - merged.lastTick) / 1000, MAX_OFFLINE_DAYS);
       if (offlineDays > 5) return advance(merged, offlineDays, Date.now());
       merged.lastTick = Date.now();
@@ -1112,8 +1114,7 @@ export interface DerivedState {
   shiftPay: number;
   job: (typeof JOBS)[number];
   nextJob: (typeof JOBS)[number] | null;
-  xpNeeded: number;
-  focus: number;
+  offerTrainingBonus: number;
   
   creditTier: number;
   creditLimit: number;
