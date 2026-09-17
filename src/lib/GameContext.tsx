@@ -217,13 +217,48 @@ export function getInvestmentTotal(state: GameState): number {
   return Object.values(state.investments).reduce((s, i) => s + i.value, 0);
 }
 
+/**
+ * What a career path gives you beyond pay. Every perk is weakest at the bottom
+ * of the ladder and full strength at the top, so climbing one path pays off in
+ * ways that are not just salary.
+ */
+export function trackPerk(
+  state: GameState,
+  key: "investBonus" | "studyBonus" | "livingDiscount" | "hoursBonus" | "ventureLuck" | "ventureCostDiscount",
+): number {
+  const track = getCareerTrack(state.currentJob.employer);
+  const raw = (track[key] as number | undefined) || 0;
+  if (!raw) return 0;
+  const scaled = raw * trackPerkScale(state.jobIndex, JOBS.length - 1);
+  return key === "hoursBonus" ? Math.round(scaled) : scaled;
+}
+
 function investMultiplier(state: GameState): number {
   let m = 1;
   if (state.consultants.includes("finance")) m *= 1.1;
   if (state.consultants.includes("quant")) m *= 1.2;
   // Working in a field that lives off markets helps your own money too.
-  m *= 1 + (getCareerTrack(state.currentJob.employer).investBonus || 0);
+  m *= 1 + trackPerk(state, "investBonus");
   return m;
+}
+
+/** The pace this particular holding is running at — published, or quietly its own. */
+export function investmentDrift(def: InvestmentDef, inv?: InvestmentState): number {
+  if (!def.unknownReturn) return def.annualReturn;
+  return inv?.drift ?? def.annualReturn;
+}
+
+/** Draw a fresh hidden pace, pulled back toward the class average from wherever it was. */
+function rollDrift(def: InvestmentDef, previous?: number): number {
+  const spread = def.driftSpread ?? 0.2;
+  const anchor = previous === undefined ? def.annualReturn : def.annualReturn + 0.35 * (previous - def.annualReturn);
+  const drawn = anchor + gaussian() * spread;
+  return Math.max(-0.35, Math.min(1.2, drawn));
+}
+
+function nextRegime(def: InvestmentDef, day: number): number {
+  const base = def.regimeDays ?? 730;
+  return day + Math.round(base * (0.6 + Math.random() * 0.8));
 }
 
 export function getInvestmentPerDay(state: GameState): number {
@@ -231,7 +266,7 @@ export function getInvestmentPerDay(state: GameState): number {
   let total = 0;
   for (const [id, inv] of Object.entries(state.investments)) {
     const def = INVESTMENTS.find((i) => i.id === id);
-    if (def) total += (inv.value * def.annualReturn * mult) / DAYS_PER_YEAR;
+    if (def) total += (inv.value * investmentDrift(def, inv) * mult) / DAYS_PER_YEAR;
   }
   return total;
 }
