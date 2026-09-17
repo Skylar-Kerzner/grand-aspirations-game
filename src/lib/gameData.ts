@@ -694,6 +694,11 @@ export function assetLooks(tier: AssetTierDef): AssetLookDef[] {
   return [{ name: tier.name, image: tier.image }, ...(tier.looks || [])];
 }
 
+/** What it costs to change your mind about a look you already settled into. */
+export function lookSwitchCost(tier: AssetTierDef): number {
+  return Math.max(250, Math.round(tier.dailyCost * 30));
+}
+
 /** The look chosen at a step, falling back to the first. */
 export function assetLook(tier: AssetTierDef, lookIdx = 0): AssetLookDef {
   const all = assetLooks(tier);
