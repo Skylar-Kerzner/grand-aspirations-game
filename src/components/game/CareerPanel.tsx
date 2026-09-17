@@ -53,8 +53,7 @@ export default function CareerPanel() {
           <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
         </div>
         <p className="text-[11px] text-muted-foreground mb-2">
-          Market range {formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max)}/day
-          {" · "}{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min / 8)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max / 8)}/hour
+          Market range at {WEEK_HOURS}h: {formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max)}/day
         </p>
         {job.perfFee && (
           <p className="text-[11px] text-primary mb-2">
@@ -116,7 +115,7 @@ export default function CareerPanel() {
                       <span className="block p-3">
                       <span className="flex justify-between gap-3 text-sm font-semibold">
                         <span>{offer.title}</span>
-                        <span className="font-mono-nums text-primary shrink-0">{formatMoney(offer.dailyPay)}/day</span>
+                        <span className="font-mono-nums text-primary shrink-0">{formatMoney(offer.dailyPay)}/day at {WEEK_HOURS}h</span>
                       </span>
                       <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
                       <span className="flex justify-between gap-3 text-[11px] mt-1">
