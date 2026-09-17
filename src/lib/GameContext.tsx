@@ -6,6 +6,7 @@ import {
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   credentialLevelFrom, requiredCredentialLevel, CREDENTIAL_YEARS_PER_LEVEL, CREDENTIAL_EXPERIENCE_CAP,
   CREDENTIAL_LEVEL_CEILING, PROMOTION_MIN_DAYS, LEVELS_PER_YEAR_IN_TRACK, TRACK_TRANSFER_SHARE, TRACK_TRANSFER_ADJACENT_BONUS,
+  licensedCeiling, licenceRequirementAt, roleAtLevel,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, WORKDAYS_PER_WEEK, WORKDAYS_PER_YEAR, WORK_HOURS_PER_YEAR, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_BASELINE_ROI, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
@@ -416,7 +417,10 @@ export function getTrackCredential(state: GameState, trackId: string) {
  */
 export function getEarnedLevelIn(state: GameState, trackId: string) {
   const cred = getTrackCredential(state, trackId);
-  const ceiling = CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)];
+  const ceiling = Math.min(
+    CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)],
+    licensedCeiling(trackId, cred.studied),
+  );
   const home = getCareerTrack(state.currentJob.employer).id;
 
   // What you have built inside the industry itself.
@@ -437,6 +441,12 @@ export function getEarnedLevelIn(state: GameState, trackId: string) {
 export function earnedLevelNote(state: GameState, trackId: string): string {
   const { cred, insider, transfer, ceiling } = getEarnedLevelIn(state, trackId);
   const name = CAREER_TRACKS[trackId]?.name || "this industry";
+  // Licensed work stops dead without the qualification, whatever else you have done.
+  const blocking = licenceRequirementAt(trackId, ceiling + 1);
+  if (blocking && blocking.level > cred.studied) {
+    const role = roleAtLevel(trackId, ceiling + 1);
+    return `${role?.title ?? "The next post"} in ${name} cannot be held without ${blocking.label} — years served will not stand in for it.`;
+  }
   if (cred.studied >= 3) return `Your graduate degree in ${name} opens the top of this ladder.`;
   if (cred.studied === 2) return `Your bachelor's in ${name} places you mid-ladder here.`;
   if (cred.studied === 1) return `Your short course in ${name} opens the junior half of this ladder.`;
@@ -1337,7 +1347,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const cred = getTrackCredential(state, trackId);
         // Schooling and years in the field set a hard ceiling on the rank
         // anybody will hire you into — in your own industry too.
-        const ceiling = CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)];
+        const ceiling = Math.min(
+          CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)],
+          licensedCeiling(trackId, cred.studied),
+        );
         if (trackId === homeTrack) {
           // Without enough time in the post, the market only offers you moves
           // at the rank you already hold.

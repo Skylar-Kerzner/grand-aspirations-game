@@ -1347,3 +1347,64 @@ export function federalBucketFor(kind: ProgramKind): "undergrad" | "graduate" {
 /** Private lenders size a loan against what you earn and what you are worth. */
 export const PRIVATE_INCOME_MULTIPLE = 4;
 export const PRIVATE_NET_WORTH_SHARE = 0.25;
+
+// ---------- Licensed roles ----------
+/**
+ * Some posts cannot be held without the qualification itself. No number of
+ * years on the ward makes you a physician, and no amount of classroom time
+ * makes you a licensed teacher. These roles demand the studied credential
+ * (1 = short course, 2 = bachelor's, 3 = graduate/professional degree);
+ * experience cannot stand in for it.
+ */
+export const LICENSED_ROLE_REQUIREMENTS: Record<string, { level: number; label: string }> = {
+  // Health & Medicine
+  "Phlebotomist": { level: 1, label: "a clinical certificate" },
+  "Paramedic": { level: 1, label: "a paramedic certificate" },
+  "Registered Nurse": { level: 2, label: "a nursing degree" },
+  "Nurse Practitioner": { level: 3, label: "a graduate clinical degree" },
+  "Resident Physician": { level: 3, label: "an MD" },
+  "Attending Physician": { level: 3, label: "an MD" },
+  "Specialist Surgeon": { level: 3, label: "an MD" },
+  "Head of Surgery": { level: 3, label: "an MD" },
+  "Chief of Medicine": { level: 3, label: "an MD" },
+  "Director of Medical Research": { level: 3, label: "an MD" },
+  "Surgeon General": { level: 3, label: "an MD" },
+  // Education & Public Service
+  "Teaching Assistant": { level: 1, label: "a teaching assistant certificate" },
+  "Substitute Teacher": { level: 1, label: "a teaching assistant certificate" },
+  "Classroom Teacher": { level: 2, label: "a teaching degree" },
+  "Senior Teacher": { level: 2, label: "a teaching degree" },
+  "Head of Department": { level: 2, label: "a teaching degree" },
+  "Deputy Principal": { level: 2, label: "a teaching degree" },
+  "Principal": { level: 3, label: "a master's in education" },
+  "District Superintendent": { level: 3, label: "a master's in education" },
+  "College Dean": { level: 3, label: "a master's in education" },
+  "University Provost": { level: 3, label: "a master's in education" },
+  "University President": { level: 3, label: "a master's in education" },
+  "State Education Commissioner": { level: 3, label: "a master's in education" },
+  "National Education Secretary": { level: 3, label: "a master's in education" },
+};
+
+/** The role an industry offers at a given rung of the ladder. */
+export function roleAtLevel(trackId: string, level: number): CareerVariant | undefined {
+  return (CAREER_VARIANTS[level] || []).find((v) => getCareerTrack(v.employer).id === trackId);
+}
+
+/** The qualification a given rung of an industry legally requires, if any. */
+export function licenceRequirementAt(trackId: string, level: number) {
+  const role = roleAtLevel(trackId, level);
+  return role ? LICENSED_ROLE_REQUIREMENTS[role.title] : undefined;
+}
+
+/** The highest rung of an industry your studied qualifications let you hold. */
+export function licensedCeiling(trackId: string, studied: number): number {
+  let ceiling = CAREER_VARIANTS.length - 1;
+  for (let level = 0; level < CAREER_VARIANTS.length; level++) {
+    const need = licenceRequirementAt(trackId, level);
+    if (need && need.level > studied) {
+      ceiling = level - 1;
+      break;
+    }
+  }
+  return Math.max(0, ceiling);
+}

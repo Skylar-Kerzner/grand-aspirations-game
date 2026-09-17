@@ -284,7 +284,9 @@ export default function CareerPanel() {
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
           Every industry has a short course, a bachelor's degree and a graduate degree. Junior roles ask for the
           course, senior roles for the bachelor's, and the very top of an industry only opens with graduate study.
-          Years worked in an industry can stand in for the first two, never for the graduate degree.
+          Years worked in an industry can stand in for the first two, never for the graduate degree. Licensed work is
+          stricter still: nursing, medicine and teaching posts need the qualification itself — no physician's post
+          without an MD, no classroom of your own without a teaching degree — and time served never substitutes.
         </p>
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
           You can pay outright or borrow. Government loans come first — 6.5% a year for courses and bachelor's
