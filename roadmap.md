@@ -35,3 +35,5 @@
 - [x] No-degree careers slow to a stop: xpNeeded × 1.7^(tier−4) without the track major; career panel names the fix
 - [x] Removed XP mechanic: "Seek a new job" always available, training budget now raises offer pay, xp-based events converted to pay/cash effects
 - [x] School hours forced to zero whenever not enrolled (work hours, graduation, save loading, enrolling resets to 20h)
+
+- [ ] Show job level (e.g. Level 5 of 14) throughout the game — career panel, offers, review history
