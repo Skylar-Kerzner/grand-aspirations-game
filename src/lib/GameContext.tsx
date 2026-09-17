@@ -438,12 +438,23 @@ export function isBusinessUnlocked(_state: GameState, _id: string): boolean {
   return true;
 }
 
+/** Net worth as the funds measure it, without needing the full derived state. */
+export function getInvestorNetWorth(state: GameState): number {
+  const loanTotal = Object.values(state.loans).reduce((s, l) => s + (l.remaining || 0), 0);
+  return state.cash + getInvestmentTotal(state) + getBusinessValue(state) - loanTotal - state.ccDebt;
+}
+
+/** Whether this fund will take your money at all, on wealth grounds. */
 export function isInvestmentUnlocked(state: GameState, id: string): boolean {
   const def = INVESTMENTS.find((i) => i.id === id);
-  if (!def?.unlockPrev) return true;
-  const prev = state.investments[def.unlockPrev];
-  const everDeposited = (prev?.basis || 0) + (state.stats.investEarnedById[def.unlockPrev] || 0);
-  return Math.max(prev?.value || 0, everDeposited) >= (def.unlockAmount || 0);
+  if (!def) return false;
+  return getInvestorNetWorth(state) >= INVESTOR_ACCESS[def.access].netWorth;
+}
+
+/** Days before money in this fund can be taken out again. 0 when free to withdraw. */
+export function getLockDaysLeft(state: GameState, id: string): number {
+  const until = state.investments[id]?.lockedUntil || 0;
+  return Math.max(0, Math.ceil(until - state.day));
 }
 
 export function upgradeCostFor(state: GameState, id: string): number {
