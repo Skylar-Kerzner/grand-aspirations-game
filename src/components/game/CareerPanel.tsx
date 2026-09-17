@@ -128,7 +128,7 @@ export default function CareerPanel() {
                           </span>
                         </span>
                       </span>
-                      <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
+                      <span className="text-[11px] text-muted-foreground">{offer.employer} · {getCareerTrack(offer.employer).name}</span>
                       <span className="flex justify-between gap-3 text-[11px] mt-1">
                         <span className={delta40 >= 0 ? "font-mono-nums text-primary" : "font-mono-nums text-destructive"}>
                           {delta40 >= 0 ? "+" : "−"}{formatMoney(Math.abs(delta40))}/day at 40h vs your job
