@@ -666,6 +666,8 @@ export const ASSETS: AssetDef[] = [
       { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "Buys back 2h a week — close in, building handles the basics" },
       { name: "Modern Loft", dailyCost: 165, hoursBonus: 5, image: "house-t3", benefit: "Buys back 5h a week — doorman, cleaning and concierge" },
       { name: "Penthouse", dailyCost: 520, hoursBonus: 9, image: "house-t4", benefit: "Buys back 9h a week — a full household staff runs it all" },
+      { name: "Country Estate", dailyCost: 2100, hoursBonus: 12, image: "house-t5", benefit: "Buys back 12h a week — an estate manager runs the whole household" },
+      { name: "Private Island Compound", dailyCost: 9400, hoursBonus: 15, image: "house-t6", benefit: "Buys back 15h a week — every errand, journey and chore is handled for you" },
     ],
   },
   {
