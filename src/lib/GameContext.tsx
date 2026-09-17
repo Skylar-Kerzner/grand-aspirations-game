@@ -990,12 +990,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!def || action.amount <= 0 || state.cash < action.amount) return state;
       if (!isInvestmentUnlocked(state, action.id)) return state;
       const cur = state.investments[action.id] || { value: 0, basis: 0 };
-      if (cur.value === 0 && action.amount < def.minInvestment) return state;
+      // The minimum applies to every fresh commitment, not only the first one.
+      if (action.amount < def.minInvestment) return state;
+      const lockedUntil = def.lockupDays ? state.day + def.lockupDays : undefined;
       return {
         ...state, cash: state.cash - action.amount,
         investments: {
           ...state.investments,
-          [action.id]: { value: cur.value + action.amount, basis: cur.basis + action.amount },
+          [action.id]: { value: cur.value + action.amount, basis: cur.basis + action.amount, lockedUntil },
         },
         stats: { ...state.stats, investDeposited: state.stats.investDeposited + action.amount },
       };
@@ -1004,6 +1006,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "WITHDRAW": {
       const cur = state.investments[action.id];
       if (!cur) return state;
+      if ((cur.lockedUntil || 0) > state.day) return state;
       const amt = Math.min(action.amount, cur.value);
       if (amt <= 0) return state;
       // basis comes out in the same proportion, so the gain figure stays honest
