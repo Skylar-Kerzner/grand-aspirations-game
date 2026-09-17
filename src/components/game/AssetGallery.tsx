@@ -123,7 +123,7 @@ export default function AssetGallery() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto flex items-start justify-center p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex-1 overflow-y-auto flex items-start justify-center p-6 pb-28" onClick={(e) => e.stopPropagation()}>
               <div className="w-full max-w-lg">
                 {/* Close */}
                 <button onClick={() => setSelected(null)} className="mb-4 text-muted-foreground text-sm hover:text-foreground transition-colors">

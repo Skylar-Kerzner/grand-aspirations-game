@@ -8,7 +8,7 @@ export default function WorkButton() {
 
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3">
+    <div className="fixed bottom-0 left-0 right-0 z-[60] bg-background/95 backdrop-blur-md border-t border-border px-4 py-3">
       <div className="max-w-md mx-auto">
         <motion.button
           whileTap={{ scale: 0.97 }}
