@@ -436,7 +436,8 @@ export function getInterviewPrepRate(state: GameState): number {
 }
 export function getInterviewReadiness(state: GameState): number {
   const rate = getInterviewPrepRate(state);
-  return Math.max(0, Math.min(1, state.trainingMomentum / Math.max(1, rate)));
+  const momentum = Number.isFinite(state.trainingMomentum) ? state.trainingMomentum : 0;
+  return Math.max(0, Math.min(1, momentum / Math.max(1, rate)));
 }
 export function getOfferTrainingBonus(state: GameState): number {
   return TRAINING_OFFER_CAP * getInterviewReadiness(state);
