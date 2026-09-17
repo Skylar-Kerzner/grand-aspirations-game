@@ -440,7 +440,25 @@ export default function BusinessList() {
                     <p className="text-[11px] text-muted-foreground mt-1">
                       That return is the potential at 15h of your week — give it less time and it earns a share of it.
                     </p>
+                    {(() => {
+                      const now = selectedBiz.fortune ?? 1;
+                      const peak = selectedBiz.fortunePeak ?? now;
+                      const off = peak > 0 ? 1 - now / peak : 0;
+                      if (off > 0.05) {
+                        return (
+                          <p className="text-[11px] text-destructive mt-1">
+                            Cooling — {Math.round(off * 100)}% off its best run as competition catches up.
+                          </p>
+                        );
+                      }
+                      return (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Holding its form — though no run lasts forever once rivals notice.
+                        </p>
+                      );
+                    })()}
                     <p className="text-[11px] text-muted-foreground mt-1">{ventureName(selectedDef.id, selectedBiz.choices)}</p>
+
 
                   </div>
                 )}
