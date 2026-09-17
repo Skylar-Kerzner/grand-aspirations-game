@@ -426,6 +426,9 @@ export default function BusinessList() {
                       {businessFortuneLabel(selectedBiz.fortune ?? 1)} —{" "}
                       {((selectedBiz.fortune ?? 1) * selectedDef.annualROI * 100).toFixed(0)}% return on capital
                     </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      That return is the potential at 15h of your week — give it less time and it earns a share of it.
+                    </p>
                     <p className="text-[11px] text-muted-foreground mt-1">{ventureName(selectedDef.id, selectedBiz.choices)}</p>
 
                   </div>
