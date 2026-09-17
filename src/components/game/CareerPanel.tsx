@@ -73,19 +73,15 @@ export default function CareerPanel() {
                 keep climbing at full pace.
               </p>
             )}
-            {gatedTier && openTracks.length === 0 && (
-              <p className="text-[11px] text-muted-foreground mb-2">
-                To climb further, either stay in {getCareerTrack(job.employer).name} until you have{" "}
-                {TRACK_EXPERIENCE_GATE} positions or {TRACK_EXPERIENCE_YEARS_GATE} years behind you, or study a major
-                below to open another path.
-              </p>
-            )}
-            {openTracks.length > 0 && (
-              <p className="text-[11px] text-muted-foreground mb-2">
-                Open to you now: {openTracks.map((t) => t.name).join(", ")}. Moving to another industry costs you
-                a step in pay, so it only pays off when the new path climbs higher.
-              </p>
-            )}
+            <p className="text-[11px] text-muted-foreground mb-2">
+              Every industry is open to you: {openTracks.map((t) => t.name).join(", ")}. Leaving your own costs you
+              pay — more so into a distant field, less if you hold its degree.
+            </p>
+            <p className="text-[11px] text-muted-foreground mb-2">
+              {settled
+                ? "You have been here long enough that employers take you seriously — offers come in at full pay."
+                : `Changing jobs too often reads as restless: offers are discounted until you have a year in a post (${Math.max(0, JOB_HOP_SETTLED_DAYS - daysInJob)} more days).`}
+            </p>
             {state.careerOffers.length === 0 ? (
               <motion.button
                 whileTap={{ scale: 0.97 }}
