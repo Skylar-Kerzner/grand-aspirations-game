@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
@@ -5,6 +6,7 @@ import { LOANS, CONSULTANTS, LOAN_EQUITY_REQUIREMENT, amortizedPayment } from "@
 
 export default function FinancePanel() {
   const { state, derived, dispatch } = useGame();
+  const [confirmReset, setConfirmReset] = useState(false);
   const totalLevels = Object.values(state.businesses).reduce((s, b) => s + b.level, 0);
 
   return (
@@ -189,6 +191,53 @@ export default function FinancePanel() {
           })}
         </div>
       </div>
+
+      {/* Start over */}
+      <div className="surface-card rounded-xl p-4">
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Start over</h3>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          Wipes everything — cash, career, ventures, investments and debts — and begins a new life from day one.
+        </p>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setConfirmReset(true)}
+          className="w-full h-10 rounded-lg surface-button text-sm font-semibold text-destructive transition-game"
+        >
+          Reset game
+        </motion.button>
+      </div>
+
+      {confirmReset && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background/80 px-5 backdrop-blur-md">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="surface-card rounded-2xl p-6 w-full max-w-sm"
+          >
+            <h3 className="text-lg font-semibold tracking-tight mb-1">Reset the game?</h3>
+            <p className="text-[12px] text-muted-foreground mb-5">
+              Your {formatMoney(derived.netWorth)} net worth, your position as {derived.job.title} and every venture
+              you own will be gone. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setConfirmReset(false)}
+                className="flex-1 h-10 rounded-lg surface-button text-sm font-semibold transition-game"
+              >
+                Keep playing
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => { dispatch({ type: "RESET" }); setConfirmReset(false); }}
+                className="flex-1 h-10 rounded-lg bg-destructive text-destructive-foreground text-sm font-semibold transition-game"
+              >
+                Reset everything
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney } from "@/lib/formatters";
+import { JOBS } from "@/lib/gameData";
 
 export default function WorkButton() {
   const { state, derived, dispatch } = useGame();
@@ -22,7 +23,7 @@ export default function WorkButton() {
             : `Take an extra shift — ${formatMoney(derived.shiftPay)}`}
         </motion.button>
         <p className="text-center text-[10px] text-muted-foreground mt-1.5">
-          {derived.job.title} · {derived.job.employer}
+          Level {state.jobIndex + 1} of {JOBS.length} · {derived.job.title} · {derived.job.employer}
         </p>
       </div>
     </div>

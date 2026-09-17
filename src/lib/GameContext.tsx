@@ -125,7 +125,11 @@ export function tierBonus(tier: number, table: number[]): number {
 }
 
 export function getJob(state: GameState) {
-  return { ...JOBS[Math.min(state.jobIndex, JOBS.length - 1)], ...state.currentJob };
+  const base = JOBS[Math.min(state.jobIndex, JOBS.length - 1)];
+  const cur = state.currentJob || base;
+  // Older saves and offers can carry a missing pay figure — never let it poison the maths.
+  const dailyPay = Number.isFinite(cur.dailyPay) ? cur.dailyPay : base.dailyPay;
+  return { ...base, ...cur, dailyPay };
 }
 
 /** How many consecutive positions you have held in your current industry. */
@@ -432,7 +436,8 @@ export function getInterviewPrepRate(state: GameState): number {
 }
 export function getInterviewReadiness(state: GameState): number {
   const rate = getInterviewPrepRate(state);
-  return Math.max(0, Math.min(1, state.trainingMomentum / Math.max(1, rate)));
+  const momentum = Number.isFinite(state.trainingMomentum) ? state.trainingMomentum : 0;
+  return Math.max(0, Math.min(1, momentum / Math.max(1, rate)));
 }
 export function getOfferTrainingBonus(state: GameState): number {
   return TRAINING_OFFER_CAP * getInterviewReadiness(state);
@@ -554,6 +559,12 @@ function createInitialState(): GameState {
       };
       // Retired mechanic: old saves may still carry experience points.
       delete (merged as unknown as Record<string, unknown>).xp;
+      // A broken number in a save would spread through every figure on screen.
+      if (!Number.isFinite(merged.cash)) merged.cash = fresh.cash;
+      if (!Number.isFinite(merged.trainingMomentum)) merged.trainingMomentum = 0;
+      if (!Number.isFinite(merged.trainingBudget)) merged.trainingBudget = 0;
+      if (!Number.isFinite(merged.ccDebt)) merged.ccDebt = 0;
+      merged.careerOffers = merged.careerOffers.filter((o) => Number.isFinite(o.dailyPay) && o.dailyPay > 0);
       // Not enrolled means no school hours, whatever the save says.
       if (!merged.studying) merged.studyHours = 0;
       const offlineDays = Math.min((Date.now() - merged.lastTick) / 1000, MAX_OFFLINE_DAYS);
@@ -932,7 +943,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
           : 1 - trackSwitchPenalty(homeTrack, offerTrack, hasMajor);
-        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty * hop * training) };
+        const pay = Math.round(next.dailyPay * factor * track * loyalty * hop * training);
+        return { ...variant, dailyPay: Number.isFinite(pay) && pay > 0 ? pay : Math.round(next.dailyPay) };
       }).sort(() => Math.random() - 0.5);
       return { ...state, careerOffers };
     }
