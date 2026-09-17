@@ -937,7 +937,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
           : 1 - trackSwitchPenalty(homeTrack, offerTrack, hasMajor);
-        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty * hop * training) };
+        const pay = Math.round(next.dailyPay * factor * track * loyalty * hop * training);
+        return { ...variant, dailyPay: Number.isFinite(pay) && pay > 0 ? pay : Math.round(next.dailyPay) };
       }).sort(() => Math.random() - 0.5);
       return { ...state, careerOffers };
     }
