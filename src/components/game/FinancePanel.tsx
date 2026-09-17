@@ -17,7 +17,7 @@ export default function FinancePanel() {
           <Row label="Business profit" value={formatRate(derived.businessPerDay)} tone="pos" />
           <Row label="Investment returns" value={formatRate(derived.investmentPerDay)} tone="pos" />
           <Row label="Lifestyle" value={formatRate(-derived.livingCosts)} tone="neg" />
-          <Row label="Training" value={formatRate(-derived.trainingCost)} tone="neg" />
+          <Row label="Interview prep" value={formatRate(-derived.trainingCost)} tone="neg" />
           <Row label="Consultant retainers" value={formatRate(-derived.operatingCosts)} tone="neg" />
           <Row label="Loan payments" value={formatRate(-derived.loanPayments)} tone="neg" />
           {state.ccDebt > 0.5 && (
