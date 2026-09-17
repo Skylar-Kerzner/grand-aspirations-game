@@ -55,20 +55,7 @@ export default function CareerPanel() {
 
         {next ? (
           <>
-            <div className="flex justify-between text-[11px] text-muted-foreground mb-1 mt-3">
-              <span>Experience toward the next level</span>
-              <span className="font-mono-nums">{Math.floor(state.xp)} / {derived.xpNeeded}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-3">
-              <motion.div className="h-full bg-primary" animate={{ width: `${xpPct}%` }} transition={{ duration: 0.3 }} />
-            </div>
-            {degreeDrag && (
-              <p className="text-[11px] text-muted-foreground mb-2">
-                Without a degree in this industry, each next step takes longer. Study {trackMajor?.name} below to
-                keep climbing at full pace.
-              </p>
-            )}
-            <p className="text-[11px] text-muted-foreground mb-2">
+            <p className="text-[11px] text-muted-foreground mb-2 mt-3">
               Every industry is open to you: {openTracks.map((t) => t.name).join(", ")}. Leaving your own costs you
               pay — more so into a distant field, less if you hold its degree.
             </p>
