@@ -915,7 +915,8 @@ function appendCashFlow(history: DailyCashFlow[], entry: DailyCashFlow): DailyCa
   } else {
     next.push({ ...entry });
   }
-  return next.sort((a, b) => a.day - b.day).slice(-7);
+  // keep eight: seven finished days plus the day in progress
+  return next.sort((a, b) => a.day - b.day).slice(-8);
 }
 
 /** Advance in calendar-day pieces so offline progress produces a real seven-day history. */
