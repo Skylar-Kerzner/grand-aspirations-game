@@ -65,7 +65,7 @@ export default function LedgerPanel() {
           return (
             <div key={`${h.title}-${h.startDay}-${i}`} className="flex justify-between gap-3 text-sm">
               <span className="text-muted-foreground min-w-0">
-                {h.title}
+                Level {Math.min(i, JOBS.length - 1) + 1} · {h.title}
                 <span className="block text-[10px]">
                   {h.employer} · from day {h.startDay} · {formatMoney(h.dailyPay)}/day
                 </span>

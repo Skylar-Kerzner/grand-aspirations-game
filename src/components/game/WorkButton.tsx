@@ -22,7 +22,7 @@ export default function WorkButton() {
             : `Take an extra shift — ${formatMoney(derived.shiftPay)}`}
         </motion.button>
         <p className="text-center text-[10px] text-muted-foreground mt-1.5">
-          {derived.job.title} · {derived.job.employer}
+          Level {state.jobIndex + 1} of {JOBS.length} · {derived.job.title} · {derived.job.employer}
         </p>
       </div>
     </div>
