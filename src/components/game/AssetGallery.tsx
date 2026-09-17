@@ -36,11 +36,11 @@ export default function AssetGallery() {
           {careerHours !== 0 && <> {careerHours >= 0 ? "+" : "−"} {Math.abs(careerHours)}h {careerHoursLabel} ({jobTrack.name})</>} = {budget}h
         </p>
         <p className="text-[11px] text-muted-foreground mt-1">
-          Every lifestyle choice is a standing daily cost that either costs you hours or buys them back.
+          Every lifestyle choice is a standing weekly cost that either costs you hours or buys them back.
           Those hours are what you spend on your job, school and your businesses.
         </p>
         <p className="text-[11px] text-muted-foreground font-mono-nums mt-1">
-          Lifestyle costs {formatMoney(derived.livingCosts)}/day in total
+          Lifestyle costs {formatMoney(derived.livingCosts * 7)}/week in total
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default function AssetGallery() {
                 <p className={`text-[11px] font-medium mt-1 ${currentTier.hoursBonus >= 0 ? "text-primary" : "text-destructive"}`}>
                   {hoursLabel(currentTier.hoursBonus)}
                 </p>
-                <p className="font-mono-nums text-[11px] text-muted-foreground">{formatMoney(currentTier.dailyCost)}/day</p>
+                <p className="font-mono-nums text-[11px] text-muted-foreground">{formatMoney(currentTier.dailyCost * 7)}/week</p>
               </div>
             </motion.div>
           );
@@ -194,12 +194,12 @@ export default function AssetGallery() {
                           </span>
                           <span className="text-right shrink-0">
                             <span className={`block font-mono-nums text-xs ${isCurrent ? "text-primary" : "text-foreground"}`}>
-                              {formatMoney(tier.dailyCost)}/day
+                              {formatMoney(tier.dailyCost * 7)}/week
                             </span>
                             <span className="block text-[10px] text-muted-foreground">
                               {isCurrent
                                 ? "Current"
-                                : `${hourDelta >= 0 ? "+" : ""}${hourDelta}h · ${costDelta >= 0 ? "+" : "−"}${formatMoney(Math.abs(costDelta))}/day`}
+                                : `${hourDelta >= 0 ? "+" : ""}${hourDelta}h · ${costDelta >= 0 ? "+" : "−"}${formatMoney(Math.abs(costDelta) * 7)}/week`}
                             </span>
                           </span>
                         </motion.button>

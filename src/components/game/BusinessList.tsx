@@ -18,7 +18,7 @@ import {
   getSaleDaysLeft,
   getBusinessAttentionOf,
 } from "@/lib/GameContext";
-import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
+import { formatMoney, formatCompact, formatRate, formatPerDay } from "@/lib/formatters";
 import {
   BUSINESSES,
   getBusinessTierIndex,
@@ -288,9 +288,10 @@ export default function BusinessList() {
                 )}
                 {selectedBiz.level > 0 && (
                   <p className="text-xs text-primary mb-1">
-                    {formatRate(businessIncomeOf(state, selectedDef.id))} today
+                    {formatRate(businessIncomeOf(state, selectedDef.id))}
                     <span className="text-muted-foreground ml-1">
-                      (normal trade {formatRate(getBusinessSteadyIncomeOf(state, selectedDef.id))})
+                      (normal trade {formatPerDay(getBusinessSteadyIncomeOf(state, selectedDef.id))})
+
                     </span>
                   </p>
                 )}
@@ -529,7 +530,7 @@ export default function BusinessList() {
                             <p className="text-center text-[11px] text-muted-foreground mb-2">
                               {selectedBiz.level === 0
                                 ? `Takes ${buildDays} days to fit out before it earns anything`
-                                : `Adds ${formatRate(addedIncome)} once built, ${buildDays} days from now`}
+                                : `Adds ${formatPerDay(addedIncome)} once built, ${buildDays} days from now`}
                             </p>
                           )}
                           {!maxed && selectedBiz.level > 0 && (
