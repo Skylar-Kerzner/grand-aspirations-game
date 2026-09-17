@@ -169,7 +169,9 @@ export default function AssetGallery() {
                     const looks = assetLooks(tier);
                     const chosenLook = getAssetLook(state, selectedDef.id, i);
                     const settled = isAssetLookChosen(state, selectedDef.id, i);
-                    const open = choosing === i && !settled;
+                    const chosenIdx = Math.max(0, state.assetLooks?.[selectedDef.id]?.[i] ?? 0);
+                    const switchFee = lookSwitchCost(tier);
+                    const open = choosing === i;
                     return (
                       <div key={tier.name} className="space-y-2">
                         <motion.button
