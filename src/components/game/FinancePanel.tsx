@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
@@ -5,6 +6,7 @@ import { LOANS, CONSULTANTS, LOAN_EQUITY_REQUIREMENT, amortizedPayment } from "@
 
 export default function FinancePanel() {
   const { state, derived, dispatch } = useGame();
+  const [confirmReset, setConfirmReset] = useState(false);
   const totalLevels = Object.values(state.businesses).reduce((s, b) => s + b.level, 0);
 
   return (
