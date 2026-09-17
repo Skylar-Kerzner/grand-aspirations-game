@@ -390,6 +390,7 @@ export function businessMultiplier(state: GameState): number {
   return m;
 }
 
+/** Flat return-on-capital points earned from network milestones (+0.02 per milestone per partner). */
 export function getBusinessNetworkBonus(state: GameState, id: string): number {
   const index = BUSINESSES.findIndex((business) => business.id === id);
   if (index < 0) return 0;
@@ -580,8 +581,16 @@ export function getBusinessSteadyIncomeAt(state: GameState, id: string, attentio
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, getBusinessEarningLevel(state, id)) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
+  // Attention-scaled trading income: the base rate x trading trend x today's
+  // takings, so the income you watch swings with the day's trade.
+  const base = getBusinessIncome(def, getBusinessEarningLevel(state, id)) * (1 + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
     * attention;
+  // The network bonus is a flat add to the return on capital — +2 points per
+  // milestone, independent of the hours you give the business.
+  const networkPoints = getBusinessNetworkBonus(state, id);
+  if (networkPoints === 0) return base;
+  const capital = getBusinessCapital(def, Math.max(1, getBusinessEarningLevel(state, id)));
+  return base + (networkPoints * capital) / DAYS_PER_YEAR;
 }
 
 /** Income ignoring today's trading conditions. */

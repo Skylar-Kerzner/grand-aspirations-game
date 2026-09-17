@@ -716,10 +716,12 @@ export const INDUSTRY_RISK_RELIEF = 0.2;
 // Expansions are few, large and deliberate: sixteen steps from first day to empire.
 export const BUSINESS_MAX_LEVEL = 16;
 export const BUSINESS_TIER_THRESHOLDS = [1, 4, 9, 16];
+// Network milestones: when a business and its neighbour both reach the level,
+// each gains a flat +2 points of annual return on capital — at any hours.
 export const BUSINESS_NETWORK_MILESTONES = [
-  { level: 4, bonus: 0.1 },
-  { level: 9, bonus: 0.2 },
-  { level: 16, bonus: 0.35 },
+  { level: 4, bonus: 0.02 },
+  { level: 9, bonus: 0.02 },
+  { level: 16, bonus: 0.02 },
 ];
 
 export const BUSINESSES: BusinessDef[] = [
