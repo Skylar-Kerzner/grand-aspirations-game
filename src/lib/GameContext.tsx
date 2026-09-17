@@ -423,12 +423,19 @@ export function getCreditCardPayment(state: GameState): number {
   return Math.min(balanceAfterInterest, balanceAfterInterest * CC_MIN_PAYMENT_RATE);
 }
 
-// Courses and coaching raise the pay of every job offer you seek out,
-// on a diminishing curve up to +35%.
+// Steady interview preparation — a fixed retainer for coaching, mock interviews and
+// certifications. It heats up over about a month and cools off if you stop.
 export const TRAINING_OFFER_CAP = 0.35;
-export const TRAINING_MOMENTUM_DAYS = 30; // time constant for training to build (and fade)
+export const TRAINING_MOMENTUM_DAYS = 30; // time constant for readiness to build (and fade)
+export function getInterviewPrepRate(state: GameState): number {
+  return Math.max(20, Math.round(getJob(state).dailyPay * 0.15));
+}
+export function getInterviewReadiness(state: GameState): number {
+  const rate = getInterviewPrepRate(state);
+  return Math.max(0, Math.min(1, state.trainingMomentum / Math.max(1, rate)));
+}
 export function getOfferTrainingBonus(state: GameState): number {
-  return Math.min(TRAINING_OFFER_CAP, 0.15 * Math.sqrt(Math.max(0, state.trainingMomentum) / TRAINING_REFERENCE));
+  return TRAINING_OFFER_CAP * getInterviewReadiness(state);
 }
 
 export function getBusinessValue(state: GameState): number {
