@@ -25,7 +25,7 @@
 - [x] Career panel shows hourly rate
 - [x] Nonlinear (concave) ROI vs venture hours; ROI copy says "X% annual return on capital at Y hours/week"; Time tab shows total income for optimization
 - [ ] Balance career+passive investments vs business ownership
-- [ ] Events: unlock gates by net worth/business/investment/career status; specific flavor texts tied to holdings
+- [x] Events: unlock gates by net worth/business/investment/career status; specific flavor texts tied to holdings
 - [x] Careers: all industries always offered; switch penalty scaled by distance/degree; job-hopping discount until a year served
 - [x] School hours slider hidden unless enrolled in a program
 - [x] Venture hours curve: 25% potential at 0h, ~50% at 1h, 100% at 15h; capital + annual return shown per venture in the Time tab

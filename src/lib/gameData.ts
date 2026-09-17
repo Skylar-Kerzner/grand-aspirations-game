@@ -914,6 +914,7 @@ export interface EventDef {
   gateJobIndex?: number;    // you hold at least this career level
   gatePerfFee?: boolean;    // you run a fund with a performance fee
   gateMajor?: boolean;      // you hold at least one degree
+  gateAsset?: string;       // you own this lifestyle category
   // effects
   cashPctOfNetWorth?: number; // + or -
   cashFlat?: number;          // scaled by era via multiplier below
@@ -926,24 +927,27 @@ export interface EventDef {
 }
 
 export const EVENTS: EventDef[] = [
-  { id: "inherit", title: "Inheritance", text: "A relative you barely knew left you something.", tone: "good", weight: 3, minDay: 120, cashPctOfNetWorth: 0.12, cashFlat: 4000 },
-  { id: "bonus", title: "Surprise bonus", text: "Your employer had a good quarter and remembered you.", tone: "good", weight: 8, cashFlat: 900 },
-  { id: "raise", title: "Off-cycle raise", text: "Someone finally noticed how much you do.", tone: "good", weight: 6, payShift: 1.15, payShiftDays: 120 },
-  { id: "boom", title: "Boom week", text: "A viral moment sends customers flooding in.", tone: "good", weight: 8, gateBusiness: true, businessBoostDays: 14 },
-  { id: "headhunt", title: "Headhunted", text: "A recruiter's pitch reminded your employer what you're worth.", tone: "good", weight: 6, payShift: 1.1, payShiftDays: 90 },
-  { id: "rentspike", title: "Rent spike", text: "The whole neighbourhood repriced overnight.", tone: "bad", weight: 8, livingCostShift: 1.3, livingCostShiftDays: 180 },
-  { id: "rentdrop", title: "Cost of living relief", text: "Prices cooled off for a while.", tone: "good", weight: 5, livingCostShift: 0.8, livingCostShiftDays: 150 },
-  { id: "medical", title: "Medical bill", text: "Nothing serious. Still expensive.", tone: "bad", weight: 7, cashFlat: -1200, cashPctOfNetWorth: -0.02 },
-  { id: "repair", title: "Emergency repair", text: "Something important broke at the worst moment.", tone: "bad", weight: 7, cashFlat: -700, cashPctOfNetWorth: -0.01 },
-  { id: "paycut", title: "Pay cut", text: "Restructuring. Everyone takes a trim.", tone: "bad", weight: 4, payShift: 0.85, payShiftDays: 120, minDay: 60 },
-  { id: "layoff", title: "Laid off", text: "Your position was eliminated. You start one rung lower.", tone: "bad", weight: 2, minDay: 200, jobLoss: true },
-  { id: "audit", title: "Tax audit", text: "They found a discrepancy. You paid it.", tone: "bad", weight: 4, minDay: 150, cashPctOfNetWorth: -0.04 },
-  { id: "award", title: "Industry award", text: "An award nobody outside the trade has heard of. It works.", tone: "good", weight: 5, minDay: 150, gateBusiness: true, businessBoostDays: 21 },
-  { id: "lawsuit", title: "Nuisance lawsuit", text: "Settled quietly, as these things are.", tone: "bad", weight: 3, minDay: 250, cashPctOfNetWorth: -0.05 },
-  { id: "refund", title: "Overpayment refunded", text: "A billing error, finally caught, in your favour.", tone: "good", weight: 7, cashFlat: 600, cashPctOfNetWorth: 0.01 },
+  { id: "inherit", title: "An uncle's estate closes", text: "The executor found your name in the will and transferred your share of the estate.", tone: "good", weight: 3, minDay: 120, cashPctOfNetWorth: 0.12, cashFlat: 4000 },
+  { id: "bonus", title: "Quarterly bonus", text: "Your team beat its quarterly target, and payroll added a one-time performance bonus.", tone: "good", weight: 8, cashFlat: 900 },
+  { id: "raise", title: "Retention raise", text: "A senior colleague resigned, so your employer raised your pay to keep you from following.", tone: "good", weight: 6, payShift: 1.15, payShiftDays: 120 },
+  { id: "boom", title: "A review goes viral", text: "A customer video takes off overnight, and your business spends two weeks handling the rush.", tone: "good", weight: 8, gateBusiness: true, businessBoostDays: 14 },
+  { id: "headhunt", title: "Recruiter calls your boss", text: "A recruiter asks for a reference. Your employer counters with a temporary retention package.", tone: "good", weight: 6, payShift: 1.1, payShiftDays: 90 },
+  { id: "rentspike", title: "Lease renewal lands", text: "Your landlord renews at a sharply higher rate after property taxes rise in the neighbourhood.", tone: "bad", weight: 8, livingCostShift: 1.3, livingCostShiftDays: 180 },
+  { id: "rentdrop", title: "Insurance premium drops", text: "A clean claims record and lower local rates reduce your household costs for the next few months.", tone: "good", weight: 5, livingCostShift: 0.8, livingCostShiftDays: 150 },
+  { id: "medical", title: "Emergency appendectomy", text: "A late-night trip to the emergency room ends in surgery and a hospital invoice.", tone: "bad", weight: 5, cashFlat: -1200, cashPctOfNetWorth: -0.02 },
+  { id: "dental", title: "Cracked molar", text: "A cracked tooth needs a crown before it becomes a root canal.", tone: "bad", weight: 3, cashFlat: -650, cashPctOfNetWorth: -0.006 },
+  { id: "caraccident", title: "Car accident", text: "A driver runs a red light. Nobody is hurt, but you owe the insurance deductible and towing bill.", tone: "bad", weight: 4, gateAsset: "car", cashFlat: -900, cashPctOfNetWorth: -0.008 },
+  { id: "hvac", title: "HVAC compressor fails", text: "The air conditioning dies during a heat wave. The compressor and emergency callout are on you.", tone: "bad", weight: 4, gateAsset: "house", cashFlat: -850, cashPctOfNetWorth: -0.008 },
+  { id: "pipe", title: "Pipe bursts upstairs", text: "A supply line splits overnight, damaging the ceiling before the shutoff valve is found.", tone: "bad", weight: 3, gateAsset: "house", cashFlat: -1100, cashPctOfNetWorth: -0.01 },
+  { id: "paycut", title: "Department budget cut", text: "A major contract is cancelled, and your department takes a temporary salary reduction.", tone: "bad", weight: 4, payShift: 0.85, payShiftDays: 120, minDay: 60 },
+  { id: "layoff", title: "Office consolidation", text: "Two departments merge and your position is eliminated. Your next role starts one rung lower.", tone: "bad", weight: 2, minDay: 200, jobLoss: true },
+  { id: "audit", title: "Tax audit adjustment", text: "An expense deduction is disallowed, leaving back tax, interest and an accountant's invoice.", tone: "bad", weight: 4, minDay: 150, cashPctOfNetWorth: -0.04 },
+  { id: "award", title: "Trade association award", text: "Your business wins operator of the year, and the local press sends customers your way.", tone: "good", weight: 5, minDay: 150, gateBusiness: true, businessBoostDays: 21 },
+  { id: "lawsuit", title: "Slip-and-fall settlement", text: "A customer injury claim settles after your insurer applies the policy deductible.", tone: "bad", weight: 3, minDay: 250, gateBusiness: true, cashPctOfNetWorth: -0.05 },
+  { id: "refund", title: "Utility billing refund", text: "A faulty meter overcharged you for months. The utility returns the difference with interest.", tone: "good", weight: 7, cashFlat: 600, cashPctOfNetWorth: 0.01 },
   { id: "mentor", title: "A mentor takes an interest", text: "Someone senior starts telling you how things actually work — and makes sure you're paid for it.", tone: "good", weight: 6, payShift: 1.08, payShiftDays: 150 },
   { id: "referral", title: "Word of mouth", text: "A regular brought everyone they know.", tone: "good", weight: 7, gateBusiness: true, businessBoostDays: 10 },
-  { id: "windfall", title: "Old position pays off", text: "Something you forgot you owned was bought out.", tone: "good", weight: 4, minDay: 180, cashPctOfNetWorth: 0.08, cashFlat: 2500 },
+  { id: "windfall", title: "Former employer is acquired", text: "A forgotten employee share grant is cashed out when your old employer is bought.", tone: "good", weight: 4, minDay: 180, cashPctOfNetWorth: 0.08, cashFlat: 2500 },
   { id: "press", title: "Flattering write-up", text: "A journalist needed a story and you were it.", tone: "good", weight: 5, minDay: 120, gateBusiness: true, businessBoostDays: 18 },
   { id: "equity", title: "Vesting cliff", text: "Equity from an old contract finally vested.", tone: "good", weight: 4, minDay: 220, gateJobIndex: 10, cashPctOfNetWorth: 0.06, cashFlat: 3000 },
   { id: "spacedividend", title: "Space dividend", text: "The space company you hold paid a huge special dividend ahead of its first orbital run.", tone: "good", weight: 6, minDay: 300, gateInvested: 50000, cashPctOfNetWorth: 0.08 },
