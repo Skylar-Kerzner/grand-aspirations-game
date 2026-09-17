@@ -28,6 +28,7 @@ import {
   businessFortuneLabel,
   BUSINESS_ATTENTION_FLOOR,
   BUSINESS_ATTENTION_FULL_HOURS,
+  getBusinessCapital,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
