@@ -148,6 +148,8 @@ export type GameAction =
   | { type: "REPAY_STUDENT_LOAN"; amount?: number }
   | { type: "BUY_BUSINESS"; id: string; choices?: Record<string, string> }
   | { type: "SELL_BUSINESS"; id: string }
+  | { type: "CANCEL_BUSINESS_SALE"; id: string }
+
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
   | { type: "TAKE_LOAN"; id: string; amount: number }
