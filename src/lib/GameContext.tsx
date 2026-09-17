@@ -5,6 +5,7 @@ import {
   trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   credentialLevelFrom, requiredCredentialLevel, CREDENTIAL_YEARS_PER_LEVEL, CREDENTIAL_EXPERIENCE_CAP,
+  CREDENTIAL_LEVEL_CEILING, LEVELS_PER_YEAR_IN_TRACK, TRACK_TRANSFER_SHARE, TRACK_TRANSFER_ADJACENT_BONUS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
@@ -28,7 +29,7 @@ export interface LoanState { drawn: number; remaining: number; dailyPayment: num
 export interface InvestmentState { value: number; basis: number; lockedUntil?: number }
 /** Money borrowed to study. Nothing is due while enrolled or during the grace period. */
 export interface StudentLoanState { balance: number; borrowed: number; repaid: number; dueFrom: number }
-export interface CareerOffer { title: string; employer: string; dailyPay: number }
+export interface CareerOffer { title: string; employer: string; dailyPay: number; level?: number; note?: string }
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
 
@@ -289,6 +290,41 @@ export function getTrackCredential(state: GameState, trackId: string) {
   const years = getTrackYears(state, trackId);
   const fromExperience = Math.min(CREDENTIAL_EXPERIENCE_CAP, Math.floor(years / CREDENTIAL_YEARS_PER_LEVEL));
   return { studied, years, effective: Math.max(studied, fromExperience) };
+}
+
+/**
+ * The rank an industry would actually hire you into: what your schooling and
+ * years in that field support, plus whatever seniority elsewhere transfers.
+ */
+export function getEarnedLevelIn(state: GameState, trackId: string) {
+  const cred = getTrackCredential(state, trackId);
+  const ceiling = CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)];
+  const home = getCareerTrack(state.currentJob.employer).id;
+
+  // What you have built inside the industry itself.
+  const fromCredentials = cred.studied > 0 ? CREDENTIAL_LEVEL_CEILING[cred.studied - 1] + 1 : 0;
+  const fromYears = Math.floor(cred.years * LEVELS_PER_YEAR_IN_TRACK);
+  const insider = Math.min(ceiling, Math.max(fromCredentials, fromYears));
+
+  // What another industry is willing to credit from your seniority elsewhere.
+  let share = TRACK_TRANSFER_SHARE[trackId] ?? 0.25;
+  if (isAdjacentTrack(home, trackId)) share += TRACK_TRANSFER_ADJACENT_BONUS;
+  const transfer = trackId === home ? 0 : Math.min(ceiling, Math.floor(state.jobIndex * share));
+
+  const level = Math.max(0, Math.min(JOBS.length - 1, ceiling, Math.max(insider, transfer)));
+  return { level, ceiling, cred, transfer, insider };
+}
+
+/** Plain-language reason an industry would start you where it would. */
+export function earnedLevelNote(state: GameState, trackId: string): string {
+  const { cred, insider, transfer, ceiling } = getEarnedLevelIn(state, trackId);
+  const name = CAREER_TRACKS[trackId]?.name || "this industry";
+  if (cred.studied >= 3) return `Your graduate degree in ${name} opens the top of this ladder.`;
+  if (cred.studied === 2) return `Your bachelor's in ${name} places you mid-ladder here.`;
+  if (cred.studied === 1) return `Your short course in ${name} opens the junior half of this ladder.`;
+  if (cred.years >= 1) return `${cred.years.toFixed(1)} years worked in ${name} is what places you here.`;
+  if (transfer > insider && transfer > 0) return `No schooling in ${name}: they credit some of your seniority elsewhere, nothing more.`;
+  return `No schooling or years in ${name}: you would start near the bottom${ceiling < JOBS.length - 1 ? " and stop at level " + (ceiling + 1) + " without studying" : ""}.`;
 }
 
 /** What your career and education bring to running a venture in its industry. */
@@ -952,80 +988,99 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "GENERATE_JOB_OFFERS": {
-      const next = JOBS[state.jobIndex + 1];
-      if (!next) return state;
-      const tier = state.jobIndex + 1;
+      const maxLevel = JOBS.length - 1;
       const homeTrack = getCareerTrack(state.currentJob.employer).id;
       const tenure = getTrackTenure(state);
-      // Every path stays open — what changes is the pay you are offered.
-      const allVariants = CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }];
-      // A step up in an industry is only offered to people qualified for it:
-      // study in that industry, or years served in it up to the diploma level.
-      const needed = requiredCredentialLevel(tier);
-      const qualified = (employer: string) => {
-        const t = getCareerTrack(employer).id;
-        const studied = credentialLevelFrom(state.majors, t);
-        const fromYears = Math.min(CREDENTIAL_EXPERIENCE_CAP, Math.floor(getTrackYears(state, t) / CREDENTIAL_YEARS_PER_LEVEL));
-        return Math.max(studied, fromYears) >= needed;
-      };
-      const variants = allVariants.filter((v) => qualified(v.employer));
-      if (variants.length === 0) return { ...state, careerOffers: [] };
-      const pool = [...variants].sort(() => Math.random() - 0.5);
-      // Spread the choice across industries: take at most one offer per track first,
-      // starting with your own industry and any industry you hold a degree in.
       const majorTracks = state.majors
         .map((m) => MAJORS.find((d) => d.id === m)?.track)
         .filter((t): t is string => !!t);
-      const rank = (v: { employer: string }) => {
-        const t = getCareerTrack(v.employer).id;
-        if (t === homeTrack) return 0;
-        if (majorTracks.includes(t)) return 1;
-        return 2;
+
+      // Which rank each industry would hire you into today.
+      const targetLevelFor = (trackId: string): number => {
+        if (trackId === homeTrack) {
+          // Your own industry usually offers the next rung. Sometimes it is a
+          // sideways move, and occasionally a double step for the clearly ready.
+          const cred = getTrackCredential(state, trackId);
+          const doubleOk =
+            state.jobIndex + 2 <= maxLevel &&
+            cred.effective >= requiredCredentialLevel(state.jobIndex + 2) &&
+            cred.years >= 2 &&
+            getInterviewReadiness(state) >= 0.6;
+          const roll = Math.random();
+          if (doubleOk && roll > 0.82) return state.jobIndex + 2;
+          if (roll < 0.15) return state.jobIndex;
+          return Math.min(maxLevel, state.jobIndex + 1);
+        }
+        // Another industry starts you where your standing there puts you, and
+        // never higher than staying put would have taken you.
+        const earned = getEarnedLevelIn(state, trackId).level;
+        return Math.max(0, Math.min(earned, state.jobIndex + 1, maxLevel));
       };
-      const ordered = [...pool].sort((a, b) => rank(a) - rank(b));
-      const picked: typeof variants = [];
-      const usedTracks = new Set<string>();
-      for (const v of ordered) {
-        if (picked.length >= 3) break;
-        const t = getCareerTrack(v.employer).id;
-        if (usedTracks.has(t)) continue;
-        if (picked.some((p) => p.title === v.title || p.employer === v.employer)) continue;
-        usedTracks.add(t);
-        picked.push(v);
+
+      // Order industries: your own, then ones you have studied, then the rest.
+      const tracks = Object.keys(CAREER_TRACKS)
+        .sort(() => Math.random() - 0.5)
+        .sort((a, b) => {
+          const rank = (t: string) => (t === homeTrack ? 0 : majorTracks.includes(t) ? 1 : 2);
+          return rank(a) - rank(b);
+        });
+
+      const chosen: { title: string; employer: string; level: number; track: string }[] = [];
+      for (const trackId of tracks) {
+        if (chosen.length >= 3) break;
+        const level = targetLevelFor(trackId);
+        const roles = (CAREER_VARIANTS[level] || []).filter(
+          (v) => getCareerTrack(v.employer).id === trackId,
+        );
+        if (roles.length === 0) continue;
+        const role = roles[Math.floor(Math.random() * roles.length)];
+        if (chosen.some((c) => c.title === role.title || c.employer === role.employer)) continue;
+        // A sideways move inside your own industry to the job you already hold is no offer.
+        if (role.title === state.currentJob.title && role.employer === state.currentJob.employer) continue;
+        chosen.push({ ...role, level, track: trackId });
       }
-      for (const v of pool) {
-        if (picked.length >= 3) break;
-        if (picked.some((p) => p.title === v.title || p.employer === v.employer)) continue;
-        picked.push(v);
-      }
+      if (chosen.length === 0) return { ...state, careerOffers: [] };
+
       // Restless records are paid less wherever they land.
       const lastStart = state.jobHistory.length > 0 ? state.jobHistory[state.jobHistory.length - 1].startDay : 0;
       const hop = jobHopMultiplier(Math.floor(state.day) - lastStart);
       // Courses and coaching sharpen every offer you seek out.
       const training = 1 + getOfferTrainingBonus(state);
-      const careerOffers = picked.map((variant) => {
+      const careerOffers: CareerOffer[] = chosen.map((variant) => {
+        const base = JOBS[Math.min(variant.level, maxLevel)].dailyPay;
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
-        const track = trackPayMultiplier(variant.employer, state.jobIndex + 1);
-        const offerTrack = getCareerTrack(variant.employer).id;
-        const sameTrack = offerTrack === homeTrack;
-        const hasMajor = state.majors.includes(getTrackMajor(offerTrack)?.id || "");
+        const track = trackPayMultiplier(variant.employer, variant.level);
+        const sameTrack = variant.track === homeTrack;
+        const hasMajor = state.majors.includes(getTrackMajor(variant.track)?.id || "");
         // Staying put compounds: loyalty, positions held and years served in the industry.
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
-          : 1 - trackSwitchPenalty(homeTrack, offerTrack, hasMajor);
-        const pay = Math.round(next.dailyPay * factor * track * loyalty * hop * training);
-        return { ...variant, dailyPay: Number.isFinite(pay) && pay > 0 ? pay : Math.round(next.dailyPay) };
+          : 1 - trackSwitchPenalty(homeTrack, variant.track, hasMajor);
+        const pay = Math.round(base * factor * track * loyalty * hop * training);
+        return {
+          title: variant.title,
+          employer: variant.employer,
+          level: variant.level,
+          note: sameTrack
+            ? variant.level > state.jobIndex + 1
+              ? "A double step up — your record makes the case for it."
+              : variant.level === state.jobIndex + 1
+                ? "The next rung in your own industry."
+                : "A sideways move at your current rank."
+            : earnedLevelNote(state, variant.track),
+          dailyPay: Number.isFinite(pay) && pay > 0 ? pay : Math.round(base),
+        };
       }).sort(() => Math.random() - 0.5);
       return { ...state, careerOffers };
     }
 
     case "ACCEPT_JOB_OFFER": {
       const offer = state.careerOffers[action.index];
-      const next = JOBS[state.jobIndex + 1];
-      if (!offer || !next) return state;
+      if (!offer) return state;
+      const level = Math.max(0, Math.min(JOBS.length - 1, offer.level ?? state.jobIndex + 1));
       return {
-        ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [],
-        jobHistory: [...state.jobHistory, { ...offer, startDay: Math.floor(state.day) }],
+        ...state, jobIndex: level, currentJob: { ...offer, level }, careerOffers: [],
+        jobHistory: [...state.jobHistory, { ...offer, level, startDay: Math.floor(state.day) }],
       };
     }
 

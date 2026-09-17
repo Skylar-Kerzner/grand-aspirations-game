@@ -2,14 +2,14 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudentLoanHeadroom } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, CAREER_TRACKS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, getTrackPrograms, requiredCredentialLevel } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, getTrackPrograms } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
   const [showPaths, setShowPaths] = useState(false);
   const loanHeadroom = getStudentLoanHeadroom(state);
   const job = derived.job;
-  const next = derived.nextJob;
+  
   const homeTrack = getCareerTrack(job.employer).id;
   const tenure = getTrackTenure(state);
   const years = getTrackExperienceDays(state) / DAYS_PER_YEAR;
@@ -20,10 +20,6 @@ export default function CareerPanel() {
     ? Math.floor(state.day) - state.jobHistory[state.jobHistory.length - 1].startDay
     : 0;
   const settled = daysInJob >= JOB_HOP_SETTLED_DAYS;
-  const neededLevel = requiredCredentialLevel(state.jobIndex + 1);
-  const qualifiedTracks = openTracks.filter((t) => getTrackCredential(state, t.id).effective >= neededLevel);
-  const canSeekOffers = !!next && state.careerOffers.length === 0 && qualifiedTracks.length > 0;
-  const levelWord = ["", "short course", "bachelor's degree", "graduate degree"][neededLevel] || "graduate degree";
 
   return (
     <div className="space-y-6">
@@ -61,14 +57,11 @@ export default function CareerPanel() {
           </p>
         )}
 
-        {next ? (
-          <>
+        <>
             <p className="text-[11px] text-muted-foreground mb-2 mt-3">
-              {neededLevel === 0
-                ? `Every industry is open to you: ${openTracks.map((t) => t.name).join(", ")}. Leaving your own costs you pay — more so into a distant field, less if you hold its degree.`
-                : qualifiedTracks.length > 0
-                  ? `At this level, employers want a ${levelWord} in their industry — or years already served in it. You qualify in: ${qualifiedTracks.map((t) => t.name).join(", ")}.`
-                  : `No industry will take you at this level yet — employers want a ${levelWord} in their field, or years already served in it. Study below, or stay where you are and build the years.`}
+              Staying in {getCareerTrack(job.employer).name} usually means the next rank up, sometimes a sideways
+              move, occasionally two rungs at once. Any other industry starts you at the rank your schooling and
+              years there support — which can be well below where you stand now.
             </p>
             <p className="text-[11px] text-muted-foreground mb-2">
               {settled
@@ -79,41 +72,45 @@ export default function CareerPanel() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => dispatch({ type: "GENERATE_JOB_OFFERS" })}
-                disabled={!canSeekOffers}
                 className="w-full h-10 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40"
               >
                 Seek a new job
               </motion.button>
             ) : (
               <div className="space-y-2 mt-3">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Your offers · Level {state.jobIndex + 2} of {JOBS.length}
-                </p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Your offers</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Offers arrive in no particular order. The best-paid job today is not always the best career.
+                  Offers arrive in no particular order, at whatever rank each industry would hire you into.
+                  The best-paid job today is not always the best career.
                 </p>
-                {state.careerOffers.map((offer, index) => (
-                  <button
-                    key={`${offer.employer}-${index}`}
-                    onClick={() => dispatch({ type: "ACCEPT_JOB_OFFER", index })}
-                    className="w-full surface-button rounded-lg p-3 text-left transition-game"
-                  >
-                    <span className="flex justify-between gap-3 text-sm font-semibold">
-                      <span>{offer.title}</span>
-                      <span className="font-mono-nums text-primary shrink-0">{formatMoney(offer.dailyPay)}/day</span>
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
-                    <span className="block text-[11px] text-primary mt-1">{getCareerTrack(offer.employer).name}</span>
-                    <span className="block text-[11px] text-muted-foreground">
-                      {getCareerTrack(offer.employer).outlook}
-                    </span>
-                    <span className="block text-[11px] text-muted-foreground mt-1">
-                      {getCareerTrack(offer.employer).id === homeTrack
-                        ? "Same industry — your years here are paid for in this offer."
-                        : "A change of industry — you start over as an outsider, and the pay reflects it."}
-                    </span>
-                  </button>
-                ))}
+                {state.careerOffers.map((offer, index) => {
+                  const level = offer.level ?? state.jobIndex + 1;
+                  const step = level - state.jobIndex;
+                  const stepWord = step >= 2 ? "Double step up" : step === 1 ? "A step up" : step === 0 ? "A sideways move" : `A step down · ${-step} ${-step === 1 ? "rank" : "ranks"}`;
+                  return (
+                    <button
+                      key={`${offer.employer}-${index}`}
+                      onClick={() => dispatch({ type: "ACCEPT_JOB_OFFER", index })}
+                      className="w-full surface-button rounded-lg p-3 text-left transition-game"
+                    >
+                      <span className="flex justify-between gap-3 text-sm font-semibold">
+                        <span>{offer.title}</span>
+                        <span className="font-mono-nums text-primary shrink-0">{formatMoney(offer.dailyPay)}/day</span>
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
+                      <span className="flex justify-between gap-3 text-[11px] mt-1">
+                        <span className="text-primary">{getCareerTrack(offer.employer).name}</span>
+                        <span className={`shrink-0 ${step < 0 ? "text-destructive" : "text-primary"}`}>
+                          Level {level + 1} of {JOBS.length} · {stepWord}
+                        </span>
+                      </span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {getCareerTrack(offer.employer).outlook}
+                      </span>
+                      <span className="block text-[11px] text-muted-foreground mt-1">{offer.note}</span>
+                    </button>
+                  );
+                })}
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => dispatch({ type: "GENERATE_JOB_OFFERS" })}
@@ -123,10 +120,7 @@ export default function CareerPanel() {
                 </motion.button>
               </div>
             )}
-          </>
-        ) : (
-          <p className="text-xs text-primary">Top of the ladder.</p>
-        )}
+        </>
       </div>
 
       {/* Interview preparation */}
