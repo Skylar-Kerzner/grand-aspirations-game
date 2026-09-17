@@ -129,6 +129,7 @@ export default function CareerPanel() {
                         {getCareerTrack(offer.employer).outlook}
                       </span>
                       <span className="block text-[11px] text-muted-foreground mt-1">{offer.note}</span>
+                      </span>
                     </button>
                   );
                 })}
