@@ -218,14 +218,24 @@ export default function CareerPanel() {
                             {Math.ceil(state.studying?.daysLeft || 0)}d of work left
                           </span>
                         ) : (
-                          <motion.button
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
-                            disabled={!!state.studying || state.cash < def.cost}
-                            className="h-9 px-4 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40 shrink-0"
-                          >
-                            Enroll
-                          </motion.button>
+                          <div className="flex gap-2 shrink-0">
+                            <motion.button
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
+                              disabled={!!state.studying || state.cash < def.cost}
+                              className="h-9 px-3 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
+                            >
+                              Pay now
+                            </motion.button>
+                            <motion.button
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => dispatch({ type: "STUDY", majorId: def.id, financed: true })}
+                              disabled={!!state.studying || loanHeadroom < def.cost}
+                              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium transition-game disabled:opacity-40"
+                            >
+                              Student loan
+                            </motion.button>
+                          </div>
                         )}
                       </div>
                     );
