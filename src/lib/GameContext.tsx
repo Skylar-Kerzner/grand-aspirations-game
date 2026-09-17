@@ -19,7 +19,8 @@ const MAX_OFFLINE_DAYS = 240;
 
 export interface BusinessState {
   level: number;
-  condition: number;
+  condition: number;                   // the slow trading trend — this is what moves the value
+  takings?: number;                    // how today's takings compared with a normal day
   fortune?: number;                    // lasting quality of this particular venture
   choices?: Record<string, string>;    // location / market / product chosen when opening
 }
