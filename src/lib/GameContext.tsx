@@ -395,7 +395,9 @@ export function businessIncomeOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessSteadyIncomeOf(state, id) * (biz.condition ?? 1);
+  // Today's actual rate: steady income x trading trend x today's takings,
+  // so the income you watch swings with the day's trade.
+  return getBusinessSteadyIncomeOf(state, id) * (biz.condition ?? 1) * (biz.takings ?? 1);
 }
 
 /** Steady income at a given attention level (1 = full hours) — used for valuation and planning. */
@@ -796,8 +798,9 @@ function advance(state: GameState, days: number, now: number): GameState {
       // the season drifts slowly and reverts toward normal over about a month
       season = 1 + (season - 1) * (1 - BUSINESS_SEASON_REVERSION) + (Math.random() + Math.random() - 1) * BUSINESS_SEASON_VOL;
       season = Math.min(BUSINESS_SEASON_MAX, Math.max(BUSINESS_SEASON_MIN, season));
-      // mean-reverting drift around normal trading conditions
-      const drift = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * trendVol;
+      // mean-reverting drift around normal trading conditions — slow, but big
+      // enough that a venture's trend visibly moves over a month
+      const drift = (Math.random() + Math.random() + Math.random() - 1.5) * 5 * trendVol;
       condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + drift;
       if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk * relief) {
         const shock = 0.35 + Math.random() * 0.25;
