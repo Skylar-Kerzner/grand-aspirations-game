@@ -1130,13 +1130,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = ASSETS.find((asset) => asset.id === action.id);
       if (!def || action.tier < 1 || action.tier > def.tiers.length) return state;
       const looksHere = [...(state.assetLooks[action.id] || def.tiers.map(() => -1))];
-      // A look is settled once and for all: moving back to a step you have
-      // lived at returns you to the same place, not a fresh pick.
-      if (action.look !== undefined && (looksHere[action.tier - 1] ?? -1) < 0) {
-        looksHere[action.tier - 1] = action.look;
+      // The first look at a step is free. Changing your mind later means
+      // moving costs: paid up front, or the switch does not happen.
+      let cash = state.cash;
+      if (action.look !== undefined) {
+        const current = looksHere[action.tier - 1] ?? -1;
+        if (current < 0) {
+          looksHere[action.tier - 1] = action.look;
+        } else if (current !== action.look) {
+          const fee = lookSwitchCost(def.tiers[action.tier - 1]);
+          if (cash < fee) return state;
+          cash -= fee;
+          looksHere[action.tier - 1] = action.look;
+        }
       }
       const next = {
         ...state,
+        cash,
         assets: { ...state.assets, [action.id]: action.tier },
         assetLooks: { ...state.assetLooks, [action.id]: looksHere },
       };
