@@ -1368,6 +1368,13 @@ export function getBusinessTierIndex(level: number): number {
  */
 export const BASE_TIME_BUDGET = 40;
 
+/** Full working capacity lasts until the mid-fifties, then fades about an hour a year. */
+export const AGE_TAPER_START = 55;
+export const AGE_TAPER_MAX = 30;
+export function getAgeHoursPenalty(age: number): number {
+  return Math.min(AGE_TAPER_MAX, Math.max(0, age - AGE_TAPER_START));
+}
+
 // ---------- Student loans ----------
 // Modelled on US federal borrowing as it stands after 1 July 2026: Grad PLUS is
 // gone, so anything the government will not lend has to come from a private

@@ -16,11 +16,11 @@ import {
   WEEKDAY_RHYTHM, BUSINESS_SEASON_REVERSION, BUSINESS_SEASON_VOL, BUSINESS_SEASON_MIN, BUSINESS_SEASON_MAX, BUSINESS_WASHOUT_CHANCE, BUSINESS_BUMPER_CHANCE,
   BUSINESS_DAILY_SWING, BUSINESS_DAILY_FLOOR,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
-  BASE_TIME_BUDGET, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS,
+  BASE_TIME_BUDGET, getAgeHoursPenalty, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS,
   FEDERAL_CAPS, federalCapFor, federalRateFor, federalBucketFor, FEDERAL_RATE_UNDERGRAD,
   PRIVATE_RATE, PRIVATE_TERM_DAYS, PRIVATE_INCOME_MULTIPLE, PRIVATE_NET_WORTH_SHARE, type MajorDef,
 } from "./gameData";
-import { formatMoney } from "./formatters";
+import { formatMoney, START_AGE } from "./formatters";
 
 const SAVE_KEY = "empire-tycoon-save-v5";
 const LEGACY_SAVE_KEY = "empire-tycoon-save-v4";
@@ -244,11 +244,17 @@ export function getBusinessAttentionOf(state: GameState, id: string): number {
   return getBusinessAttentionFor(state, id, state.businessHours[id] || 0);
 }
 
-/** Weekly hours you can direct: a base week, what your lifestyle buys back, and what your field allows. */
+/** Weekly hours you can direct: a base week, what your lifestyle buys back, what your field allows, less what age takes. */
 export function getTimeBudget(state: GameState): number {
   const lifestyle = ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
   const career = trackPerk(state, "hoursBonus");
-  return Math.max(10, BASE_TIME_BUDGET + lifestyle + career);
+  const age = START_AGE + Math.floor(state.day / 365);
+  return Math.max(10, BASE_TIME_BUDGET - getAgeHoursPenalty(age) + lifestyle + career);
+}
+
+/** Hours a week age currently takes off your base week. */
+export function getAgeHours(state: GameState): number {
+  return getAgeHoursPenalty(START_AGE + Math.floor(state.day / 365));
 }
 
 /** Hours a week your lifestyle choices currently buy back (negative when they cost you). */

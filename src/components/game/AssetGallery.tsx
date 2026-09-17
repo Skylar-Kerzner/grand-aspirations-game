@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame, getTimeBudget, getLifestyleHours, getAssetLook, isAssetLookChosen, trackPerk } from "@/lib/GameContext";
+import { useGame, getTimeBudget, getLifestyleHours, getAgeHours, getAssetLook, isAssetLookChosen, trackPerk } from "@/lib/GameContext";
 import { formatMoney, periodLabel } from "@/lib/formatters";
 import { ASSETS, BASE_TIME_BUDGET, assetLooks, lookSwitchCost, getCareerTrack, getHoursBonusLabel } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
@@ -22,6 +22,7 @@ export default function AssetGallery() {
   const budget = getTimeBudget(state);
   const lifestyleHours = getLifestyleHours(state);
   const careerHours = trackPerk(state, "hoursBonus");
+  const ageHours = getAgeHours(state);
   const jobTrack = getCareerTrack(state.currentJob.employer);
   const careerHoursLabel = getHoursBonusLabel(jobTrack.id);
   const period = periodLabel(derived.recentCashFlowDays);
@@ -32,7 +33,9 @@ export default function AssetGallery() {
       <div className="surface-card rounded-xl p-4 mb-3">
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Your week</h3>
         <p className="font-mono-nums text-lg">
-          {BASE_TIME_BUDGET}h base {lifestyleHours >= 0 ? "+" : "−"} {Math.abs(lifestyleHours)}h lifestyle
+          {BASE_TIME_BUDGET}h base
+          {ageHours > 0 && <> − {ageHours}h age</>}
+          {" "}{lifestyleHours >= 0 ? "+" : "−"} {Math.abs(lifestyleHours)}h lifestyle
           {careerHours !== 0 && <> {careerHours >= 0 ? "+" : "−"} {Math.abs(careerHours)}h {careerHoursLabel} ({jobTrack.name})</>} = {budget}h
         </p>
         <p className="text-[11px] text-muted-foreground mt-1">
