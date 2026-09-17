@@ -211,7 +211,7 @@ export default function BusinessList() {
                       ) : (
                         <div className="w-full h-full flex items-center justify-center px-6 text-center">
                           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                            Not open yet — you'll see it the day the doors open
+                            Not open yet
                           </p>
                         </div>
                       )}
