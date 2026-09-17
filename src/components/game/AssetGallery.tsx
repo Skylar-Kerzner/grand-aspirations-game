@@ -200,25 +200,44 @@ export default function AssetGallery() {
                           </span>
                         </motion.button>
 
-                        {open && !isCurrent && (
+                        {open && (
                           <div className="rounded-lg border border-border p-3">
                             <p className="text-[11px] text-muted-foreground mb-2">
-                              Same price, same hours — pick the one you want to live with. You only see it once you
-                              move in, and this step keeps that look for the rest of the game.
+                              {settled
+                                ? `Same price, same hours. You already live with ${chosenLook?.name} here — moving to another costs ${formatMoney(switchFee)}.`
+                                : "Same price, same hours — pick the one you want to live with. You only see it once you move in."}
                             </p>
                             <div className="grid grid-cols-3 gap-2">
-                              {looks.map((look, li) => (
-                                <button
-                                  key={look.image}
-                                  onClick={() => {
-                                    dispatch({ type: "SET_LIFESTYLE", id: selectedDef.id, tier: i + 1, look: li });
-                                    setChoosing(null);
-                                  }}
-                                  className="surface-button rounded-md px-2 py-2 text-[11px] leading-tight text-center transition-game"
-                                >
-                                  {look.name}
-                                </button>
-                              ))}
+                              {looks.map((look, li) => {
+                                const isChosen = settled && li === chosenIdx;
+                                const fee = settled && !isChosen ? switchFee : 0;
+                                const afford = state.cash >= fee;
+                                return (
+                                  <button
+                                    key={look.image}
+                                    disabled={!afford || (isChosen && isCurrent)}
+                                    onClick={() => {
+                                      dispatch({
+                                        type: "SET_LIFESTYLE",
+                                        id: selectedDef.id,
+                                        tier: i + 1,
+                                        ...(isChosen ? {} : { look: li }),
+                                      });
+                                      setChoosing(null);
+                                    }}
+                                    className={`rounded-md px-2 py-2 text-[11px] leading-tight text-center transition-game ${
+                                      isChosen ? "bg-primary/15 ring-1 ring-primary/40" : "surface-button"
+                                    } ${afford ? "" : "opacity-40"}`}
+                                  >
+                                    <span className="block">{look.name}</span>
+                                    {settled && (
+                                      <span className="block text-[10px] text-muted-foreground font-mono-nums">
+                                        {isChosen ? "Yours" : formatMoney(switchFee)}
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
