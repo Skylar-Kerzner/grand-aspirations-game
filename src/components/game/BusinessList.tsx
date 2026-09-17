@@ -140,7 +140,7 @@ export default function BusinessList() {
                 )}
                 {biz.level > 0 && (
                   <div className="mt-1 space-y-0.5">
-                    <p className="font-mono-nums text-[11px] text-primary">{formatRate(income)}</p>
+                    <p className={`font-mono-nums text-[11px] ${income < 0 ? "text-destructive" : "text-primary"}`}>{formatRate(income)}</p>
                     <p className="font-mono-nums text-[10px] text-muted-foreground">
                       {formatCompact(getBusinessCapital(def, biz.level))} invested
                     </p>
@@ -287,7 +287,7 @@ export default function BusinessList() {
                   </p>
                 )}
                 {selectedBiz.level > 0 && (
-                  <p className="text-xs text-primary mb-1">
+                  <p className={`text-xs mb-1 ${businessIncomeOf(state, selectedDef.id) < 0 ? "text-destructive" : "text-primary"}`}>
                     {formatRate(businessIncomeOf(state, selectedDef.id))}
                     <span className="text-muted-foreground ml-1">
                       (normal trade {formatPerDay(getBusinessSteadyIncomeOf(state, selectedDef.id))})

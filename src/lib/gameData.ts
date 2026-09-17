@@ -243,8 +243,8 @@ export const ROLE_ANNUAL_SALARY_BANDS: Record<string, { min: number; max: number
   "Head of Surgery": { min: 400000, max: 750000 },
   "Chief of Medicine": { min: 300000, max: 600000 },
   "Hospital Chief Executive": { min: 350000, max: 900000 },
-  "Director of Medical Research": { min: 220000, max: 500000 },
-  "Surgeon General": { min: 190000, max: 300000 },
+  "Health System President": { min: 500000, max: 1200000 },
+  "Healthcare Group Chairman": { min: 800000, max: 2000000 },
 };
 
 /**
@@ -641,7 +641,7 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Head of Private Equity", employer: "Halstead Capital" },
     { title: "Studio Headliner", employer: "Silver Reel Studios" },
     { title: "State Education Commissioner", employer: "State Department of Learning" },
-    { title: "Director of Medical Research", employer: "National Health Institute" },
+    { title: "Health System President", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Chief Executive Officer", employer: "Larkspur Hotels" },
@@ -651,7 +651,7 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Chief Investment Officer", employer: "Kestrel Capital" },
     { title: "Studio Chief Executive", employer: "Vantage Pictures" },
     { title: "National Education Secretary", employer: "State Department of Learning" },
-    { title: "Surgeon General", employer: "National Health Institute" },
+    { title: "Healthcare Group Chairman", employer: "Kingsley Medical Group" },
     { title: "Founder", employer: "Your own fund" },
   ],
 ];
@@ -1426,8 +1426,8 @@ export const LICENSED_ROLE_REQUIREMENTS: Record<string, { level: number; label: 
   "Specialist Surgeon": { level: 3, label: "an MD" },
   "Head of Surgery": { level: 3, label: "an MD" },
   "Chief of Medicine": { level: 3, label: "an MD" },
-  "Director of Medical Research": { level: 3, label: "an MD" },
-  "Surgeon General": { level: 3, label: "an MD" },
+  "Health System President": { level: 3, label: "an MD" },
+  "Healthcare Group Chairman": { level: 3, label: "an MD" },
   // Education & Public Service
   "Teaching Assistant": { level: 1, label: "a teaching assistant certificate" },
   "Substitute Teacher": { level: 1, label: "a teaching assistant certificate" },
