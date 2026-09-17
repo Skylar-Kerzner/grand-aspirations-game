@@ -53,10 +53,12 @@ export default function CareerPanel() {
           <span className="text-muted-foreground">Gross pay at 40h</span>
           <span className="font-mono-nums">{formatMoney(job.dailyPay)}/day</span>
         </div>
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-muted-foreground">Gross pay at your {derived.workHours}h</span>
-          <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
-        </div>
+        {derived.workHours !== WEEK_HOURS && (
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-muted-foreground">Gross pay at your {derived.workHours}h</span>
+            <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
+          </div>
+        )}
         <p className="text-[11px] text-muted-foreground mb-2">
           Offers below are quoted at 40h — compare them with the 40h line above.
         </p>
@@ -128,9 +130,11 @@ export default function CareerPanel() {
                         <span>{offer.title}</span>
                         <span className="font-mono-nums text-primary shrink-0 text-right">
                           {formatMoney(offer.dailyPay)}/day at 40h
-                          <span className="block text-[11px] font-normal text-muted-foreground">
-                            {formatMoney(offer.dailyPay * (derived.workHours / WEEK_HOURS))}/day at your {derived.workHours}h
-                          </span>
+                          {derived.workHours !== WEEK_HOURS && (
+                            <span className="block text-[11px] font-normal text-muted-foreground">
+                              {formatMoney(offer.dailyPay * (derived.workHours / WEEK_HOURS))}/day at your {derived.workHours}h
+                            </span>
+                          )}
                         </span>
                       </span>
                       <span className="text-[11px] text-muted-foreground">{offer.employer} · {getCareerTrack(offer.employer).name}</span>
