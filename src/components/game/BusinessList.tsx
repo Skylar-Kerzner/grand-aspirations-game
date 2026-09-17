@@ -478,8 +478,6 @@ export default function BusinessList() {
                   const saleLeft = getSaleDaysLeft(state, selectedDef.id);
                   const listed = !!selectedBiz.listedUntil;
                   const maxed = selectedBiz.level >= BUSINESS_MAX_LEVEL;
-                  const nextRate = marginalBusinessROI(selectedDef, selectedBiz.level + 1);
-                  const lastRate = marginalBusinessROI(selectedDef, Math.max(1, selectedBiz.level));
                   const buildDays = businessBuildDays(selectedBiz.level + 1);
                   return (
                     <>
