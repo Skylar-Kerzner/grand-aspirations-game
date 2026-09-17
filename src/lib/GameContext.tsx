@@ -63,7 +63,7 @@ export interface GameState {
   currentJob: CareerOffer;
   careerOffers: CareerOffer[];
   jobHistory: (CareerOffer & { startDay: number })[];
-  xp: number;
+  
   majors: string[]; // completed major ids — each opens a career track
   studying: { majorId: string; daysLeft: number } | null;
   studyHours: number;     // of the 40 weekly hours, how many go to school
@@ -569,7 +569,7 @@ function rollEvent(state: GameState, days: number): GameState {
     s.cash += delta;
     if (delta > 0) s.stats.eventGains += delta; else s.stats.eventLosses += -delta;
   }
-  if (def.xpFlat) s.xp += def.xpFlat;
+  
   if (def.businessBoostDays) s.boostUntil = s.day + def.businessBoostDays;
   if (def.livingCostShift && def.livingCostShiftDays) {
     s.livingMult = def.livingCostShift;
@@ -585,12 +585,11 @@ function rollEvent(state: GameState, days: number): GameState {
     s.currentJob = { title: fallback.title, employer: fallback.employer, dailyPay: fallback.dailyPay };
     s.jobHistory = [...s.jobHistory, { ...s.currentJob, startDay: Math.floor(s.day) }];
     s.careerOffers = [];
-    s.xp = 0;
   }
 
   const parts: string[] = [];
   if (delta !== 0) parts.push(`${delta > 0 ? "+" : "-"}${formatMoney(Math.abs(delta))} cash`);
-  if (def.xpFlat) parts.push(`+${def.xpFlat} experience`);
+  
   if (def.businessBoostDays) parts.push(`Venture profits doubled for ${def.businessBoostDays} days`);
   if (def.livingCostShift && def.livingCostShiftDays) parts.push(`Living costs ${def.livingCostShift >= 1 ? "+" : ""}${Math.round((def.livingCostShift - 1) * 100)}% for ${def.livingCostShiftDays} days`);
   if (def.payShift && def.payShiftDays) parts.push(`Pay ${def.payShift >= 1 ? "+" : ""}${Math.round((def.payShift - 1) * 100)}% for ${def.payShiftDays} days`);
@@ -748,16 +747,12 @@ function advance(state: GameState, days: number, now: number): GameState {
     events = [cutoff, ...events].slice(0, 30);
   }
 
-  // Experience
-  const workShare = getWorkHours(s) / WEEK_HOURS;
-  const xp = s.xp + days * getCareerProgressMultiplier(s) * (0.4 + 0.6 * workShare);
-
   let next: GameState = {
     ...s,
     cash: Math.max(0, cash), ccDebt,
     assets, events,
     day: s.day + days,
-    xp, businesses, investments, loans, loansRepaid,
+    businesses, investments, loans, loansRepaid,
     stats, lastTick: now,
   };
   next = rollEvent(next, days);
@@ -797,7 +792,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         cash: state.cash + pay,
-        xp: state.xp + 2 * getCareerProgressMultiplier(state),
         lastShiftDay: today,
         stats,
       };
