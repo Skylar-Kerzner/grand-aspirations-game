@@ -122,32 +122,49 @@ export default function CareerPanel() {
         )}
       </div>
 
-      {/* Training budget */}
+      {/* Interview preparation */}
       <div className="surface-card rounded-xl p-4">
         <div className="flex justify-between items-baseline mb-1">
-          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Training budget</h3>
-          <span className="font-mono-nums text-sm">{formatMoney(state.trainingBudget)}/day</span>
+          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Interview readiness</h3>
+          <span className="font-mono-nums text-sm">
+            {state.trainingBudget > 0 ? `${formatMoney(derived.interviewPrepRate)}/day` : "Off"}
+          </span>
         </div>
-        <p className="text-[11px] text-muted-foreground mb-1">
-          Courses, certifications, coaching and conferences for your career. They build up over weeks of
-          sustained spending — every offer you seek out pays +{Math.round(derived.offerTrainingBonus * 100)}%
-          (up to +35%). Ease off and the edge fades.
-        </p>
         <p className="text-[11px] text-muted-foreground mb-3">
-          {derived.offerTrainingBonus >= 0.349
-            ? "You are at the full boost."
-            : `Effective spend ${formatMoney(state.trainingMomentum)}/day — it takes about $140/day held for a month to reach the cap.`}
+          A steady retainer for coaching, mock interviews and certifications. Keep it running and you warm up
+          over about a month — every offer you seek pays up to +35% more. Stop and you cool off again.
         </p>
-        <input
-          type="range"
-          min={0}
-          max={Math.max(50, Math.round(Math.max(derived.salaryPerDay, 50) * 1.5))}
-          step={1}
-          value={Math.min(state.trainingBudget, Math.max(50, Math.round(Math.max(derived.salaryPerDay, 50) * 1.5)))}
-          onChange={(e) => dispatch({ type: "SET_TRAINING", amount: Number(e.target.value) })}
-          className="w-full accent-primary"
-        />
+
+        <div className="h-3 rounded-full bg-secondary overflow-hidden mb-2">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-primary/40 via-primary to-primary"
+            animate={{ width: `${Math.round(derived.interviewReadiness * 100)}%` }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          />
+        </div>
+        <div className="flex justify-between text-[11px] mb-3">
+          <span className="text-muted-foreground">
+            {derived.interviewReadiness >= 0.99
+              ? "Fully warmed up"
+              : state.trainingBudget > 0
+                ? "Heating up"
+                : "Cooling off"}
+            {" · "}{Math.round(derived.interviewReadiness * 100)}% ready
+          </span>
+          <span className="font-mono-nums text-primary">+{Math.round(derived.offerTrainingBonus * 100)}% on offers</span>
+        </div>
+
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => dispatch({ type: "SET_TRAINING", amount: state.trainingBudget > 0 ? 0 : derived.interviewPrepRate })}
+          className={`w-full h-10 rounded-lg font-semibold text-sm transition-game ${
+            state.trainingBudget > 0 ? "surface-button" : "bg-primary text-primary-foreground"
+          }`}
+        >
+          {state.trainingBudget > 0 ? "Stop interview prep" : `Start interview prep — ${formatMoney(derived.interviewPrepRate)}/day`}
+        </motion.button>
       </div>
+
 
       {/* Education — short courses, diplomas and degrees, one per industry */}
       <div>

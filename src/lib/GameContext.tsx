@@ -423,12 +423,19 @@ export function getCreditCardPayment(state: GameState): number {
   return Math.min(balanceAfterInterest, balanceAfterInterest * CC_MIN_PAYMENT_RATE);
 }
 
-// Courses and coaching raise the pay of every job offer you seek out,
-// on a diminishing curve up to +35%.
+// Steady interview preparation — a fixed retainer for coaching, mock interviews and
+// certifications. It heats up over about a month and cools off if you stop.
 export const TRAINING_OFFER_CAP = 0.35;
-export const TRAINING_MOMENTUM_DAYS = 30; // time constant for training to build (and fade)
+export const TRAINING_MOMENTUM_DAYS = 30; // time constant for readiness to build (and fade)
+export function getInterviewPrepRate(state: GameState): number {
+  return Math.max(20, Math.round(getJob(state).dailyPay * 0.15));
+}
+export function getInterviewReadiness(state: GameState): number {
+  const rate = getInterviewPrepRate(state);
+  return Math.max(0, Math.min(1, state.trainingMomentum / Math.max(1, rate)));
+}
 export function getOfferTrainingBonus(state: GameState): number {
-  return Math.min(TRAINING_OFFER_CAP, 0.15 * Math.sqrt(Math.max(0, state.trainingMomentum) / TRAINING_REFERENCE));
+  return TRAINING_OFFER_CAP * getInterviewReadiness(state);
 }
 
 export function getBusinessValue(state: GameState): number {
@@ -648,13 +655,14 @@ function advance(state: GameState, days: number, now: number): GameState {
   stats.jobEarned[job.id] = (stats.jobEarned[job.id] || 0) + netSalary;
   stats.jobDays[job.id] = (stats.jobDays[job.id] || 0) + days;
 
-  // Living and training
+  // Living and interview prep (a steady retainer while it is switched on)
   const living = getLivingCosts(s) * days;
-  const training = Math.max(0, s.trainingBudget) * days;
+  const prepRate = s.trainingBudget > 0 ? getInterviewPrepRate(s) : 0;
+  const training = prepRate * days;
   cash -= living + training;
-  // Training only pays off if it is sustained — momentum builds and fades over about a month.
+  // Readiness only counts if it is sustained — it heats up and cools over about a month.
   const trainingKeep = Math.exp(-days / TRAINING_MOMENTUM_DAYS);
-  const trainingMomentum = s.trainingMomentum * trainingKeep + Math.max(0, s.trainingBudget) * (1 - trainingKeep);
+  const trainingMomentum = s.trainingMomentum * trainingKeep + prepRate * (1 - trainingKeep);
   stats.livingSpent += living;
   stats.trainingSpent += training;
 
@@ -777,6 +785,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     day: s.day + days,
     businesses, investments, loans, loansRepaid,
     trainingMomentum,
+    trainingBudget: prepRate,
     stats, lastTick: now,
   };
   next = rollEvent(next, days);
@@ -1145,6 +1154,8 @@ export interface DerivedState {
   job: (typeof JOBS)[number];
   nextJob: (typeof JOBS)[number] | null;
   offerTrainingBonus: number;
+  interviewReadiness: number;
+  interviewPrepRate: number;
   
   creditTier: number;
   creditLimit: number;
@@ -1192,6 +1203,8 @@ function calculateDerived(state: GameState): DerivedState {
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
     offerTrainingBonus: getOfferTrainingBonus(state),
+    interviewReadiness: getInterviewReadiness(state),
+    interviewPrepRate: getInterviewPrepRate(state),
     creditTier: state.loansRepaid.length,
     creditLimit: getCreditLimit(state),
     taxRate,

@@ -48,7 +48,7 @@ export default function LedgerPanel() {
       <Section title="Where it went">
         <Line label="Tax" value={-s.taxesPaid} days={days} />
         <Line label="Lifestyle" value={-s.livingSpent} days={days} />
-        <Line label="Training" value={-s.trainingSpent} days={days} />
+        <Line label="Interview prep" value={-s.trainingSpent} days={days} />
         <Line label="Tuition" value={-s.educationSpent} days={days} />
         <Line label="Consultant retainers" value={-s.retainerSpent} days={days} />
         <Line label="Consultant hiring" value={-s.consultantSpent} days={days} />

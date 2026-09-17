@@ -34,7 +34,7 @@ export default function TimePanel() {
             <span className="font-mono-nums text-primary">{formatMoney(derived.incomePerDay)}/day</span>
           </div>
           <div className="flex justify-between text-[11px] text-muted-foreground">
-            <span>Living costs, training, loans</span>
+            <span>Living costs, interview prep, loans</span>
             <span className="font-mono-nums">
               -{formatMoney(derived.livingCosts + derived.trainingCost + derived.operatingCosts + derived.loanPayments + derived.ccPaymentPerDay)}/day
             </span>
