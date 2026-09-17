@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/GameContext";
 import { formatMoney } from "@/lib/formatters";
+import { JOBS } from "@/lib/gameData";
 
 export default function WorkButton() {
   const { state, derived, dispatch } = useGame();
