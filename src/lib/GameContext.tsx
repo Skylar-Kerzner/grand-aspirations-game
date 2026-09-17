@@ -28,7 +28,7 @@ export interface LoanState { drawn: number; remaining: number; dailyPayment: num
 export interface InvestmentState { value: number; basis: number; lockedUntil?: number }
 /** Money borrowed to study. Nothing is due while enrolled or during the grace period. */
 export interface StudentLoanState { balance: number; borrowed: number; repaid: number; dueFrom: number }
-export interface CareerOffer { title: string; employer: string; dailyPay: number }
+export interface CareerOffer { title: string; employer: string; dailyPay: number; level?: number; note?: string }
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
 
