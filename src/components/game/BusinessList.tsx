@@ -322,13 +322,15 @@ export default function BusinessList() {
                           i < selectedDef.tierNames.length - 1 ? "border-b border-border" : ""
                         }`}
                       >
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-                          {reached && tierImg ? (
+                        {reached && tierImg ? (
+                          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
                             <img src={tierImg} alt={name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full" />
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center flex-shrink-0">
+                            <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm ${reached ? "text-foreground" : "text-muted-foreground"}`}>
                             {reached ? name : "?"}
