@@ -163,32 +163,6 @@ export default function TimePanel() {
         </div>
       </div>
 
-      {/* Training budget */}
-      <div className="surface-card rounded-xl p-4">
-        <div className="flex justify-between items-baseline mb-1">
-          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Training budget</h3>
-          <span className="font-mono-nums text-sm">{formatMoney(state.trainingBudget)}/day</span>
-        </div>
-        <p className="text-[11px] text-muted-foreground mb-1">
-          Courses, certifications, coaching and conferences for your career. They build up over weeks of
-          sustained spending — every offer you seek out pays +{Math.round(derived.offerTrainingBonus * 100)}%
-          (up to +35%). Ease off and the edge fades.
-        </p>
-        <p className="text-[11px] text-muted-foreground mb-3">
-          {derived.offerTrainingBonus >= 0.349
-            ? "You are at the full boost."
-            : `Effective spend ${formatMoney(state.trainingMomentum)}/day — it takes about $140/day held for a month to reach the cap.`}
-        </p>
-        <input
-          type="range"
-          min={0}
-          max={Math.max(50, Math.round(Math.max(derived.salaryPerDay, 50) * 1.5))}
-          step={1}
-          value={Math.min(state.trainingBudget, Math.max(50, Math.round(Math.max(derived.salaryPerDay, 50) * 1.5)))}
-          onChange={(e) => dispatch({ type: "SET_TRAINING", amount: Number(e.target.value) })}
-          className="w-full accent-primary"
-        />
-      </div>
     </div>
   );
 }
