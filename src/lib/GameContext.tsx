@@ -22,7 +22,7 @@ export interface BusinessState {
   choices?: Record<string, string>;    // location / market / product chosen when opening
 }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
-export interface InvestmentState { value: number; basis: number }
+export interface InvestmentState { value: number; basis: number; lockedUntil?: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number }
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
