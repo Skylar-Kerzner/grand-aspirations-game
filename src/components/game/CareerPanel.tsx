@@ -16,15 +16,13 @@ export default function CareerPanel() {
   const tenure = getTrackTenure(state);
   const years = getTrackExperienceDays(state) / DAYS_PER_YEAR;
   const experienceBonus = getTrackExperienceBonus(state);
-  // Tracks whose offers are open to the player at the next level
-  const openTracks = Object.values(CAREER_TRACKS).filter((t) => {
-    const hasMajor = state.majors.includes(getTrackMajor(t.id)?.id || "");
-    const sameTrack = t.id === homeTrack;
-    if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, t.id)) return false;
-    if (!gatedTier) return true;
-    return hasMajor || (sameTrack && (tenure >= TRACK_EXPERIENCE_GATE || years >= TRACK_EXPERIENCE_YEARS_GATE));
-  });
-  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && openTracks.length > 0 && state.careerOffers.length === 0;
+  // Every industry stays open — switching simply pays less
+  const openTracks = Object.values(CAREER_TRACKS);
+  const daysInJob = state.jobHistory.length > 0
+    ? Math.floor(state.day) - state.jobHistory[state.jobHistory.length - 1].startDay
+    : 0;
+  const settled = daysInJob >= JOB_HOP_SETTLED_DAYS;
+  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && state.careerOffers.length === 0;
 
   return (
     <div className="space-y-6">
