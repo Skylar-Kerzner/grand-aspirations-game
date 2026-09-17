@@ -868,8 +868,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const homeTrack = getCareerTrack(state.currentJob.employer).id;
       const tenure = getTrackTenure(state);
       // Every path stays open — what changes is the pay you are offered.
-      const variants = CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }];
-      if (variants.length === 0) return state;
+      const allVariants = CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }];
+      // A step up in an industry is only offered to people qualified for it:
+      // study in that industry, or years served in it up to the diploma level.
+      const needed = requiredCredentialLevel(tier);
+      const qualified = (employer: string) => {
+        const t = getCareerTrack(employer).id;
+        const studied = credentialLevelFrom(state.majors, t);
+        const fromYears = Math.min(CREDENTIAL_EXPERIENCE_CAP, Math.floor(getTrackYears(state, t) / CREDENTIAL_YEARS_PER_LEVEL));
+        return Math.max(studied, fromYears) >= needed;
+      };
+      const variants = allVariants.filter((v) => qualified(v.employer));
+      if (variants.length === 0) return { ...state, careerOffers: [] };
       const pool = [...variants].sort(() => Math.random() - 0.5);
       // Spread the choice across industries: take at most one offer per track first,
       // starting with your own industry and any industry you hold a degree in.
