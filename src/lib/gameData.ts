@@ -270,11 +270,14 @@ export function jobHopMultiplier(daysInCurrentJob: number): number {
  * only reachable by studying that path's major.
  */
 export const TRACK_ADJACENCY: Record<string, string[]> = {
-  hospitality: ["operations", "corporate"],
-  operations: ["hospitality", "corporate"],
-  corporate: ["operations", "hospitality", "finance"],
-  tech: ["corporate"],
+  hospitality: ["operations", "corporate", "arts"],
+  operations: ["hospitality", "corporate", "medicine"],
+  corporate: ["operations", "hospitality", "finance", "education"],
+  tech: ["corporate", "education"],
   finance: ["corporate"],
+  arts: ["hospitality", "education"],
+  education: ["arts", "corporate", "medicine"],
+  medicine: ["education", "operations"],
 };
 
 export function isAdjacentTrack(from: string, to: string): boolean {
