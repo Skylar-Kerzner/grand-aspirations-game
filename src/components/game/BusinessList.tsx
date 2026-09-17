@@ -125,9 +125,14 @@ export default function BusinessList() {
                 )}
                 {biz.level > 0 && (
                   <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[10px] font-medium">
-                    {condition.text}
+                    {biz.listedUntil
+                      ? `On the market · ${getSaleDaysLeft(state, def.id)}d`
+                      : getBuildDaysLeft(state, def.id) > 0
+                        ? `Building · ${getBuildDaysLeft(state, def.id)}d`
+                        : condition.text}
                   </div>
                 )}
+
               </div>
               <div className="p-3">
                 <h3 className="font-semibold text-sm leading-tight">{displayName}</h3>
