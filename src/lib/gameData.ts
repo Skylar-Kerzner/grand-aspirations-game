@@ -151,28 +151,28 @@ export const CAREER_TRACKS: Record<string, CareerTrack> = {
     id: "hospitality", name: "Hospitality & Retail", curve: -0.6,
     outlook: "Pays well right away, but the ceiling is low.",
     middle: "Rises quickly at first, then flattens out by the middle.",
-    perks: ["Runs coffee shops, restaurants, hotels and fashion labels better", "Meals and rooms comped: 10% off your lifestyle", "You read a site before you sign: ventures open luckier"],
+    perks: ["Runs coffee shops, restaurants, hotels and fashion labels better", "Meals and rooms comped: 10% off your lifestyle", "You read a site before you sign: businesses open luckier"],
     ventureTracks: ["hospitality"], livingDiscount: 0.1, ventureLuck: 0.12,
   },
   operations: {
     id: "operations", name: "Operations & Industry", curve: -0.25,
     outlook: "Steady pay that rises slowly and reliably.",
     middle: "Even, predictable steps the whole way up.",
-    perks: ["Runs theme parks and large sites better", "Cheapest schooling of the hands-on paths", "You know the trades: 14% off opening and growing ventures"],
+    perks: ["Runs theme parks and large sites better", "Cheapest schooling of the hands-on paths", "You know the trades: 14% off opening and growing businesses"],
     ventureTracks: ["operations"], ventureCostDiscount: 0.14,
   },
   corporate: {
     id: "corporate", name: "Corporate Leadership", curve: 0.2,
     outlook: "Modest early, strong once you reach the top table.",
     middle: "Slow through the middle, then jumps at director level.",
-    perks: ["Runs city developments better", "Boardroom contacts: +4% on everything invested", "Deals come to you first: ventures open luckier"],
+    perks: ["Runs city developments better", "Boardroom contacts: +4% on everything invested", "Deals come to you first: businesses open luckier"],
     ventureTracks: ["corporate"], investBonus: 0.04, ventureLuck: 0.1,
   },
   tech: {
     id: "tech", name: "Technology", curve: 0.5,
     outlook: "A slow start that compounds into very high pay.",
     middle: "Climbs fast through the middle once you can build.",
-    perks: ["Runs tech ventures and media networks better", "Remote and flexible: +3h of your week", "You build the systems yourself: 7% off venture costs"],
+    perks: ["Runs tech companies and media networks better", "Remote and flexible: +3h of your week", "You build the systems yourself: 7% off business costs"],
     ventureTracks: ["tech"], hoursBonus: 3, ventureCostDiscount: 0.07,
   },
   finance: {
@@ -186,7 +186,7 @@ export const CAREER_TRACKS: Record<string, CareerTrack> = {
     id: "arts", name: "Arts & Entertainment", curve: 1.1,
     outlook: "Almost nothing for years, then fame pays enormously.",
     middle: "A brutal middle — many years at little pay.",
-    perks: ["Runs fashion labels, theme parks and media better", "Sponsorships and invitations: 20% off your lifestyle", "Your name on the door: ventures open a little luckier"],
+    perks: ["Runs fashion labels, theme parks and media better", "Sponsorships and invitations: 20% off your lifestyle", "Your name on the door: businesses open a little luckier"],
     ventureTracks: ["hospitality", "tech", "operations"], livingDiscount: 0.2, ventureLuck: 0.06,
   },
   education: {
@@ -657,12 +657,20 @@ export function getBusinessIncome(def: BusinessDef, level: number): number {
 }
 
 // ---------- Lifestyle (all costs recur daily) ----------
+/** One look at a tier. Same cost, same hours — only the name and the picture differ. */
+export interface AssetLookDef {
+  name: string;
+  image: string;
+}
+
 export interface AssetTierDef {
   name: string;
   dailyCost: number;
   hoursBonus: number; // extra weekly hours this tier buys back (staff, services, convenience)
   image: string;
   benefit: string;
+  /** Alternative looks at the same step. The tier's own name/image is look 0. */
+  looks?: AssetLookDef[];
 }
 
 export interface AssetDef {
@@ -672,71 +680,118 @@ export interface AssetDef {
   tiers: AssetTierDef[];
 }
 
+/** Every look available at a step, the tier's own first. */
+export function assetLooks(tier: AssetTierDef): AssetLookDef[] {
+  return [{ name: tier.name, image: tier.image }, ...(tier.looks || [])];
+}
+
+/** The look chosen at a step, falling back to the first. */
+export function assetLook(tier: AssetTierDef, lookIdx = 0): AssetLookDef {
+  const all = assetLooks(tier);
+  return all[lookIdx] || all[0];
+}
+
 export const ASSETS: AssetDef[] = [
   {
     id: "house", name: "Housing", category: "Home",
     tiers: [
-      { name: "Shared Room", dailyCost: 34, hoursBonus: -3, image: "house-t1", benefit: "Costs you 3h a week — long commute, chores, queues for the bathroom" },
-      { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "Buys back 2h a week — close in, building handles the basics" },
-      { name: "Modern Loft", dailyCost: 165, hoursBonus: 5, image: "house-t3", benefit: "Buys back 5h a week — doorman, cleaning and concierge" },
-      { name: "Penthouse", dailyCost: 520, hoursBonus: 9, image: "house-t4", benefit: "Buys back 9h a week — a full household staff runs it all" },
-      { name: "Country Estate", dailyCost: 2100, hoursBonus: 12, image: "house-t5", benefit: "Buys back 12h a week — an estate manager runs the whole household" },
-      { name: "Private Island Compound", dailyCost: 9400, hoursBonus: 15, image: "house-t6", benefit: "Buys back 15h a week — every errand, journey and chore is handled for you" },
+      { name: "Shared Room", dailyCost: 34, hoursBonus: -3, image: "house-t1", benefit: "Costs you 3h a week — long commute, chores, queues for the bathroom",
+        looks: [{ name: "Bunk in a Hostel", image: "house-t1b" }, { name: "Converted Garage", image: "house-t1c" }] },
+      { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "Buys back 2h a week — close in, building handles the basics",
+        looks: [{ name: "Canal Houseboat", image: "house-t2b" }, { name: "Terrace Cottage", image: "house-t2c" }] },
+      { name: "Modern Loft", dailyCost: 165, hoursBonus: 5, image: "house-t3", benefit: "Buys back 5h a week — doorman, cleaning and concierge",
+        looks: [{ name: "Warehouse Conversion", image: "house-t3b" }, { name: "Garden Townhouse", image: "house-t3c" }] },
+      { name: "Penthouse", dailyCost: 520, hoursBonus: 9, image: "house-t4", benefit: "Buys back 9h a week — a full household staff runs it all",
+        looks: [{ name: "Cliffside Villa", image: "house-t4b" }, { name: "Historic Mansion", image: "house-t4c" }] },
+      { name: "Country Estate", dailyCost: 2100, hoursBonus: 12, image: "house-t5", benefit: "Buys back 12h a week — an estate manager runs the whole household",
+        looks: [{ name: "Alpine Chalet Estate", image: "house-t5b" }, { name: "Vineyard Château", image: "house-t5c" }] },
+      { name: "Private Island Compound", dailyCost: 9400, hoursBonus: 15, image: "house-t6", benefit: "Buys back 15h a week — every errand, journey and chore is handled for you",
+        looks: [{ name: "Desert Sky Residence", image: "house-t6b" }, { name: "Lakeside Palace", image: "house-t6c" }] },
     ],
   },
   {
     id: "food", name: "Food", category: "Daily life",
     tiers: [
-      { name: "Simple Groceries", dailyCost: 12, hoursBonus: -2, image: "food-t1", benefit: "Costs you 2h a week — shopping, cooking and washing up" },
-      { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 1, image: "food-t2", benefit: "Buys back 1h a week — deliveries and prepped ingredients" },
-      { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "Buys back 3h a week — every meal handled elsewhere" },
-      { name: "Private Chef", dailyCost: 320, hoursBonus: 6, image: "food-t4", benefit: "Buys back 6h a week — a chef runs your kitchen" },
-      { name: "Private Dining Brigade", dailyCost: 1250, hoursBonus: 8, image: "food-t5", benefit: "Buys back 8h a week — a kitchen team plans, shops and cooks every meal" },
-      { name: "Estate Culinary Team", dailyCost: 4800, hoursBonus: 10, image: "food-t6", benefit: "Buys back 10h a week — kitchen garden, cellar and chefs on call around the clock" },
+      { name: "Simple Groceries", dailyCost: 12, hoursBonus: -2, image: "food-t1", benefit: "Costs you 2h a week — shopping, cooking and washing up",
+        looks: [{ name: "Instant Noodles", image: "food-t1b" }, { name: "Canteen Trays", image: "food-t1c" }] },
+      { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 1, image: "food-t2", benefit: "Buys back 1h a week — deliveries and prepped ingredients",
+        looks: [{ name: "Market Box Deliveries", image: "food-t2b" }, { name: "Street Food Circuit", image: "food-t2c" }] },
+      { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "Buys back 3h a week — every meal handled elsewhere",
+        looks: [{ name: "Neighbourhood Bistro Tab", image: "food-t3b" }, { name: "Sushi Counter Standing", image: "food-t3c" }] },
+      { name: "Private Chef", dailyCost: 320, hoursBonus: 6, image: "food-t4", benefit: "Buys back 6h a week — a chef runs your kitchen",
+        looks: [{ name: "Standing Chef's Table", image: "food-t4b" }, { name: "Household Cook", image: "food-t4c" }] },
+      { name: "Private Dining Brigade", dailyCost: 1250, hoursBonus: 8, image: "food-t5", benefit: "Buys back 8h a week — a kitchen team plans, shops and cooks every meal",
+        looks: [{ name: "Cellar & Tasting Room", image: "food-t5b" }, { name: "Coastal Catch Kitchen", image: "food-t5c" }] },
+      { name: "Estate Culinary Team", dailyCost: 4800, hoursBonus: 10, image: "food-t6", benefit: "Buys back 10h a week — kitchen garden, cellar and chefs on call around the clock",
+        looks: [{ name: "Kitchen Garden Estate", image: "food-t6b" }, { name: "Travelling Brigade", image: "food-t6c" }] },
     ],
   },
   {
     id: "wardrobe", name: "Clothing", category: "Presentation",
     tiers: [
-      { name: "Thrifted Basics", dailyCost: 3, hoursBonus: -1, image: "wardrobe-t1", benefit: "Costs you 1h a week — laundry, repairs, nothing quite fits" },
-      { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "Buys back 1h a week — easy wardrobe, little upkeep" },
-      { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "Buys back 2h a week — a tailor keeps it all ready" },
-      { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "Buys back 4h a week — a stylist and valet service" },
-      { name: "Couture Fittings", dailyCost: 720, hoursBonus: 5, image: "wardrobe-t5", benefit: "Buys back 5h a week — a house keeps your wardrobe fitted and ready" },
-      { name: "Private Wardrobe Hall", dailyCost: 2600, hoursBonus: 7, image: "wardrobe-t6", benefit: "Buys back 7h a week — a dressing team packs, styles and travels with you" },
+      { name: "Thrifted Basics", dailyCost: 3, hoursBonus: -1, image: "wardrobe-t1", benefit: "Costs you 1h a week — laundry, repairs, nothing quite fits",
+        looks: [{ name: "Work Uniform", image: "wardrobe-t1b" }, { name: "Hand-Me-Downs", image: "wardrobe-t1c" }] },
+      { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "Buys back 1h a week — easy wardrobe, little upkeep",
+        looks: [{ name: "Workwear Denim", image: "wardrobe-t2b" }, { name: "Clean Minimal Basics", image: "wardrobe-t2c" }] },
+      { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "Buys back 2h a week — a tailor keeps it all ready",
+        looks: [{ name: "Vintage Collector", image: "wardrobe-t3b" }, { name: "Designer Streetwear", image: "wardrobe-t3c" }] },
+      { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "Buys back 4h a week — a stylist and valet service",
+        looks: [{ name: "Savile Row House", image: "wardrobe-t4b" }, { name: "Avant-Garde Label", image: "wardrobe-t4c" }] },
+      { name: "Couture Fittings", dailyCost: 720, hoursBonus: 5, image: "wardrobe-t5", benefit: "Buys back 5h a week — a house keeps your wardrobe fitted and ready",
+        looks: [{ name: "Archive Couture", image: "wardrobe-t5b" }, { name: "Private Milliner & Cobbler", image: "wardrobe-t5c" }] },
+      { name: "Private Wardrobe Hall", dailyCost: 2600, hoursBonus: 7, image: "wardrobe-t6", benefit: "Buys back 7h a week — a dressing team packs, styles and travels with you",
+        looks: [{ name: "Costume Archive", image: "wardrobe-t6b" }, { name: "House Commission", image: "wardrobe-t6c" }] },
     ],
   },
   {
     id: "car", name: "Car", category: "Transport",
     tiers: [
-      { name: "Used Sedan", dailyCost: 19, hoursBonus: -2, image: "car-t1", benefit: "Costs you 2h a week — breakdowns, repairs, slow going" },
-      { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "Buys back 2h a week — reliable, driver service on tap" },
-      { name: "Sports Car", dailyCost: 165, hoursBonus: 5, image: "car-t3", benefit: "Buys back 5h a week — a driver handles the road" },
-      { name: "Hypercar", dailyCost: 880, hoursBonus: 9, image: "car-t4", benefit: "Buys back 9h a week — chauffeur and fleet care included" },
-      { name: "Collector's Garage", dailyCost: 3400, hoursBonus: 12, image: "car-t5", benefit: "Buys back 12h a week — a fleet and drivers on standby wherever you are" },
-      { name: "Private Aviation", dailyCost: 14000, hoursBonus: 15, image: "car-t6", benefit: "Buys back 15h a week — jet, helicopter and cars waiting at both ends" },
+      { name: "Used Sedan", dailyCost: 19, hoursBonus: -2, image: "car-t1", benefit: "Costs you 2h a week — breakdowns, repairs, slow going",
+        looks: [{ name: "Rust-Belt Pickup", image: "car-t1b" }, { name: "City Scooter", image: "car-t1c" }] },
+      { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "Buys back 2h a week — reliable, driver service on tap",
+        looks: [{ name: "Electric Crossover", image: "car-t2b" }, { name: "Restored Classic", image: "car-t2c" }] },
+      { name: "Sports Car", dailyCost: 165, hoursBonus: 5, image: "car-t3", benefit: "Buys back 5h a week — a driver handles the road",
+        looks: [{ name: "Grand Tourer", image: "car-t3b" }, { name: "Off-Road Expedition Rig", image: "car-t3c" }] },
+      { name: "Hypercar", dailyCost: 880, hoursBonus: 9, image: "car-t4", benefit: "Buys back 9h a week — chauffeur and fleet care included",
+        looks: [{ name: "Armoured Limousine", image: "car-t4b" }, { name: "Le Mans Homologation", image: "car-t4c" }] },
+      { name: "Collector's Garage", dailyCost: 3400, hoursBonus: 12, image: "car-t5", benefit: "Buys back 12h a week — a fleet and drivers on standby wherever you are",
+        looks: [{ name: "Concours Vault", image: "car-t5b" }, { name: "Motor Yacht & Tender", image: "car-t5c" }] },
+      { name: "Private Aviation", dailyCost: 14000, hoursBonus: 15, image: "car-t6", benefit: "Buys back 15h a week — jet, helicopter and cars waiting at both ends",
+        looks: [{ name: "Long-Range Fleet", image: "car-t6b" }, { name: "Helipad & Hangar", image: "car-t6c" }] },
     ],
   },
   {
     id: "health", name: "Health & Fitness", category: "Wellbeing",
     tiers: [
-      { name: "No Routine", dailyCost: 0, hoursBonus: -4, image: "health-t1", benefit: "Costs you 4h a week — low energy and days lost to illness" },
-      { name: "Gym Membership", dailyCost: 9, hoursBonus: 1, image: "health-t2", benefit: "Buys back 1h a week — steadier energy through the day" },
-      { name: "Personal Trainer", dailyCost: 95, hoursBonus: 4, image: "health-t3", benefit: "Buys back 4h a week — training, physio and check-ups handled" },
-      { name: "Full Wellness Team", dailyCost: 420, hoursBonus: 8, image: "health-t4", benefit: "Buys back 8h a week — doctor, chef and recovery team on call" },
-      { name: "Home Recovery Suite", dailyCost: 1600, hoursBonus: 10, image: "health-t5", benefit: "Buys back 10h a week — gym, pool and therapists all under your own roof" },
-      { name: "Longevity Programme", dailyCost: 6200, hoursBonus: 13, image: "health-t6", benefit: "Buys back 13h a week — a medical team keeps you at full energy every day" },
+      { name: "No Routine", dailyCost: 0, hoursBonus: -4, image: "health-t1", benefit: "Costs you 4h a week — low energy and days lost to illness",
+        looks: [{ name: "Late Nights", image: "health-t1b" }, { name: "Desk-Bound", image: "health-t1c" }] },
+      { name: "Gym Membership", dailyCost: 9, hoursBonus: 1, image: "health-t2", benefit: "Buys back 1h a week — steadier energy through the day",
+        looks: [{ name: "Running Club", image: "health-t2b" }, { name: "Boxing Gym", image: "health-t2c" }] },
+      { name: "Personal Trainer", dailyCost: 95, hoursBonus: 4, image: "health-t3", benefit: "Buys back 4h a week — training, physio and check-ups handled",
+        looks: [{ name: "Climbing & Swim Coach", image: "health-t3b" }, { name: "Yoga & Physio Studio", image: "health-t3c" }] },
+      { name: "Full Wellness Team", dailyCost: 420, hoursBonus: 8, image: "health-t4", benefit: "Buys back 8h a week — doctor, chef and recovery team on call",
+        looks: [{ name: "Performance Lab", image: "health-t4b" }, { name: "Alpine Retreat Programme", image: "health-t4c" }] },
+      { name: "Home Recovery Suite", dailyCost: 1600, hoursBonus: 10, image: "health-t5", benefit: "Buys back 10h a week — gym, pool and therapists all under your own roof",
+        looks: [{ name: "Private Bathhouse", image: "health-t5b" }, { name: "Cryo & Altitude Wing", image: "health-t5c" }] },
+      { name: "Longevity Programme", dailyCost: 6200, hoursBonus: 13, image: "health-t6", benefit: "Buys back 13h a week — a medical team keeps you at full energy every day",
+        looks: [{ name: "Private Clinic", image: "health-t6b" }, { name: "Research Protocol", image: "health-t6c" }] },
     ],
   },
   {
     id: "watch", name: "Watch", category: "Accessories",
     tiers: [
-      { name: "Digital Watch", dailyCost: 1, hoursBonus: 0, image: "watch-t1", benefit: "No time bought back — it tells the time, that is all" },
-      { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "Buys back 1h a week — club and concierge access" },
-      { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "Buys back 2h a week — a concierge runs your errands" },
-      { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 4, image: "watch-t4", benefit: "Buys back 4h a week — a personal assistant on call" },
-      { name: "Grand Complication", dailyCost: 620, hoursBonus: 5, image: "watch-t5", benefit: "Buys back 5h a week — doors open and an assistant clears your diary" },
-      { name: "Private Collection", dailyCost: 2400, hoursBonus: 7, image: "watch-t6", benefit: "Buys back 7h a week — a chief of staff runs your calendar" },
+      { name: "Digital Watch", dailyCost: 1, hoursBonus: 0, image: "watch-t1", benefit: "No time bought back — it tells the time, that is all",
+        looks: [{ name: "Field Quartz", image: "watch-t1b" }, { name: "Plastic Diver", image: "watch-t1c" }] },
+      { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "Buys back 1h a week — club and concierge access",
+        looks: [{ name: "Pilot's Automatic", image: "watch-t2b" }, { name: "Dress Automatic", image: "watch-t2c" }] },
+      { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "Buys back 2h a week — a concierge runs your errands",
+        looks: [{ name: "Steel Sports Icon", image: "watch-t3b" }, { name: "Gold Dress Watch", image: "watch-t3c" }] },
+      { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 4, image: "watch-t4", benefit: "Buys back 4h a week — a personal assistant on call",
+        looks: [{ name: "Skeleton Tourbillon", image: "watch-t4b" }, { name: "Platinum Perpetual", image: "watch-t4c" }] },
+      { name: "Grand Complication", dailyCost: 620, hoursBonus: 5, image: "watch-t5", benefit: "Buys back 5h a week — doors open and an assistant clears your diary",
+        looks: [{ name: "Minute Repeater", image: "watch-t5b" }, { name: "Astronomical Calendar", image: "watch-t5c" }] },
+      { name: "Private Collection", dailyCost: 2400, hoursBonus: 7, image: "watch-t6", benefit: "Buys back 7h a week — a chief of staff runs your calendar",
+        looks: [{ name: "Auction Vault", image: "watch-t6b" }, { name: "Commissioned Unique Piece", image: "watch-t6c" }] },
     ],
   },
 ];

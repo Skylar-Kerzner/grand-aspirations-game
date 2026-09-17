@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame, getTimeBudget, getLifestyleHours } from "@/lib/GameContext";
+import { useGame, getTimeBudget, getLifestyleHours, getAssetLook } from "@/lib/GameContext";
 import { formatMoney } from "@/lib/formatters";
-import { ASSETS, BASE_TIME_BUDGET } from "@/lib/gameData";
+import { ASSETS, BASE_TIME_BUDGET, assetLooks } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 function hoursLabel(hours: number): string {
@@ -14,6 +14,8 @@ function hoursLabel(hours: number): string {
 export default function AssetGallery() {
   const { state, derived, dispatch } = useGame();
   const [selected, setSelected] = useState<string | null>(null);
+  /** Which tier row is showing its choice of looks. */
+  const [choosing, setChoosing] = useState<number | null>(null);
 
   const selectedDef = ASSETS.find((a) => a.id === selected);
   const selectedTier = selected ? Math.max(1, state.assets[selected] || 1) : 0;
@@ -30,7 +32,7 @@ export default function AssetGallery() {
         </p>
         <p className="text-[11px] text-muted-foreground mt-1">
           Every lifestyle choice is a standing daily cost that either costs you hours or buys them back.
-          Those hours are what you spend on your job, school and your ventures.
+          Those hours are what you spend on your job, school and your businesses.
         </p>
         <p className="text-[11px] text-muted-foreground font-mono-nums mt-1">
           Lifestyle costs {formatMoney(derived.livingCosts)}/day in total
@@ -41,13 +43,14 @@ export default function AssetGallery() {
         {ASSETS.map((def) => {
           const tier = Math.max(1, state.assets[def.id] || 1);
           const currentTier = def.tiers[tier - 1];
-          const img = getImage(currentTier.image);
+          const look = getAssetLook(state, def.id, tier - 1);
+          const img = getImage(look?.image || currentTier.image);
 
           return (
             <motion.div
               key={def.id}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setSelected(def.id)}
+              onClick={() => { setSelected(def.id); setChoosing(null); }}
               className="surface-card rounded-xl overflow-hidden cursor-pointer transition-game"
             >
               <div className="aspect-[4/3] bg-secondary relative">
@@ -122,31 +125,39 @@ export default function AssetGallery() {
                   Close
                 </button>
 
-                {/* Lifestyle image */}
-                <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
-                  {getImage(selectedDef.tiers[selectedTier - 1].image) ? (
-                    <motion.img
-                      key={selectedTier}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5 }}
-                      src={getImage(selectedDef.tiers[selectedTier - 1].image)}
-                      alt={selectedDef.tiers[selectedTier - 1].name}
-                      width={1024}
-                      height={640}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      No picture yet
-                    </div>
-                  )}
-                </div>
+                {/* Lifestyle image — the look you chose at this step */}
+                {(() => {
+                  const currentLook = getAssetLook(state, selectedDef.id, selectedTier - 1);
+                  const currentImg = getImage(currentLook?.image || "");
+                  return (
+                    <>
+                      <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
+                        {currentImg ? (
+                          <motion.img
+                            key={currentLook?.image}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                            src={currentImg}
+                            alt={currentLook?.name}
+                            width={1024}
+                            height={640}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            No picture yet
+                          </div>
+                        )}
+                      </div>
 
-                {/* Info */}
-                <h2 className="text-xl font-bold tracking-tight">{selectedDef.name}</h2>
-                <p className="text-sm text-muted-foreground mb-1">{selectedDef.tiers[selectedTier - 1].name}</p>
-                <p className="text-xs text-primary mb-4">{selectedDef.tiers[selectedTier - 1].benefit}</p>
+                      {/* Info */}
+                      <h2 className="text-xl font-bold tracking-tight">{selectedDef.name}</h2>
+                      <p className="text-sm text-muted-foreground mb-1">{currentLook?.name}</p>
+                      <p className="text-xs text-primary mb-4">{selectedDef.tiers[selectedTier - 1].benefit}</p>
+                    </>
+                  );
+                })()}
 
                 {/* Tiers — tap a row to choose it */}
                 <div className="space-y-2">
@@ -154,39 +165,60 @@ export default function AssetGallery() {
                     const isCurrent = i + 1 === selectedTier;
                     const hourDelta = tier.hoursBonus - selectedDef.tiers[selectedTier - 1].hoursBonus;
                     const costDelta = tier.dailyCost - selectedDef.tiers[selectedTier - 1].dailyCost;
+                    const looks = assetLooks(tier);
+                    const chosenLook = getAssetLook(state, selectedDef.id, i);
+                    const open = choosing === i;
                     return (
-                      <motion.button
-                        key={tier.name}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => dispatch({ type: "SET_LIFESTYLE", id: selectedDef.id, tier: i + 1 })}
-                        disabled={isCurrent}
-                        className={`w-full flex items-center gap-3 rounded-lg p-3 text-left transition-game ${isCurrent ? "bg-primary/15 ring-1 ring-primary/40" : "surface-button"}`}
-                      >
-                        <div className="w-16 h-12 rounded-md overflow-hidden bg-secondary shrink-0">
-                          {getImage(tier.image) && (
-                            <img src={getImage(tier.image)} alt={tier.name} loading="lazy" className="w-full h-full object-cover" />
-                          )}
-                        </div>
-                        <span className="flex-1 min-w-0">
-                          <span className={`block text-sm font-medium ${isCurrent ? "text-primary" : "text-foreground"}`}>
-                            {tier.name}
+                      <div key={tier.name} className="space-y-2">
+                        <motion.button
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setChoosing(open ? null : i)}
+                          disabled={isCurrent}
+                          className={`w-full flex items-center gap-3 rounded-lg p-3 text-left transition-game ${isCurrent ? "bg-primary/15 ring-1 ring-primary/40" : "surface-button"}`}
+                        >
+                          <span className="flex-1 min-w-0">
+                            <span className={`block text-sm font-medium ${isCurrent ? "text-primary" : "text-foreground"}`}>
+                              {isCurrent ? chosenLook?.name : tier.name}
+                            </span>
+                            <span className={`block text-[11px] font-medium ${tier.hoursBonus >= 0 ? "text-primary" : "text-destructive"}`}>
+                              {hoursLabel(tier.hoursBonus)}
+                            </span>
+                            <span className="block text-[11px] text-muted-foreground">{tier.benefit}</span>
                           </span>
-                          <span className={`block text-[11px] font-medium ${tier.hoursBonus >= 0 ? "text-primary" : "text-destructive"}`}>
-                            {hoursLabel(tier.hoursBonus)}
+                          <span className="text-right shrink-0">
+                            <span className={`block font-mono-nums text-xs ${isCurrent ? "text-primary" : "text-foreground"}`}>
+                              {formatMoney(tier.dailyCost)}/day
+                            </span>
+                            <span className="block text-[10px] text-muted-foreground">
+                              {isCurrent
+                                ? "Current"
+                                : `${hourDelta >= 0 ? "+" : ""}${hourDelta}h · ${costDelta >= 0 ? "+" : "−"}${formatMoney(Math.abs(costDelta))}/day`}
+                            </span>
                           </span>
-                          <span className="block text-[11px] text-muted-foreground">{tier.benefit}</span>
-                        </span>
-                        <span className="text-right shrink-0">
-                          <span className={`block font-mono-nums text-xs ${isCurrent ? "text-primary" : "text-foreground"}`}>
-                            {formatMoney(tier.dailyCost)}/day
-                          </span>
-                          <span className="block text-[10px] text-muted-foreground">
-                            {isCurrent
-                              ? "Current"
-                              : `${hourDelta >= 0 ? "+" : ""}${hourDelta}h · ${costDelta >= 0 ? "+" : "−"}${formatMoney(Math.abs(costDelta))}/day`}
-                          </span>
-                        </span>
-                      </motion.button>
+                        </motion.button>
+
+                        {open && !isCurrent && (
+                          <div className="rounded-lg border border-border p-3">
+                            <p className="text-[11px] text-muted-foreground mb-2">
+                              Same price, same hours — pick the one you want to live with. You only see it once you move in.
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {looks.map((look, li) => (
+                                <button
+                                  key={look.image}
+                                  onClick={() => {
+                                    dispatch({ type: "SET_LIFESTYLE", id: selectedDef.id, tier: i + 1, look: li });
+                                    setChoosing(null);
+                                  }}
+                                  className="surface-button rounded-md px-2 py-2 text-[11px] leading-tight text-center transition-game"
+                                >
+                                  {look.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

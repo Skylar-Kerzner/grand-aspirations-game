@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
+  BUSINESSES, ASSETS, assetLook, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS, trackPerkScale, type InvestmentDef,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
@@ -81,6 +81,8 @@ export interface GameState {
   lastShiftDay: number;
   businesses: Record<string, BusinessState>;
   assets: Record<string, number>;
+  /** Which look was chosen at each step of each lifestyle category. */
+  assetLooks: Record<string, number[]>;
   investments: Record<string, InvestmentState>;
   loans: Record<string, LoanState>;
   studentLoan: StudentLoanState;
@@ -100,7 +102,7 @@ export type GameAction =
   | { type: "SET_STUDY_HOURS"; hours: number }
   | { type: "SET_BUSINESS_HOURS"; id: string; hours: number }
   | { type: "SET_TRAINING"; amount: number }
-  | { type: "SET_LIFESTYLE"; id: string; tier: number }
+  | { type: "SET_LIFESTYLE"; id: string; tier: number; look?: number }
   | { type: "GENERATE_JOB_OFFERS" }
   | { type: "ACCEPT_JOB_OFFER"; index: number }
   | { type: "STUDY"; majorId: string; financed?: boolean }
@@ -211,6 +213,21 @@ export function getLifestyleTier(state: GameState, id: string) {
   if (!def) return undefined;
   const tier = Math.max(1, Math.min(state.assets[id] || 1, def.tiers.length));
   return def.tiers[tier - 1];
+}
+
+/** The look the player chose at a given step of a lifestyle category. */
+export function getAssetLook(state: GameState, id: string, tierIdx: number) {
+  const def = ASSETS.find((asset) => asset.id === id);
+  if (!def || !def.tiers[tierIdx]) return undefined;
+  return assetLook(def.tiers[tierIdx], state.assetLooks?.[id]?.[tierIdx] ?? 0);
+}
+
+/** The look of the tier a category is currently set to. */
+export function getCurrentAssetLook(state: GameState, id: string) {
+  const def = ASSETS.find((asset) => asset.id === id);
+  if (!def) return undefined;
+  const tier = Math.max(1, Math.min(state.assets[id] || 1, def.tiers.length));
+  return getAssetLook(state, id, tier - 1);
 }
 
 export function getInvestmentTotal(state: GameState): number {
@@ -618,7 +635,9 @@ function createFresh(): GameState {
     majors: [], studying: null,
     studyHours: 0, businessHours: {}, trainingBudget: 0, trainingMomentum: 0,
     lastShiftDay: -1,
-    businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, health: 1, watch: 1 }, investments: {}, loans: {},
+    businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, health: 1, watch: 1 },
+    assetLooks: Object.fromEntries(ASSETS.map((a) => [a.id, a.tiers.map(() => 0)])),
+    investments: {}, loans: {},
     studentLoan: { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
     loansRepaid: [], consultants: [],
     payMult: 1, payUntil: 0, livingMult: 1, livingUntil: 0, boostUntil: 0,
@@ -664,6 +683,9 @@ function createInitialState(): GameState {
           health: legacyAssets.health || 1,
           watch: legacyAssets.watch || 1,
         },
+        assetLooks: Object.fromEntries(
+          ASSETS.map((a) => [a.id, a.tiers.map((_, i) => parsed.assetLooks?.[a.id]?.[i] ?? 0)]),
+        ),
         studentLoan: parsed.studentLoan && typeof parsed.studentLoan === "object"
           ? parsed.studentLoan
           : { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
@@ -748,7 +770,7 @@ function rollEvent(state: GameState, days: number): GameState {
   const parts: string[] = [];
   if (delta !== 0) parts.push(`${delta > 0 ? "+" : "-"}${formatMoney(Math.abs(delta))} cash`);
   
-  if (def.businessBoostDays) parts.push(`Venture profits doubled for ${def.businessBoostDays} days`);
+  if (def.businessBoostDays) parts.push(`Business profits doubled for ${def.businessBoostDays} days`);
   if (def.livingCostShift && def.livingCostShiftDays) parts.push(`Living costs ${def.livingCostShift >= 1 ? "+" : ""}${Math.round((def.livingCostShift - 1) * 100)}% for ${def.livingCostShiftDays} days`);
   if (def.payShift && def.payShiftDays) parts.push(`Pay ${def.payShift >= 1 ? "+" : ""}${Math.round((def.payShift - 1) * 100)}% for ${def.payShiftDays} days`);
   if (def.jobLoss && state.jobIndex > 0) parts.push(`Your new position pays ${formatMoney(s.currentJob.dailyPay)} a day`);
@@ -1033,7 +1055,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "SET_LIFESTYLE": {
       const def = ASSETS.find((asset) => asset.id === action.id);
       if (!def || action.tier < 1 || action.tier > def.tiers.length) return state;
-      const next = { ...state, assets: { ...state.assets, [action.id]: action.tier } };
+      const looksHere = [...(state.assetLooks[action.id] || def.tiers.map(() => 0))];
+      if (action.look !== undefined) looksHere[action.tier - 1] = action.look;
+      const next = {
+        ...state,
+        assets: { ...state.assets, [action.id]: action.tier },
+        assetLooks: { ...state.assetLooks, [action.id]: looksHere },
+      };
       // A humbler lifestyle means fewer bought-back hours — trim commitments to fit.
       const budget = getTimeBudget(next);
       const bizEntries = Object.entries(next.businessHours);
