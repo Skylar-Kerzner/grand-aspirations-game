@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS, noDegreeXpMultiplier,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
@@ -473,7 +473,7 @@ function createFresh(): GameState {
     currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
     careerOffers: [],
     jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
-    xp: 0, majors: [], studying: null,
+    majors: [], studying: null,
     studyHours: 0, businessHours: {}, trainingBudget: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
