@@ -755,7 +755,9 @@ export function getCreditCardPayment(state: GameState): number {
 
 // Steady interview preparation — a fixed retainer for coaching, mock interviews and
 // certifications. It heats up over about a month and cools off if you stop.
-export const TRAINING_OFFER_CAP = 0.35;
+// Unprepared candidates land below the going rate for the role and well-prepared ones
+// above it: the swing runs from -17.5% to +17.5% around the US median for that job.
+export const TRAINING_OFFER_SWING = 0.175;
 export const TRAINING_MOMENTUM_DAYS = 30; // time constant for readiness to build (and fade)
 export function getInterviewPrepRate(state: GameState): number {
   return Math.max(20, Math.round(getJob(state).dailyPay * 0.15));
@@ -766,8 +768,9 @@ export function getInterviewReadiness(state: GameState): number {
   return Math.max(0, Math.min(1, momentum / Math.max(1, rate)));
 }
 export function getOfferTrainingBonus(state: GameState): number {
-  return TRAINING_OFFER_CAP * getInterviewReadiness(state);
+  return TRAINING_OFFER_SWING * (getInterviewReadiness(state) * 2 - 1);
 }
+
 
 export function getBusinessValue(state: GameState): number {
   let total = 0;
