@@ -800,9 +800,11 @@ export const BUSINESS_SHOCK_TEXTS = [
   "a licensing dispute halted trade",
   "a competitor opened across the street",
 ];
-/** The baseline return on capital every sector is built around. A venture running
- *  at exactly this success sells for 100% of the money invested in it. */
-export const BUSINESS_BASELINE_ROI = 0.3;
+/** The return on capital a typical business is built around, before scale and luck. */
+export const BUSINESS_BASELINE_ROI = 0.18;
+
+/** Each expansion earns a little less on the money than the one before it. */
+export const BUSINESS_SCALE_DECAY = 0.948;
 
 /** Cost of the NEXT level (levels are 0-indexed: level 0 means you own nothing yet). */
 export function getBusinessCost(baseCost: number, costMultiplier: number, level: number): number {
@@ -816,10 +818,50 @@ export function getBusinessCapital(def: BusinessDef, level: number): number {
   return def.baseCost * (Math.pow(m, level) - 1) / (m - 1);
 }
 
-/** Gross profit per day. Constant ROI — tiers never reduce your return. */
-export function getBusinessIncome(def: BusinessDef, level: number): number {
-  return (getBusinessCapital(def, level) * def.annualROI) / DAYS_PER_YEAR;
+/** Return on capital earned by the money put in at a given expansion step. */
+export function marginalBusinessROI(def: BusinessDef, level: number): number {
+  return def.annualROI * Math.pow(BUSINESS_SCALE_DECAY, Math.max(0, level - 1));
 }
+
+/** Gross profit per day. Later expansions earn less on the money than earlier ones. */
+export function getBusinessIncome(def: BusinessDef, level: number): number {
+  if (level <= 0) return 0;
+  let annual = 0;
+  for (let i = 1; i <= level; i++) {
+    annual += getBusinessCost(def.baseCost, def.costMultiplier, i - 1) * marginalBusinessROI(def, i);
+  }
+  return annual / DAYS_PER_YEAR;
+}
+
+/** Blended return on all capital in the business, as a share of the headline rate. */
+export function businessScaleEfficiency(def: BusinessDef, level: number): number {
+  const capital = getBusinessCapital(def, level);
+  if (capital <= 0) return 1;
+  return (getBusinessIncome(def, level) * DAYS_PER_YEAR) / (capital * def.annualROI);
+}
+
+// ---------- Business luck over time ----------
+/** Competition drags the great ones back; the weak ones limp upward slowly. */
+export const BUSINESS_FORTUNE_ANCHOR = 0.9;
+export const BUSINESS_FORTUNE_DECAY_UP = 0.0019;   // a winner gives up half its edge in a year
+export const BUSINESS_FORTUNE_DECAY_DOWN = 0.0006; // a struggler recovers about a fifth in a year
+export const BUSINESS_FORTUNE_NOISE = 0.004;
+
+// ---------- Building out ----------
+/** Days a new build takes before the money put in starts earning. */
+export function businessBuildDays(level: number): number {
+  return Math.round(Math.min(150, 18 + 9 * Math.max(0, level - 1)));
+}
+
+// ---------- Selling ----------
+/** Days it takes to find a buyer once a business is put on the market. */
+export const BUSINESS_SALE_DAYS = 45;
+/** Fees, diligence and the buyer's discount. */
+export const BUSINESS_SALE_DISCOUNT = 0.12;
+/** Selling straight after an expansion costs more: the work is not proven yet. */
+export const BUSINESS_SALE_RECENT_DAYS = 180;
+export const BUSINESS_SALE_RECENT_PENALTY = 0.15;
+
 
 // ---------- Lifestyle (all costs recur daily) ----------
 /** One look at a tier. Same cost, same hours — only the name and the picture differ. */
