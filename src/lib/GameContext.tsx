@@ -841,18 +841,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Past the gate tier you need either that path's major, or — on your own
       // industry — enough years served in it. Sideways moves only into related
       // industries, and only if that move makes sense at this level.
-      const gated = (CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }]).filter((v) => {
-        const track = getCareerTrack(v.employer).id;
-        const hasMajor = state.majors.includes(getTrackMajor(track)?.id || "");
-        const sameTrack = track === homeTrack;
-        if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, track)) return false;
-        if (tier < MAJOR_GATE_TIER) return true;
-        if (hasMajor) return true;
-        // No degree: climb on experience — held positions or years served in your own industry.
-        return sameTrack && (tenure >= TRACK_EXPERIENCE_GATE || getTrackExperienceDays(state) >= TRACK_EXPERIENCE_YEARS_GATE * DAYS_PER_YEAR);
-      });
-      if (gated.length === 0) return state;
-      const variants = gated;
+      // Every path stays open — what changes is the pay you are offered.
+      const variants = CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }];
+      if (variants.length === 0) return state;
       // Shuffle, then take distinct titles and distinct employers so no offer repeats either.
       const pool = [...variants].sort(() => Math.random() - 0.5);
       const picked: typeof variants = [];
