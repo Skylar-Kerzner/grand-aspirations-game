@@ -32,3 +32,4 @@
 - [x] Venture hour sliders cap at 15h/week; blocked copy when the week's hours are fully allocated
 - [x] Lifestyle items affect time only (careerBonus/schoolBonus removed; watches now buy hours)
 - [x] Time tab: ROI at 15h + ROI at current hours + $/day per venture on each slider card
+- [x] No-degree careers slow to a stop: xpNeeded × 1.7^(tier−4) without the track major; career panel names the fix

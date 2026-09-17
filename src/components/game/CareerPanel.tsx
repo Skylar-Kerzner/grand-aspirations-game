@@ -11,6 +11,8 @@ export default function CareerPanel() {
   const nextTier = state.jobIndex + 1;
   const gatedTier = !!next && nextTier >= MAJOR_GATE_TIER;
   const homeTrack = getCareerTrack(job.employer).id;
+  const trackMajor = getTrackMajor(homeTrack);
+  const degreeDrag = gatedTier && !!trackMajor && !state.majors.includes(trackMajor.id);
   const tenure = getTrackTenure(state);
   const years = getTrackExperienceDays(state) / DAYS_PER_YEAR;
   const experienceBonus = getTrackExperienceBonus(state);
@@ -67,6 +69,12 @@ export default function CareerPanel() {
             <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-3">
               <motion.div className="h-full bg-primary" animate={{ width: `${xpPct}%` }} transition={{ duration: 0.3 }} />
             </div>
+            {degreeDrag && (
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Without a degree in this industry, each next step takes longer. Study {trackMajor?.name} below to
+                keep climbing at full pace.
+              </p>
+            )}
             {gatedTier && openTracks.length === 0 && (
               <p className="text-[11px] text-muted-foreground mb-2">
                 To climb further, either stay in {getCareerTrack(job.employer).name} until you have{" "}
