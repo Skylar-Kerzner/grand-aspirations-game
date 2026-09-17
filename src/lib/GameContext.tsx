@@ -898,12 +898,31 @@ function createInitialState(): GameState {
                 ?? (parsed.studentLoan.gradBorrowed !== undefined ? 0 : parsed.studentLoan.borrowed || 0),
             }
           : { ...EMPTY_STUDENT_LOAN },
+        businessScale: BUSINESS_SCALE_VERSION,
         businesses: Object.fromEntries(
-          Object.entries(parsed.businesses || {}).map(([id, biz]) => [
-            id,
-            { level: biz.level || 0, condition: biz.condition ?? 1, fortune: biz.fortune, choices: biz.choices },
-          ]),
+          Object.entries(parsed.businesses || {}).map(([id, biz]) => {
+            // Expansions used to be forty small steps; they are now sixteen large
+            // ones. Old saves keep their place on the ladder, rescaled.
+            const rawLevel = biz.level || 0;
+            const level = parsed.businessScale === BUSINESS_SCALE_VERSION
+              ? Math.min(BUSINESS_MAX_LEVEL, rawLevel)
+              : rawLevel > 0
+                ? Math.max(1, Math.min(BUSINESS_MAX_LEVEL, Math.round((rawLevel * BUSINESS_MAX_LEVEL) / 40)))
+                : 0;
+            return [id, {
+              level,
+              condition: biz.condition ?? 1,
+              fortune: biz.fortune,
+              fortunePeak: biz.fortunePeak ?? biz.fortune,
+              choices: biz.choices,
+              buildUntil: biz.buildUntil,
+              buildFromLevel: biz.buildFromLevel,
+              lastExpandedOn: biz.lastExpandedOn,
+              listedUntil: biz.listedUntil,
+            }];
+          }),
         ),
+
         businessHours: parsed.businessHours && typeof parsed.businessHours === "object" ? parsed.businessHours : {},
         cashFlowHistory: Array.isArray(parsed.cashFlowHistory) ? parsed.cashFlowHistory.slice(-8) : [],
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
