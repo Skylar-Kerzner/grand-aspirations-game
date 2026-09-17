@@ -1426,7 +1426,6 @@ export const LICENSED_ROLE_REQUIREMENTS: Record<string, { level: number; label: 
   "Specialist Surgeon": { level: 3, label: "an MD" },
   "Head of Surgery": { level: 3, label: "an MD" },
   "Chief of Medicine": { level: 3, label: "an MD" },
-  "Director of Medical Research": { level: 3, label: "an MD" },
   "Health System President": { level: 3, label: "an MD" },
   "Healthcare Group Chairman": { level: 3, label: "an MD" },
   // Education & Public Service

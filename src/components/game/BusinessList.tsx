@@ -140,7 +140,7 @@ export default function BusinessList() {
                 )}
                 {biz.level > 0 && (
                   <div className="mt-1 space-y-0.5">
-                    <p className="font-mono-nums text-[11px] text-primary">{formatRate(income)}</p>
+                    <p className={`font-mono-nums text-[11px] ${income < 0 ? "text-destructive" : "text-primary"}`}>{formatRate(income)}</p>
                     <p className="font-mono-nums text-[10px] text-muted-foreground">
                       {formatCompact(getBusinessCapital(def, biz.level))} invested
                     </p>
