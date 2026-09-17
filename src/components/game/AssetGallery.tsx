@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGame, getTimeBudget, getLifestyleHours, getAssetLook, isAssetLookChosen } from "@/lib/GameContext";
 import { formatMoney, periodLabel } from "@/lib/formatters";
-import { ASSETS, BASE_TIME_BUDGET, assetLooks } from "@/lib/gameData";
+import { ASSETS, BASE_TIME_BUDGET, assetLooks, lookSwitchCost } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 function hoursLabel(hours: number): string {
@@ -176,15 +176,7 @@ export default function AssetGallery() {
                       <div key={tier.name} className="space-y-2">
                         <motion.button
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            if (settled) {
-                              dispatch({ type: "SET_LIFESTYLE", id: selectedDef.id, tier: i + 1 });
-                              setChoosing(null);
-                            } else {
-                              setChoosing(open ? null : i);
-                            }
-                          }}
-                          disabled={isCurrent}
+                          onClick={() => setChoosing(open ? null : i)}
                           className={`w-full flex items-center gap-3 rounded-lg p-3 text-left transition-game ${isCurrent ? "bg-primary/15 ring-1 ring-primary/40" : "surface-button"}`}
                         >
                           <span className="flex-1 min-w-0">
