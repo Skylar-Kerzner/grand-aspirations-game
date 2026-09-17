@@ -447,11 +447,13 @@ export default function BusinessList() {
                     {(() => {
                       const now = selectedBiz.fortune ?? 1;
                       const peak = selectedBiz.fortunePeak ?? now;
-                      const off = peak > 0 ? 1 - now / peak : 0;
-                      if (off > 0.05) {
+                      const roi = getBusinessROIAt(state, selectedDef.id, 1);
+                      const peakRoi = now > 0 ? roi * (peak / now) : roi;
+                      const pointsOff = (peakRoi - roi) * 100;
+                      if (pointsOff > 0.5) {
                         return (
                           <p className="text-[11px] text-destructive mt-1">
-                            Cooling — {Math.round(off * 100)}% off its best run as competition catches up.
+                            Cooling — {pointsOff.toFixed(0)} points below its peak of {(peakRoi * 100).toFixed(0)}% as competition catches up.
                           </p>
                         );
                       }
