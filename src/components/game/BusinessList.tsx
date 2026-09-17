@@ -198,7 +198,7 @@ export default function BusinessList() {
             </div>
 
             <div
-              className="flex-1 flex items-start justify-center p-6 overflow-y-auto"
+              className="flex-1 flex items-start justify-center p-6 pb-32 overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-full max-w-lg">
