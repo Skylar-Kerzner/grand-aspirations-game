@@ -297,6 +297,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Office Runner", employer: "Hartwell Group" },
     { title: "IT Support Trainee", employer: "Helix Systems" },
     { title: "Filing Clerk", employer: "Ashford Mutual" },
+    { title: "Background Extra", employer: "Silver Reel Studios" },
+    { title: "Playground Monitor", employer: "Hillcrest Public School" },
+    { title: "Hospital Porter", employer: "Riverside Clinic" },
   ],
   [
     { title: "Barista", employer: "Roast House" },
@@ -304,6 +307,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Receptionist", employer: "Arclight Group" },
     { title: "Helpdesk Technician", employer: "Orbit Cloud" },
     { title: "Mail Room Clerk", employer: "Halstead Capital" },
+    { title: "Stagehand", employer: "Lyric Playhouse" },
+    { title: "Teaching Assistant", employer: "Hillcrest Public School" },
+    { title: "Care Assistant", employer: "Meadowbrook Health" },
   ],
   [
     { title: "Shift Supervisor", employer: "Juniper Coffee" },
@@ -311,6 +317,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Office Administrator", employer: "Hartwell Group" },
     { title: "Desktop Support Analyst", employer: "Helix Systems" },
     { title: "Bank Teller", employer: "Ashford Mutual" },
+    { title: "Commercial Voice Actor", employer: "Marquee Talent" },
+    { title: "Substitute Teacher", employer: "Wren Academy" },
+    { title: "Phlebotomist", employer: "Riverside Clinic" },
   ],
   [
     { title: "Assistant Manager", employer: "Daily Ritual" },
@@ -318,6 +327,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Executive Assistant", employer: "Sterling Partners" },
     { title: "Junior Developer", employer: "Fieldstone Tech" },
     { title: "Claims Assistant", employer: "Ashford Mutual" },
+    { title: "Repertory Actor", employer: "Lyric Playhouse" },
+    { title: "Classroom Teacher", employer: "Hillcrest Public School" },
+    { title: "Paramedic", employer: "Meadowbrook Health" },
   ],
   [
     { title: "Store Manager", employer: "Alder Grocers" },
@@ -325,6 +337,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Business Analyst", employer: "Hartwell Group" },
     { title: "Software Developer", employer: "Northbeam Labs" },
     { title: "Underwriting Associate", employer: "Ashford Mutual" },
+    { title: "Supporting Screen Actor", employer: "Vantage Pictures" },
+    { title: "Senior Teacher", employer: "Wren Academy" },
+    { title: "Registered Nurse", employer: "St. Alder Hospital" },
   ],
   [
     { title: "General Manager", employer: "Pennington Hall" },
@@ -332,6 +347,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Commercial Analyst", employer: "Summit Advisory" },
     { title: "Software Engineer", employer: "Vanta Works" },
     { title: "Junior Analyst", employer: "Halstead Capital" },
+    { title: "Series Regular", employer: "Silver Reel Studios" },
+    { title: "Head of Department", employer: "Wren Academy" },
+    { title: "Nurse Practitioner", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Area Manager", employer: "Beacon Retail Group" },
@@ -339,6 +357,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Category Manager", employer: "Devon & Rowe" },
     { title: "Product Engineer", employer: "Fieldstone Tech" },
     { title: "Research Analyst", employer: "North & Finch" },
+    { title: "Recording Artist", employer: "Nightfall Records" },
+    { title: "Deputy Principal", employer: "Hillcrest Public School" },
+    { title: "Resident Physician", employer: "Kingsley Medical Group" },
   ],
   [
     { title: "Regional Manager", employer: "Beacon Retail Group" },
@@ -346,6 +367,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Commercial Manager", employer: "Summit Advisory" },
     { title: "Senior Software Engineer", employer: "Northbeam Labs" },
     { title: "Portfolio Associate", employer: "Crown & Vale" },
+    { title: "Lead Actor", employer: "Vantage Pictures" },
+    { title: "Principal", employer: "Wren Academy" },
+    { title: "Attending Physician", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Group Operations Manager", employer: "Larkspur Hotels" },
@@ -353,6 +377,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Strategy Manager", employer: "Arclight Group" },
     { title: "Engineering Lead", employer: "Vanta Works" },
     { title: "Risk Manager", employer: "Ashford Mutual" },
+    { title: "Headline Performer", employer: "Nightfall Records" },
+    { title: "District Superintendent", employer: "City Education Board" },
+    { title: "Specialist Surgeon", employer: "Kingsley Medical Group" },
   ],
   [
     { title: "Head of Retail Operations", employer: "Maison Grove" },
@@ -360,6 +387,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Head of Corporate Development", employer: "Summit Advisory" },
     { title: "Director of Engineering", employer: "Fieldstone Tech" },
     { title: "Senior Quant", employer: "Crown & Vale" },
+    { title: "Leading Film Actor", employer: "Silver Reel Studios" },
+    { title: "College Dean", employer: "Alderman College" },
+    { title: "Head of Surgery", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Retail Director", employer: "Beacon Retail Group" },
@@ -367,6 +397,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Vice President", employer: "Arclight Group" },
     { title: "Vice President of Product", employer: "Aster Group" },
     { title: "Director of Investments", employer: "North & Finch" },
+    { title: "Box-Office Star", employer: "Vantage Pictures" },
+    { title: "University Provost", employer: "Alderman College" },
+    { title: "Chief of Medicine", employer: "Kingsley Medical Group" },
   ],
   [
     { title: "Managing Director of Hotels", employer: "Larkspur Hotels" },
@@ -374,6 +407,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Senior Vice President", employer: "Sterling Partners" },
     { title: "Chief Technology Officer", employer: "Fieldstone Tech" },
     { title: "Head of Capital Markets", employer: "North & Finch" },
+    { title: "Actor-Producer", employer: "Marquee Talent" },
+    { title: "University President", employer: "Alderman College" },
+    { title: "Hospital Chief Executive", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Chief Merchant", employer: "Maison Grove" },
@@ -381,6 +417,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Managing Partner", employer: "Arclight Group" },
     { title: "Chief Executive", employer: "Aster Group" },
     { title: "Head of Private Equity", employer: "Halstead Capital" },
+    { title: "Studio Headliner", employer: "Silver Reel Studios" },
+    { title: "State Education Commissioner", employer: "State Department of Learning" },
+    { title: "Director of Medical Research", employer: "National Health Institute" },
   ],
   [
     { title: "Hospitality Group Owner", employer: "Larkspur Hotels" },
@@ -388,6 +427,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Chairman", employer: "Sterling Partners" },
     { title: "Founding Chief Executive", employer: "Orbit Cloud" },
     { title: "Hedge Fund Manager", employer: "Kestrel Capital" },
+    { title: "Studio Owner", employer: "Vantage Pictures" },
+    { title: "National Education Secretary", employer: "State Department of Learning" },
+    { title: "Surgeon General", employer: "National Health Institute" },
     { title: "Founder", employer: "Your own fund" },
   ],
 ];
