@@ -762,6 +762,14 @@ export interface InvestmentDef {
   minInvestment: number;
   annualReturn: number;
   annualVolatility: number;
+  /** No published return: each holding quietly finds its own pace. */
+  unknownReturn?: boolean;
+  /** Spread of that hidden pace around the class average. */
+  driftSpread?: number;
+  /** Roughly how long a hidden pace holds before the market turns. */
+  regimeDays?: number;
+  /** Cost of getting in and out, as a share — stops buying and selling to fish for a good run. */
+  tradeSpread?: number;
   risk: string;
   access: InvestorAccess;
   lockupDays?: number; // money put in cannot come out until this many days have passed
@@ -771,7 +779,7 @@ export const INVESTMENTS: InvestmentDef[] = [
   { id: "savings", name: "Savings Account", description: "FDIC-safe. 2.0% a year, never moves.", minInvestment: 250, annualReturn: 0.02, annualVolatility: 0, risk: "None", access: "open" },
   { id: "bonds", name: "Treasury Bonds", description: "4.5% a year, barely wobbles.", minInvestment: 5000, annualReturn: 0.045, annualVolatility: 0.02, risk: "Low", access: "open" },
   { id: "index", name: "Index Fund", description: "9% in a typical year. It will dip.", minInvestment: 2500, annualReturn: 0.09, annualVolatility: 0.16, risk: "Moderate", access: "open" },
-  { id: "crypto", name: "Digital Assets", description: "30% in a typical year. Wild ride.", minInvestment: 1000, annualReturn: 0.3, annualVolatility: 0.42, risk: "Very High", access: "open" },
+  { id: "crypto", name: "Digital Assets", description: "Nobody will tell you what it returns. Your holding finds its own pace, and the market turns every few years.", minInvestment: 1000, annualReturn: 0.24, annualVolatility: 0.42, risk: "Very High", access: "open", unknownReturn: true, driftSpread: 0.3, regimeDays: 730, tradeSpread: 0.02 },
   { id: "realestate", name: "Real Estate Fund", description: "12% a year. Your money sits for half a year.", minInvestment: 150000, annualReturn: 0.12, annualVolatility: 0.2, risk: "Moderate-High", access: "accredited", lockupDays: 180 },
   { id: "art", name: "Art & Collectibles", description: "14% a year, and it sells when it sells.", minInvestment: 2000000, annualReturn: 0.14, annualVolatility: 0.25, risk: "Moderate-High", access: "accredited", lockupDays: 365 },
   { id: "pe", name: "Private Equity", description: "22% a year. Locked up, leveraged.", minInvestment: 20000000, annualReturn: 0.22, annualVolatility: 0.3, risk: "High", access: "qualified", lockupDays: 1095 },
