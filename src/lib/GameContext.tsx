@@ -522,7 +522,8 @@ function createFresh(): GameState {
     majors: [], studying: null,
     studyHours: 0, businessHours: {}, trainingBudget: 0, trainingMomentum: 0,
     lastShiftDay: -1,
-    businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
+    businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, health: 1, watch: 1 }, investments: {}, loans: {},
+    studentLoan: { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
     loansRepaid: [], consultants: [],
     payMult: 1, payUntil: 0, livingMult: 1, livingUntil: 0, boostUntil: 0,
     events: [], stats: emptyStats(), lastTick: Date.now(),
@@ -564,8 +565,12 @@ function createInitialState(): GameState {
           food: legacyAssets.food || (parsed.food === "chef" ? 4 : parsed.food === "eatout" ? 3 : parsed.food === "groceries" ? 2 : 1),
           wardrobe: legacyAssets.wardrobe || (parsed.clothing === "tailored" ? 3 : parsed.clothing === "highstreet" ? 2 : 1),
           car: legacyAssets.car || 1,
+          health: legacyAssets.health || 1,
           watch: legacyAssets.watch || 1,
         },
+        studentLoan: parsed.studentLoan && typeof parsed.studentLoan === "object"
+          ? parsed.studentLoan
+          : { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
         businesses: Object.fromEntries(
           Object.entries(parsed.businesses || {}).map(([id, biz]) => [
             id,
