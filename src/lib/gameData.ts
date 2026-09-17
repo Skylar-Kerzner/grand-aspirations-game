@@ -149,16 +149,6 @@ export function isAdjacentTrack(from: string, to: string): boolean {
 /** Levels served in one industry that count in place of a degree on that path. */
 export const TRACK_EXPERIENCE_GATE = 3;
 
-/**
- * Climbing past MAJOR_GATE_TIER without your industry's major is possible but
- * slows to a stop: each next level's experience requirement grows by this much
- * per tier, compounding.
- */
-export const NO_DEGREE_DRAG_BASE = 0.7;
-export function noDegreeXpMultiplier(tier: number): number {
-  return Math.pow(1 + NO_DEGREE_DRAG_BASE, Math.max(0, tier - MAJOR_GATE_TIER));
-}
-
 export const CAREER_SALARY_RANGE = { min: 0.82, max: 1.22 };
 export const CAREER_VARIANTS: CareerVariant[][] = [
   [
@@ -546,7 +536,6 @@ export interface EventDef {
   // effects
   cashPctOfNetWorth?: number; // + or -
   cashFlat?: number;          // scaled by era via multiplier below
-  xpFlat?: number;
   businessBoostDays?: number; // days of doubled business profit
   livingCostShiftDays?: number;
   livingCostShift?: number;   // multiplier on living costs while active
@@ -560,7 +549,7 @@ export const EVENTS: EventDef[] = [
   { id: "bonus", title: "Surprise bonus", text: "Your employer had a good quarter and remembered you.", tone: "good", weight: 8, cashFlat: 900 },
   { id: "raise", title: "Off-cycle raise", text: "Someone finally noticed how much you do.", tone: "good", weight: 6, payShift: 1.15, payShiftDays: 120 },
   { id: "boom", title: "Boom week", text: "A viral moment sends customers flooding in.", tone: "good", weight: 8, gateBusiness: true, businessBoostDays: 14 },
-  { id: "headhunt", title: "Headhunted", text: "A recruiter's pitch teaches you more than the job does.", tone: "good", weight: 6, xpFlat: 80 },
+  { id: "headhunt", title: "Headhunted", text: "A recruiter's pitch reminded your employer what you're worth.", tone: "good", weight: 6, payShift: 1.1, payShiftDays: 90 },
   { id: "rentspike", title: "Rent spike", text: "The whole neighbourhood repriced overnight.", tone: "bad", weight: 8, livingCostShift: 1.3, livingCostShiftDays: 180 },
   { id: "rentdrop", title: "Cost of living relief", text: "Prices cooled off for a while.", tone: "good", weight: 5, livingCostShift: 0.8, livingCostShiftDays: 150 },
   { id: "medical", title: "Medical bill", text: "Nothing serious. Still expensive.", tone: "bad", weight: 7, cashFlat: -1200, cashPctOfNetWorth: -0.02 },
@@ -568,20 +557,20 @@ export const EVENTS: EventDef[] = [
   { id: "paycut", title: "Pay cut", text: "Restructuring. Everyone takes a trim.", tone: "bad", weight: 4, payShift: 0.85, payShiftDays: 120, minDay: 60 },
   { id: "layoff", title: "Laid off", text: "Your position was eliminated. You start one rung lower.", tone: "bad", weight: 2, minDay: 200, jobLoss: true },
   { id: "audit", title: "Tax audit", text: "They found a discrepancy. You paid it.", tone: "bad", weight: 4, minDay: 150, cashPctOfNetWorth: -0.04 },
-  { id: "award", title: "Industry award", text: "An award nobody outside the trade has heard of. It works.", tone: "good", weight: 5, minDay: 150, gateBusiness: true, businessBoostDays: 21, xpFlat: 40 },
+  { id: "award", title: "Industry award", text: "An award nobody outside the trade has heard of. It works.", tone: "good", weight: 5, minDay: 150, gateBusiness: true, businessBoostDays: 21 },
   { id: "lawsuit", title: "Nuisance lawsuit", text: "Settled quietly, as these things are.", tone: "bad", weight: 3, minDay: 250, cashPctOfNetWorth: -0.05 },
   { id: "refund", title: "Overpayment refunded", text: "A billing error, finally caught, in your favour.", tone: "good", weight: 7, cashFlat: 600, cashPctOfNetWorth: 0.01 },
-  { id: "mentor", title: "A mentor takes an interest", text: "Someone senior starts telling you how things actually work.", tone: "good", weight: 6, xpFlat: 60 },
+  { id: "mentor", title: "A mentor takes an interest", text: "Someone senior starts telling you how things actually work — and makes sure you're paid for it.", tone: "good", weight: 6, payShift: 1.08, payShiftDays: 150 },
   { id: "referral", title: "Word of mouth", text: "A regular brought everyone they know.", tone: "good", weight: 7, gateBusiness: true, businessBoostDays: 10 },
   { id: "windfall", title: "Old position pays off", text: "Something you forgot you owned was bought out.", tone: "good", weight: 4, minDay: 180, cashPctOfNetWorth: 0.08, cashFlat: 2500 },
-  { id: "press", title: "Flattering write-up", text: "A journalist needed a story and you were it.", tone: "good", weight: 5, minDay: 120, gateBusiness: true, businessBoostDays: 18, xpFlat: 30 },
+  { id: "press", title: "Flattering write-up", text: "A journalist needed a story and you were it.", tone: "good", weight: 5, minDay: 120, gateBusiness: true, businessBoostDays: 18 },
   { id: "equity", title: "Vesting cliff", text: "Equity from an old contract finally vested.", tone: "good", weight: 4, minDay: 220, gateJobIndex: 10, cashPctOfNetWorth: 0.06, cashFlat: 3000 },
   { id: "spacedividend", title: "Space dividend", text: "The space company you hold paid a huge special dividend ahead of its first orbital run.", tone: "good", weight: 6, minDay: 300, gateInvested: 50000, cashPctOfNetWorth: 0.08 },
-  { id: "patent", title: "Patent licensed", text: "A larger company licensed the method behind your flagship product.", tone: "good", weight: 5, minDay: 240, gateBusiness: true, cashPctOfNetWorth: 0.06, xpFlat: 60 },
+  { id: "patent", title: "Patent licensed", text: "A larger company licensed the method behind your flagship product.", tone: "good", weight: 5, minDay: 240, gateBusiness: true, cashPctOfNetWorth: 0.06 },
   { id: "supplier", title: "Supplier locked in", text: "You signed supplies at last year's prices the week before they jumped.", tone: "good", weight: 5, minDay: 120, gateBusiness: true, businessBoostDays: 21 },
-  { id: "vip", title: "A very regular guest", text: "Someone famous keeps booking the whole place and brings an entourage.", tone: "good", weight: 4, minDay: 200, gateBusiness: true, businessBoostDays: 14, xpFlat: 30 },
-  { id: "speaking", title: "Keynote invitation", text: "A conference pays handsomely just for telling your story.", tone: "good", weight: 4, minDay: 300, gateJobIndex: 8, cashPctOfNetWorth: 0.02, xpFlat: 80 },
-  { id: "alumni", title: "Alumni network", text: "A classmate steers a client your way and vouches for you.", tone: "good", weight: 5, minDay: 240, gateMajor: true, xpFlat: 100 },
+  { id: "vip", title: "A very regular guest", text: "Someone famous keeps booking the whole place and brings an entourage.", tone: "good", weight: 4, minDay: 200, gateBusiness: true, businessBoostDays: 14 },
+  { id: "speaking", title: "Keynote invitation", text: "A conference pays handsomely just for telling your story.", tone: "good", weight: 4, minDay: 300, gateJobIndex: 8, cashPctOfNetWorth: 0.02 },
+  { id: "alumni", title: "Alumni network", text: "A classmate steers a client your way and vouches for you.", tone: "good", weight: 5, minDay: 240, gateMajor: true, cashPctOfNetWorth: 0.03 },
   { id: "margin", title: "Margin call", text: "Your broker wants cash you had other plans for.", tone: "bad", weight: 4, minDay: 300, gateInvested: 100000, cashPctOfNetWorth: -0.05 },
   { id: "fundcollapse", title: "A fund goes under", text: "One of your holdings filed for protection. Your slice of it is gone.", tone: "bad", weight: 3, minDay: 360, gateInvested: 500000, cashPctOfNetWorth: -0.07 },
 ];
