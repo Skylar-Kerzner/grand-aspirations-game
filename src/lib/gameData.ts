@@ -213,7 +213,7 @@ const EMPLOYER_TRACKS: Record<string, string> = {
   "Hillcrest Public School": "education", "Wren Academy": "education", "City Education Board": "education",
   "Alderman College": "education", "State Department of Learning": "education",
   // Health & Medicine
-  "Riverside Clinic": "medicine", "St. Alder Hospital": "medicine", "Meadowbrook Health",
+  "Riverside Clinic": "medicine", "St. Alder Hospital": "medicine", "Meadowbrook Health": "medicine",
   "Kingsley Medical Group": "medicine", "National Health Institute": "medicine",
 };
 
