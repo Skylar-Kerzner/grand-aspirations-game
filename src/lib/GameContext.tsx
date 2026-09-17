@@ -533,7 +533,7 @@ function createInitialState(): GameState {
 
       };
       // Retired mechanic: old saves may still carry experience points.
-      delete (merged as Record<string, unknown>).xp;
+      delete (merged as unknown as Record<string, unknown>).xp;
       const offlineDays = Math.min((Date.now() - merged.lastTick) / 1000, MAX_OFFLINE_DAYS);
       if (offlineDays > 5) return advance(merged, offlineDays, Date.now());
       merged.lastTick = Date.now();
