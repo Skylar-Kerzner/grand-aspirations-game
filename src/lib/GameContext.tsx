@@ -714,7 +714,7 @@ function createInitialState(): GameState {
               // never-chosen looks at tiers above home look "chosen". Only a
               // non-zero stored look can be a real pick up there.
               if (i + 1 > currentTier && (stored ?? 0) === 0) return -1;
-              return stored ?? (i + 1 > currentTier ? -1 : stored ?? -1);
+              return stored ?? -1;
             })];
           }),
         ),
