@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS, noDegreeXpMultiplier,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
@@ -63,7 +63,7 @@ export interface GameState {
   currentJob: CareerOffer;
   careerOffers: CareerOffer[];
   jobHistory: (CareerOffer & { startDay: number })[];
-  xp: number;
+  
   majors: string[]; // completed major ids — each opens a career track
   studying: { majorId: string; daysLeft: number } | null;
   studyHours: number;     // of the 40 weekly hours, how many go to school
@@ -163,7 +163,8 @@ export function getTotalBusinessHours(state: GameState): number {
 }
 
 export function getWorkHours(state: GameState): number {
-  return Math.max(0, getTimeBudget(state) - state.studyHours - getTotalBusinessHours(state));
+  const study = state.studying ? state.studyHours : 0;
+  return Math.max(0, getTimeBudget(state) - study - getTotalBusinessHours(state));
 }
 
 /** How close to full performance this venture runs, from the hours you give it.
@@ -412,9 +413,11 @@ export function getCreditCardPayment(state: GameState): number {
   return Math.min(balanceAfterInterest, balanceAfterInterest * CC_MIN_PAYMENT_RATE);
 }
 
-export function getCareerProgressMultiplier(state: GameState): number {
-  const training = Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE);
-  return 1 + training;
+// Courses and coaching raise the pay of every job offer you seek out,
+// on a diminishing curve up to +35%.
+export const TRAINING_OFFER_CAP = 0.35;
+export function getOfferTrainingBonus(state: GameState): number {
+  return Math.min(TRAINING_OFFER_CAP, 0.15 * Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE));
 }
 
 export function getBusinessValue(state: GameState): number {
@@ -473,7 +476,7 @@ function createFresh(): GameState {
     currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
     careerOffers: [],
     jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
-    xp: 0, majors: [], studying: null,
+    majors: [], studying: null,
     studyHours: 0, businessHours: {}, trainingBudget: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
@@ -530,6 +533,10 @@ function createInitialState(): GameState {
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
 
       };
+      // Retired mechanic: old saves may still carry experience points.
+      delete (merged as unknown as Record<string, unknown>).xp;
+      // Not enrolled means no school hours, whatever the save says.
+      if (!merged.studying) merged.studyHours = 0;
       const offlineDays = Math.min((Date.now() - merged.lastTick) / 1000, MAX_OFFLINE_DAYS);
       if (offlineDays > 5) return advance(merged, offlineDays, Date.now());
       merged.lastTick = Date.now();
@@ -569,7 +576,7 @@ function rollEvent(state: GameState, days: number): GameState {
     s.cash += delta;
     if (delta > 0) s.stats.eventGains += delta; else s.stats.eventLosses += -delta;
   }
-  if (def.xpFlat) s.xp += def.xpFlat;
+  
   if (def.businessBoostDays) s.boostUntil = s.day + def.businessBoostDays;
   if (def.livingCostShift && def.livingCostShiftDays) {
     s.livingMult = def.livingCostShift;
@@ -585,12 +592,11 @@ function rollEvent(state: GameState, days: number): GameState {
     s.currentJob = { title: fallback.title, employer: fallback.employer, dailyPay: fallback.dailyPay };
     s.jobHistory = [...s.jobHistory, { ...s.currentJob, startDay: Math.floor(s.day) }];
     s.careerOffers = [];
-    s.xp = 0;
   }
 
   const parts: string[] = [];
   if (delta !== 0) parts.push(`${delta > 0 ? "+" : "-"}${formatMoney(Math.abs(delta))} cash`);
-  if (def.xpFlat) parts.push(`+${def.xpFlat} experience`);
+  
   if (def.businessBoostDays) parts.push(`Venture profits doubled for ${def.businessBoostDays} days`);
   if (def.livingCostShift && def.livingCostShiftDays) parts.push(`Living costs ${def.livingCostShift >= 1 ? "+" : ""}${Math.round((def.livingCostShift - 1) * 100)}% for ${def.livingCostShiftDays} days`);
   if (def.payShift && def.payShiftDays) parts.push(`Pay ${def.payShift >= 1 ? "+" : ""}${Math.round((def.payShift - 1) * 100)}% for ${def.payShiftDays} days`);
@@ -616,7 +622,8 @@ function advance(state: GameState, days: number, now: number): GameState {
     if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
   }
-  s = { ...s, studying, majors };
+  // No enrollment, no school hours — the time goes back to your week.
+  s = { ...s, studying, majors, studyHours: studying ? s.studyHours : 0 };
 
   // Salary
   const job = getJob(s);
@@ -748,16 +755,12 @@ function advance(state: GameState, days: number, now: number): GameState {
     events = [cutoff, ...events].slice(0, 30);
   }
 
-  // Experience
-  const workShare = getWorkHours(s) / WEEK_HOURS;
-  const xp = s.xp + days * getCareerProgressMultiplier(s) * (0.4 + 0.6 * workShare);
-
   let next: GameState = {
     ...s,
     cash: Math.max(0, cash), ccDebt,
     assets, events,
     day: s.day + days,
-    xp, businesses, investments, loans, loansRepaid,
+    businesses, investments, loans, loansRepaid,
     stats, lastTick: now,
   };
   next = rollEvent(next, days);
@@ -797,7 +800,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         cash: state.cash + pay,
-        xp: state.xp + 2 * getCareerProgressMultiplier(state),
         lastShiftDay: today,
         stats,
       };
@@ -846,7 +848,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "GENERATE_JOB_OFFERS": {
       const next = JOBS[state.jobIndex + 1];
       if (!next) return state;
-      if (state.xp < getJob(state).xpToPromote) return state;
       const tier = state.jobIndex + 1;
       const homeTrack = getCareerTrack(state.currentJob.employer).id;
       const tenure = getTrackTenure(state);
@@ -884,6 +885,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Restless records are paid less wherever they land.
       const lastStart = state.jobHistory.length > 0 ? state.jobHistory[state.jobHistory.length - 1].startDay : 0;
       const hop = jobHopMultiplier(Math.floor(state.day) - lastStart);
+      // Courses and coaching sharpen every offer you seek out.
+      const training = 1 + getOfferTrainingBonus(state);
       const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
         const track = trackPayMultiplier(variant.employer, state.jobIndex + 1);
@@ -894,9 +897,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
           : 1 - trackSwitchPenalty(homeTrack, offerTrack, hasMajor);
-        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty * hop) };
+        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty * hop * training) };
       }).sort(() => Math.random() - 0.5);
-      return { ...state, careerOffers, xp: Math.max(0, state.xp - getJob(state).xpToPromote) };
+      return { ...state, careerOffers };
     }
 
     case "ACCEPT_JOB_OFFER": {
@@ -904,7 +907,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const next = JOBS[state.jobIndex + 1];
       if (!offer || !next) return state;
       return {
-        ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0,
+        ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [],
         jobHistory: [...state.jobHistory, { ...offer, startDay: Math.floor(state.day) }],
       };
     }
@@ -916,7 +919,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.cash < def.cost) return state;
       return {
         ...state, cash: state.cash - def.cost,
-        studyHours: state.studyHours === 0 ? 20 : state.studyHours,
+        studyHours: 20,
         studying: { majorId: def.id, daysLeft: def.days },
         stats: { ...state.stats, educationSpent: state.stats.educationSpent + def.cost },
       };
@@ -1115,8 +1118,7 @@ export interface DerivedState {
   shiftPay: number;
   job: (typeof JOBS)[number];
   nextJob: (typeof JOBS)[number] | null;
-  xpNeeded: number;
-  focus: number;
+  offerTrainingBonus: number;
   
   creditTier: number;
   creditLimit: number;
@@ -1154,8 +1156,6 @@ function calculateDerived(state: GameState): DerivedState {
   const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay;
 
   const job = getJob(state);
-  const jobMajor = getTrackMajor(getCareerTrack(job.employer).id);
-  const lacksMajor = !!jobMajor && !state.majors.includes(jobMajor.id);
   return {
     // you owe the principal, not the future interest
     netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt,
@@ -1165,8 +1165,7 @@ function calculateDerived(state: GameState): DerivedState {
     shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
-    xpNeeded: Math.round(job.xpToPromote * (lacksMajor ? noDegreeXpMultiplier(state.jobIndex + 1) : 1)),
-    focus: getCareerProgressMultiplier(state),
+    offerTrainingBonus: getOfferTrainingBonus(state),
     creditTier: state.loansRepaid.length,
     creditLimit: getCreditLimit(state),
     taxRate,

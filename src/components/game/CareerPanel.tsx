@@ -1,18 +1,13 @@
 import { motion } from "framer-motion";
 import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, getTrackMajor, JOB_HOP_SETTLED_DAYS } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
   const job = derived.job;
   const next = derived.nextJob;
-  const xpPct = Math.min(100, (state.xp / (derived.xpNeeded || 1)) * 100);
-  const nextTier = state.jobIndex + 1;
-  const gatedTier = !!next && nextTier >= MAJOR_GATE_TIER;
   const homeTrack = getCareerTrack(job.employer).id;
-  const trackMajor = getTrackMajor(homeTrack);
-  const degreeDrag = gatedTier && !!trackMajor && !state.majors.includes(trackMajor.id);
   const tenure = getTrackTenure(state);
   const years = getTrackExperienceDays(state) / DAYS_PER_YEAR;
   const experienceBonus = getTrackExperienceBonus(state);
@@ -22,7 +17,7 @@ export default function CareerPanel() {
     ? Math.floor(state.day) - state.jobHistory[state.jobHistory.length - 1].startDay
     : 0;
   const settled = daysInJob >= JOB_HOP_SETTLED_DAYS;
-  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && state.careerOffers.length === 0;
+  const canSeekOffers = !!next && state.careerOffers.length === 0;
 
   return (
     <div className="space-y-6">
@@ -60,20 +55,7 @@ export default function CareerPanel() {
 
         {next ? (
           <>
-            <div className="flex justify-between text-[11px] text-muted-foreground mb-1 mt-3">
-              <span>Experience toward the next level</span>
-              <span className="font-mono-nums">{Math.floor(state.xp)} / {derived.xpNeeded}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-3">
-              <motion.div className="h-full bg-primary" animate={{ width: `${xpPct}%` }} transition={{ duration: 0.3 }} />
-            </div>
-            {degreeDrag && (
-              <p className="text-[11px] text-muted-foreground mb-2">
-                Without a degree in this industry, each next step takes longer. Study {trackMajor?.name} below to
-                keep climbing at full pace.
-              </p>
-            )}
-            <p className="text-[11px] text-muted-foreground mb-2">
+            <p className="text-[11px] text-muted-foreground mb-2 mt-3">
               Every industry is open to you: {openTracks.map((t) => t.name).join(", ")}. Leaving your own costs you
               pay — more so into a distant field, less if you hold its degree.
             </p>
@@ -89,7 +71,7 @@ export default function CareerPanel() {
                 disabled={!canSeekOffers}
                 className="w-full h-10 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40"
               >
-                Seek offers for the next career level
+                Seek a new job
               </motion.button>
             ) : (
               <div className="space-y-2 mt-3">
@@ -122,12 +104,9 @@ export default function CareerPanel() {
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => dispatch({ type: "GENERATE_JOB_OFFERS" })}
-                  disabled={state.xp < derived.xpNeeded}
-                  className="w-full h-9 rounded-lg surface-button text-xs transition-game disabled:opacity-40"
+                  className="w-full h-9 rounded-lg surface-button text-xs transition-game"
                 >
-                  {state.xp >= derived.xpNeeded
-                    ? "Search again"
-                    : `Search again at ${Math.ceil(derived.xpNeeded - state.xp)} more experience`}
+                  Search again
                 </motion.button>
               </div>
             )}
