@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudentLoanHeadroom } from "@/lib/GameContext";
+import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudyFunding, getStudyPrereqNote } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
 import { CAREER_SALARY_RANGE, CAREER_TRACKS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, PROMOTION_MIN_DAYS, getTrackPrograms, workplaceImage } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
