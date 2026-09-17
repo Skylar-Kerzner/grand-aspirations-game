@@ -59,8 +59,11 @@ export default function CareerPanel() {
         {next ? (
           <>
             <p className="text-[11px] text-muted-foreground mb-2 mt-3">
-              Every industry is open to you: {openTracks.map((t) => t.name).join(", ")}. Leaving your own costs you
-              pay — more so into a distant field, less if you hold its degree.
+              {neededLevel === 0
+                ? `Every industry is open to you: ${openTracks.map((t) => t.name).join(", ")}. Leaving your own costs you pay — more so into a distant field, less if you hold its degree.`
+                : qualifiedTracks.length > 0
+                  ? `At this level, employers want a ${levelWord} in their industry — or years already served in it. You qualify in: ${qualifiedTracks.map((t) => t.name).join(", ")}.`
+                  : `No industry will take you at this level yet — employers want a ${levelWord} in their field, or years already served in it. Study below, or stay where you are and build the years.`}
             </p>
             <p className="text-[11px] text-muted-foreground mb-2">
               {settled
