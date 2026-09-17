@@ -124,6 +124,8 @@ export default function TimePanel() {
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-1">
                   {formatMoney(getBusinessCapital(def, state.businesses[def.id]?.level || 0))} invested
+                  {" · "}today's takings {Math.round((state.businesses[def.id]?.takings ?? 1) * 100)}% of normal
+                  {" · "}trading trend {Math.round(condition * 100)}%
                 </p>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] mb-1">
                   <span className="text-muted-foreground">Now, at {hours}h a week</span>
