@@ -11,6 +11,8 @@ export default function CareerPanel() {
   const nextTier = state.jobIndex + 1;
   const gatedTier = !!next && nextTier >= MAJOR_GATE_TIER;
   const homeTrack = getCareerTrack(job.employer).id;
+  const trackMajor = getTrackMajor(homeTrack);
+  const degreeDrag = gatedTier && !!trackMajor && !state.majors.includes(trackMajor.id);
   const tenure = getTrackTenure(state);
   const years = getTrackExperienceDays(state) / DAYS_PER_YEAR;
   const experienceBonus = getTrackExperienceBonus(state);

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
+  BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS, noDegreeXpMultiplier,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
@@ -1150,7 +1150,7 @@ function calculateDerived(state: GameState): DerivedState {
     shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
-    xpNeeded: job.xpToPromote,
+    xpNeeded: Math.round(job.xpToPromote * (lacksMajor ? noDegreeXpMultiplier(state.jobIndex + 1) : 1)),
     focus: getCareerProgressMultiplier(state),
     creditTier: state.loansRepaid.length,
     creditLimit: getCreditLimit(state),
