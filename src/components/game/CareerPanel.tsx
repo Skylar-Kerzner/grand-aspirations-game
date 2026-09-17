@@ -6,6 +6,8 @@ import { CAREER_SALARY_RANGE, CAREER_TRACKS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, ge
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
+  const [showPaths, setShowPaths] = useState(false);
+  const loanHeadroom = getStudentLoanHeadroom(state);
   const job = derived.job;
   const next = derived.nextJob;
   const homeTrack = getCareerTrack(job.employer).id;
