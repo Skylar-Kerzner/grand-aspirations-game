@@ -1390,22 +1390,36 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = MAJORS.find((m) => m.id === action.majorId);
       if (!def || state.studying) return state;
       if (state.majors.includes(def.id)) return state;
+      if (getStudyPrereqNote(state, def)) return state;
       // Teaching lives get their fees subsidised.
       const discount = getCareerTrack(state.currentJob.employer).studyBonus ? 0.25 : 0;
       const cost = Math.round(def.cost * (1 - discount));
-      const loan = state.studentLoan || { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 };
+      const loan = getStudentLoan(state);
       if (action.financed) {
-        const headroom = getStudentLoanHeadroom({ ...state, studying: { majorId: def.id, daysLeft: def.days } });
-        if (cost > headroom) return state;
+        const funding = getStudyFunding(state, def, cost);
+        if (!funding.covered) return state;
+        const fedRate = federalRateFor(def.kind);
+        const newFederal = loan.balance + funding.federal;
+        const blended = newFederal > 0
+          ? (loan.balance * (loan.rate ?? FEDERAL_RATE_UNDERGRAD) + funding.federal * fedRate) / newFederal
+          : fedRate;
+        const bucket = federalBucketFor(def.kind);
+        const finishDay = state.day + def.days;
         return {
           ...state,
           studyHours: 20,
           studying: { majorId: def.id, daysLeft: def.days },
           studentLoan: {
             ...loan,
-            balance: loan.balance + cost,
-            borrowed: loan.borrowed + cost,
-            dueFrom: state.day + def.days + STUDENT_LOAN_GRACE_DAYS,
+            balance: newFederal,
+            borrowed: loan.borrowed + funding.federal,
+            rate: blended,
+            undergradBorrowed: (loan.undergradBorrowed || 0) + (bucket === "undergrad" ? funding.federal : 0),
+            gradBorrowed: (loan.gradBorrowed || 0) + (bucket === "graduate" ? funding.federal : 0),
+            privateBalance: (loan.privateBalance || 0) + funding.private,
+            privateBorrowed: (loan.privateBorrowed || 0) + funding.private,
+            dueFrom: finishDay + STUDENT_LOAN_GRACE_DAYS,
+            privateDueFrom: finishDay,
           },
           stats: { ...state.stats, educationSpent: state.stats.educationSpent + cost },
         };
@@ -1420,13 +1434,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "REPAY_STUDENT_LOAN": {
-      const loan = state.studentLoan;
-      if (!loan || loan.balance <= 0) return state;
-      const pay = Math.min(state.cash, action.amount ?? loan.balance, loan.balance);
+      const loan = getStudentLoan(state);
+      const total = loan.balance + (loan.privateBalance || 0);
+      if (total <= 0) return state;
+      let pay = Math.min(state.cash, action.amount ?? total, total);
       if (pay <= 0) return state;
+      // Clear the expensive bank debt first.
+      const toPrivate = Math.min(pay, loan.privateBalance || 0);
+      pay -= toPrivate;
+      const toFederal = Math.min(pay, loan.balance);
       return {
-        ...state, cash: state.cash - pay,
-        studentLoan: { ...loan, balance: loan.balance - pay, repaid: loan.repaid + pay },
+        ...state, cash: state.cash - (toPrivate + toFederal),
+        studentLoan: {
+          ...loan,
+          balance: loan.balance - toFederal,
+          repaid: loan.repaid + toFederal,
+          privateBalance: (loan.privateBalance || 0) - toPrivate,
+          privateRepaid: (loan.privateRepaid || 0) + toPrivate,
+        },
       };
     }
 
