@@ -658,7 +658,7 @@ function createFresh(): GameState {
     studyHours: 0, businessHours: {}, trainingBudget: 0, trainingMomentum: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, health: 1, watch: 1 },
-    assetLooks: Object.fromEntries(ASSETS.map((a) => [a.id, a.tiers.map(() => 0)])),
+    assetLooks: Object.fromEntries(ASSETS.map((a) => [a.id, a.tiers.map(() => -1)])),
     investments: {}, loans: {},
     studentLoan: { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
     loansRepaid: [], consultants: [],
@@ -706,7 +706,17 @@ function createInitialState(): GameState {
           watch: legacyAssets.watch || 1,
         },
         assetLooks: Object.fromEntries(
-          ASSETS.map((a) => [a.id, a.tiers.map((_, i) => parsed.assetLooks?.[a.id]?.[i] ?? 0)]),
+          ASSETS.map((a) => {
+            const currentTier = Math.max(1, (parsed.assets?.[a.id] ?? 1));
+            return [a.id, a.tiers.map((_, i) => {
+              const stored = parsed.assetLooks?.[a.id]?.[i];
+              // Older saves stored 0 as the default for every tier, which made
+              // never-chosen looks at tiers above home look "chosen". Only a
+              // non-zero stored look can be a real pick up there.
+              if (i + 1 > currentTier && (stored ?? 0) === 0) return -1;
+              return stored ?? (i + 1 > currentTier ? -1 : stored ?? -1);
+            })];
+          }),
         ),
         studentLoan: parsed.studentLoan && typeof parsed.studentLoan === "object"
           ? parsed.studentLoan
