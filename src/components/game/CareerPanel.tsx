@@ -117,8 +117,11 @@ export default function CareerPanel() {
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Your offers</p>
                 <p className="text-[11px] text-muted-foreground">
                   Offers arrive in no particular order, at whatever rank each industry would hire you into.
-                  The best-paid job today is not always the best career.
+                  Pay does not rise at every single rung: a rung can be a training post, a public-service
+                  role or a change of specialism that pays less for a while but unlocks the far better paid
+                  work above it. Every ladder ends far higher than it starts.
                 </p>
+
                 {state.careerOffers.map((offer, index) => {
                   const level = offer.level ?? state.jobIndex + 1;
                   const step = level - state.jobIndex;
