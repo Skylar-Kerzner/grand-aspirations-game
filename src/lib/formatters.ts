@@ -47,3 +47,11 @@ export function formatDays(days: number): string {
   if (years > 0) return `Year ${years + 1}, Day ${rem + 1}`;
   return `Day ${d + 1}`;
 }
+
+/** Plain label for the stretch of days a money figure covers. */
+export function periodLabel(days: number): string {
+  if (days >= 7) return "last 7 days";
+  if (days === 1) return "today";
+  if (days > 1) return `last ${days} days`;
+  return "no history yet";
+}
