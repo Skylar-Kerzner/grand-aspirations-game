@@ -793,7 +793,7 @@ function rollEvent(state: GameState, days: number): GameState {
 
 // ---------- the daily simulation ----------
 function appendCashFlow(history: DailyCashFlow[], entry: DailyCashFlow): DailyCashFlow[] {
-  const next = [...history];
+  const next = history.map((item) => ({ ...item }));
   const existing = next.find((item) => item.day === entry.day);
   if (existing) {
     existing.salary += entry.salary;
