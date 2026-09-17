@@ -986,11 +986,19 @@ export function ventureNameAtTier(businessId: string, tierIdx: number, choices?:
   return location ? `${stage} in ${location.name}` : stage;
 }
 
-/** Artwork key for a venture at a given stage. */
+/** Artwork key for a venture at a given stage, in the city it trades in. */
 export function ventureImageAtTier(businessId: string, tierIdx: number, choices?: Record<string, string>): string {
   const concept = getBusinessConcept(businessId, choices?.concept || "");
   if (!concept) return "";
-  return tierIdx === 1 ? concept.image : `${concept.image}-t${tierIdx + 1}`;
+  const stage = `t${tierIdx + 1}`;
+  const location = getBusinessLocation(businessId, choices?.location || "");
+  const others = (BUSINESS_LOCATIONS[businessId] || []).map((l) => `${concept.image}-${l.id}-${stage}`);
+  return pickImage(
+    location ? `${concept.image}-${location.id}-${stage}` : "",
+    ...others,
+    `${concept.image}-${stage}`,
+    concept.image,
+  );
 }
 
 /** How much of the sale price you actually walk away with. */
