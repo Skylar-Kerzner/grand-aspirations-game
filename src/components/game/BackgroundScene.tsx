@@ -69,7 +69,13 @@ export default function BackgroundScene() {
                 className="overflow-hidden rounded-md shrink-0"
                 style={{ height: `${tile.span * 22}vh` }}
               >
-                <img src={tile.src} alt="" loading="lazy" className="h-full w-full object-cover saturate-[1.35] contrast-105" />
+                <img
+                  src={tile.src}
+                  alt=""
+                  loading="lazy"
+                  className="h-full w-full object-cover saturate-[1.35] contrast-105"
+                  style={{ objectPosition: ["50% 30%", "50% 70%", "50% 50%"][repeat % 3] }}
+                />
               </motion.div>
             ))}
           </motion.div>
