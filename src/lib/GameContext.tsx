@@ -4,6 +4,7 @@ import {
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
+  credentialLevelFrom, requiredCredentialLevel, CREDENTIAL_YEARS_PER_LEVEL, CREDENTIAL_EXPERIENCE_CAP,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
@@ -263,16 +264,24 @@ export function getTrackYears(state: GameState, trackId: string): number {
   return days / DAYS_PER_YEAR;
 }
 
+/** How far you have studied an industry, counting years served as partial credit. */
+export function getTrackCredential(state: GameState, trackId: string) {
+  const studied = credentialLevelFrom(state.majors, trackId);
+  const years = getTrackYears(state, trackId);
+  const fromExperience = Math.min(CREDENTIAL_EXPERIENCE_CAP, Math.floor(years / CREDENTIAL_YEARS_PER_LEVEL));
+  return { studied, years, effective: Math.max(studied, fromExperience) };
+}
+
 /** What your career and education bring to running a venture in its industry. */
 export function getIndustryKnowledge(state: GameState, id: string) {
   const def = BUSINESSES.find((business) => business.id === id);
   if (!def) return { returnBonus: 0, riskRelief: 0, hasMajor: false, years: 0, track: undefined };
   const track = CAREER_TRACKS[def.track];
-  const major = getTrackMajor(def.track);
-  const hasMajor = !!major && state.majors.includes(major.id);
+  const studied = credentialLevelFrom(state.majors, def.track);
+  const hasMajor = studied >= 2;
   const years = getTrackYears(state, def.track);
   const yearBonus = Math.min(INDUSTRY_YEAR_CAP, years * INDUSTRY_YEAR_STEP);
-  const returnBonus = (hasMajor ? INDUSTRY_MAJOR_BONUS : 0) + yearBonus;
+  const returnBonus = INDUSTRY_MAJOR_BONUS * (studied / 3) + yearBonus;
   const maxBonus = INDUSTRY_MAJOR_BONUS + INDUSTRY_YEAR_CAP;
   return {
     returnBonus,
@@ -859,8 +868,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const homeTrack = getCareerTrack(state.currentJob.employer).id;
       const tenure = getTrackTenure(state);
       // Every path stays open — what changes is the pay you are offered.
-      const variants = CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }];
-      if (variants.length === 0) return state;
+      const allVariants = CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }];
+      // A step up in an industry is only offered to people qualified for it:
+      // study in that industry, or years served in it up to the diploma level.
+      const needed = requiredCredentialLevel(tier);
+      const qualified = (employer: string) => {
+        const t = getCareerTrack(employer).id;
+        const studied = credentialLevelFrom(state.majors, t);
+        const fromYears = Math.min(CREDENTIAL_EXPERIENCE_CAP, Math.floor(getTrackYears(state, t) / CREDENTIAL_YEARS_PER_LEVEL));
+        return Math.max(studied, fromYears) >= needed;
+      };
+      const variants = allVariants.filter((v) => qualified(v.employer));
+      if (variants.length === 0) return { ...state, careerOffers: [] };
       const pool = [...variants].sort(() => Math.random() - 0.5);
       // Spread the choice across industries: take at most one offer per track first,
       // starting with your own industry and any industry you hold a degree in.
