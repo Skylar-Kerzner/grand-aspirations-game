@@ -1086,7 +1086,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const today = Math.floor(state.day);
       if (state.lastShiftDay === today) return state;
       const job = getJob(state);
-      const pay = getJob(state).dailyPay * 0.25 * (1 - getTaxRate(state));
+      const pay = (getJob(state).dailyPay / 8) * (1 - getTaxRate(state));
       const stats = { ...state.stats, shifts: { ...state.stats.shifts }, jobEarned: { ...state.stats.jobEarned } };
       stats.shiftEarned += pay;
       stats.shifts[job.id] = (stats.shifts[job.id] || 0) + 1;
@@ -1156,26 +1156,41 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         .map((m) => MAJORS.find((d) => d.id === m)?.track)
         .filter((t): t is string => !!t);
 
+      // Time served in the post you hold — nobody is promoted every morning.
+      const lastStartDay = state.jobHistory.length > 0
+        ? state.jobHistory[state.jobHistory.length - 1].startDay
+        : 0;
+      const daysInPost = Math.floor(state.day) - lastStartDay;
+      const seasoned = daysInPost >= PROMOTION_MIN_DAYS;
+
       // Which rank each industry would hire you into today.
       const targetLevelFor = (trackId: string): number => {
+        const cred = getTrackCredential(state, trackId);
+        // Schooling and years in the field set a hard ceiling on the rank
+        // anybody will hire you into — in your own industry too.
+        const ceiling = CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)];
         if (trackId === homeTrack) {
-          // Your own industry usually offers the next rung. Sometimes it is a
-          // sideways move, and occasionally a double step for the clearly ready.
-          const cred = getTrackCredential(state, trackId);
+          // Without enough time in the post, the market only offers you moves
+          // at the rank you already hold.
+          if (!seasoned) return state.jobIndex;
+          const stepOk = cred.effective >= requiredCredentialLevel(state.jobIndex + 1);
           const doubleOk =
             state.jobIndex + 2 <= maxLevel &&
             cred.effective >= requiredCredentialLevel(state.jobIndex + 2) &&
             cred.years >= 2 &&
+            daysInPost >= PROMOTION_MIN_DAYS * 2 &&
             getInterviewReadiness(state) >= 0.6;
           const roll = Math.random();
-          if (doubleOk && roll > 0.82) return state.jobIndex + 2;
-          if (roll < 0.15) return state.jobIndex;
-          return Math.min(maxLevel, state.jobIndex + 1);
+          let target = state.jobIndex;
+          if (doubleOk && roll > 0.82) target = state.jobIndex + 2;
+          else if (stepOk && roll >= 0.15) target = state.jobIndex + 1;
+          return Math.max(0, Math.min(maxLevel, ceiling, target));
         }
         // Another industry starts you where your standing there puts you, and
         // never higher than staying put would have taken you.
         const earned = getEarnedLevelIn(state, trackId).level;
-        return Math.max(0, Math.min(earned, state.jobIndex + 1, maxLevel));
+        const cap = seasoned ? state.jobIndex + 1 : state.jobIndex;
+        return Math.max(0, Math.min(earned, cap, ceiling, maxLevel));
       };
 
       // Order industries: your own, then ones you have studied, then the rest.
@@ -1550,7 +1565,8 @@ function calculateDerived(state: GameState): DerivedState {
   const recentBusiness = recent.reduce((sum, item) => sum + item.business, 0);
   const recentInvestments = recent.reduce((sum, item) => sum + item.investments, 0);
   const recentCosts = recent.reduce((sum, item) => sum + item.costs, 0);
-  const recentNet = recentSalary + recentBusiness + recentInvestments - recentCosts;
+  // What you earn by working: passive investment movement is reported separately.
+  const recentNet = recentSalary + recentBusiness - recentCosts;
 
   const job = getJob(state);
   return {
@@ -1560,7 +1576,7 @@ function calculateDerived(state: GameState): DerivedState {
     livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
     recentCashFlowDays: recent.length, recentSalary, recentBusiness, recentInvestments, recentCosts, recentNet,
     investmentTotal, loanTotal, studentDebt, studentLoanPayment, assetValue, businessValue, businessCapital,
-    shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
+    shiftPay: (job.dailyPay / 8) * (1 - taxRate),
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
     offerTrainingBonus: getOfferTrainingBonus(state),
