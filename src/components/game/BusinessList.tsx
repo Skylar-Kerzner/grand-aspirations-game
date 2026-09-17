@@ -211,7 +211,7 @@ export default function BusinessList() {
                       ) : (
                         <div className="w-full h-full flex items-center justify-center px-6 text-center">
                           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                            Not open yet — you'll see it the day the doors open
+                            Not open yet
                           </p>
                         </div>
                       )}
@@ -354,7 +354,7 @@ export default function BusinessList() {
                     <p className="text-[11px] text-muted-foreground">
                       {selectedBiz.level > 0
                         ? "Stepping up a tier is a chance to rebrand — pick a new concept or city before you expand."
-                        : "Give the business an identity. You find out how it went once the doors open."}
+                        : "Give the business an identity."}
                     </p>
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-2">Concept</p>
