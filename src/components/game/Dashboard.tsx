@@ -3,6 +3,7 @@ import { formatMoney, formatRate, formatDays } from "@/lib/formatters";
 
 export default function Dashboard() {
   const { state, derived, dispatch } = useGame();
+  const periodLabel = derived.recentCashFlowDays >= 7 ? "Last 7 days" : `Last ${derived.recentCashFlowDays || 0} days`;
   return (
     <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-border px-4 py-5">
       <div className="text-center mb-3">
@@ -33,22 +34,25 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="flex justify-between items-end max-w-md mx-auto">
+      <div className="grid grid-cols-3 items-end max-w-md mx-auto gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Income</p>
-          <p className="font-mono-nums text-sm text-primary">{formatRate(derived.incomePerDay)}</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{periodLabel}</p>
+          <p className="font-mono-nums text-sm text-primary">
+            {formatMoney(derived.recentSalary + derived.recentBusiness + derived.recentInvestments)}
+          </p>
         </div>
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Costs</p>
           <p className="font-mono-nums text-sm text-destructive">
-            {formatRate(-(derived.livingCosts + derived.trainingCost + derived.operatingCosts + derived.loanPayments + derived.ccPaymentPerDay))}
+            -{formatMoney(derived.recentCosts)}
           </p>
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Net</p>
-          <p className={`font-mono-nums text-base ${derived.netPerDay >= 0 ? "text-primary" : "text-destructive"}`}>
-            {formatRate(derived.netPerDay)}
+          <p className={`font-mono-nums text-base ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
+            {derived.recentNet >= 0 ? "+" : ""}{formatMoney(derived.recentNet)}
           </p>
+          <p className="text-[10px] text-muted-foreground font-mono-nums">Pace {formatRate(derived.netPerDay)}</p>
         </div>
       </div>
     </div>
