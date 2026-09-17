@@ -11,40 +11,48 @@ export default function TimePanel() {
   const careerHours = trackPerk(state, "hoursBonus");
   const workHours = getWorkHours(state);
   const freeHours = Math.max(0, budget - workHours - state.studyHours - bizHours);
+  const periodLabel = derived.recentCashFlowDays >= 7
+    ? "Last 7 days"
+    : derived.recentCashFlowDays === 1 ? "Today" : derived.recentCashFlowDays > 1
+      ? `Last ${derived.recentCashFlowDays} days` : "No history yet";
 
   return (
     <div className="space-y-6">
       {/* Where the money lands */}
       <div className="surface-card rounded-xl p-4">
-        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Where your week lands</h3>
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Where your money landed</h3>
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Job</span>
-            <span className="font-mono-nums">{formatMoney(derived.salaryPerDay)}/day</span>
+            <span className="font-mono-nums">{formatMoney(derived.recentSalary)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Businesses</span>
-            <span className="font-mono-nums">{formatMoney(derived.businessPerDay)}/day</span>
+            <span className="font-mono-nums">{formatMoney(derived.recentBusiness)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Investments</span>
-            <span className="font-mono-nums">{formatMoney(derived.investmentPerDay)}/day</span>
+            <span className="font-mono-nums">{formatMoney(derived.recentInvestments)}</span>
           </div>
           <div className="flex justify-between border-t border-border pt-1">
-            <span className="text-muted-foreground">Total income</span>
-            <span className="font-mono-nums text-primary">{formatMoney(derived.incomePerDay)}/day</span>
+            <span className="text-muted-foreground">{periodLabel} income</span>
+            <span className="font-mono-nums text-primary">{formatMoney(derived.recentSalary + derived.recentBusiness + derived.recentInvestments)}</span>
           </div>
           <div className="flex justify-between text-[11px] text-muted-foreground">
             <span>Living costs, interview prep, loans</span>
             <span className="font-mono-nums">
-              -{formatMoney(derived.livingCosts + derived.trainingCost + derived.operatingCosts + derived.loanPayments + derived.ccPaymentPerDay)}/day
+              -{formatMoney(derived.recentCosts)}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="font-semibold">Net</span>
-            <span className={`font-mono-nums font-semibold ${derived.netPerDay >= 0 ? "text-primary" : "text-destructive"}`}>
-              {derived.netPerDay >= 0 ? "+" : ""}{formatMoney(derived.netPerDay)}/day
+            <span className={`font-mono-nums font-semibold ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
+              {derived.recentNet >= 0 ? "+" : ""}{formatMoney(derived.recentNet)}
             </span>
+          </div>
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>Current pace</span>
+            <span className="font-mono-nums">{derived.netPerDay >= 0 ? "+" : ""}{formatMoney(derived.netPerDay)}/day</span>
           </div>
         </div>
       </div>

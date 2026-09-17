@@ -8,31 +8,30 @@ export default function FinancePanel() {
   const { state, derived, dispatch } = useGame();
   const [confirmReset, setConfirmReset] = useState(false);
   const totalLevels = Object.values(state.businesses).reduce((s, b) => s + b.level, 0);
+  const periodLabel = derived.recentCashFlowDays >= 7
+    ? "Last 7 days"
+    : derived.recentCashFlowDays === 1 ? "Today" : derived.recentCashFlowDays > 1
+      ? `Last ${derived.recentCashFlowDays} days` : "No history yet";
 
   return (
     <div className="space-y-6">
       {/* Cash flow */}
       <div className="surface-card rounded-xl p-4">
-        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Daily cash flow</h3>
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">{periodLabel}</h3>
         <div className="space-y-2 text-sm">
-          <Row label="Salary (after tax)" value={formatRate(derived.salaryPerDay)} tone="pos" />
-          <Row label="Business profit" value={formatRate(derived.businessPerDay)} tone="pos" />
-          <Row label="Investment returns" value={formatRate(derived.investmentPerDay)} tone="pos" />
-          <Row label="Lifestyle" value={formatRate(-derived.livingCosts)} tone="neg" />
-          <Row label="Interview prep" value={formatRate(-derived.trainingCost)} tone="neg" />
-          <Row label="Consultant retainers" value={formatRate(-derived.operatingCosts)} tone="neg" />
-          <Row label="Loan payments" value={formatRate(-derived.loanPayments)} tone="neg" />
-          {derived.studentDebt > 0.5 && (
-            <Row label="Student loan payment" value={formatRate(-derived.studentLoanPayment)} tone="neg" />
-          )}
-          {state.ccDebt > 0.5 && (
-            <Row label="Credit card payment" value={formatRate(-derived.ccPaymentPerDay)} tone="neg" />
-          )}
+          <Row label="Salary (after tax)" value={formatMoney(derived.recentSalary)} tone="pos" />
+          <Row label="Business profit" value={formatMoney(derived.recentBusiness)} tone="pos" />
+          <Row label="Investment returns" value={formatMoney(derived.recentInvestments)} tone={derived.recentInvestments >= 0 ? "pos" : "neg"} />
+          <Row label="Recurring costs" value={`-${formatMoney(derived.recentCosts)}`} tone="neg" />
           <div className="flex justify-between border-t border-border pt-2">
             <span>Net</span>
-            <span className={`font-mono-nums font-semibold ${derived.netPerDay >= 0 ? "text-primary" : "text-destructive"}`}>
-              {formatRate(derived.netPerDay)}
+            <span className={`font-mono-nums font-semibold ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
+              {derived.recentNet >= 0 ? "+" : ""}{formatMoney(derived.recentNet)}
             </span>
+          </div>
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>Current pace</span>
+            <span className="font-mono-nums">{formatRate(derived.netPerDay)}</span>
           </div>
         </div>
       </div>

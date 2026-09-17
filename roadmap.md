@@ -47,3 +47,4 @@
 - [ ] Generate remaining ~99 images with the agent image tool (not app credits)
 
 - Hide business concept/city preview art while choosing — reveal only once opened
+- [x] Lead net displays with actual operating net from the last seven game days; retain current daily pace

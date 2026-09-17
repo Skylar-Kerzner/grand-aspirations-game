@@ -21,6 +21,10 @@ export default function AssetGallery() {
   const selectedTier = selected ? Math.max(1, state.assets[selected] || 1) : 0;
   const budget = getTimeBudget(state);
   const lifestyleHours = getLifestyleHours(state);
+  const periodLabel = derived.recentCashFlowDays >= 7
+    ? "7d net"
+    : derived.recentCashFlowDays === 1 ? "Today net" : derived.recentCashFlowDays > 1
+      ? `${derived.recentCashFlowDays}d net` : "Net history";
 
   return (
     <>
@@ -106,10 +110,11 @@ export default function AssetGallery() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Net</p>
-                  <p className={`font-mono-nums text-sm ${derived.netPerDay >= 0 ? "text-primary" : "text-destructive"}`}>
-                    {derived.netPerDay >= 0 ? "+" : ""}{formatMoney(derived.netPerDay)}/day
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{periodLabel}</p>
+                  <p className={`font-mono-nums text-sm ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
+                    {derived.recentNet >= 0 ? "+" : ""}{formatMoney(derived.recentNet)}
                   </p>
+                  <p className="font-mono-nums text-[9px] text-muted-foreground">Pace {formatMoney(derived.netPerDay)}/day</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Week</p>

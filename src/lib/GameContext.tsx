@@ -35,6 +35,14 @@ export interface CareerOffer { title: string; employer: string; dailyPay: number
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
 
+export interface DailyCashFlow {
+  day: number;
+  salary: number;
+  business: number;
+  investments: number;
+  costs: number;
+}
+
 export interface Stats {
   salaryEarned: number;
   shiftEarned: number;
@@ -92,6 +100,8 @@ export interface GameState {
   livingMult: number; livingUntil: number;
   boostUntil: number;
   events: GameEvent[];
+  /** Actual operating results, grouped by game day. Purchases, financing, and events stay out. */
+  cashFlowHistory: DailyCashFlow[];
   stats: Stats;
   lastTick: number;
 }
@@ -641,7 +651,7 @@ function createFresh(): GameState {
     studentLoan: { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
     loansRepaid: [], consultants: [],
     payMult: 1, payUntil: 0, livingMult: 1, livingUntil: 0, boostUntil: 0,
-    events: [], stats: emptyStats(), lastTick: Date.now(),
+    events: [], cashFlowHistory: [], stats: emptyStats(), lastTick: Date.now(),
   };
 }
 
@@ -696,6 +706,7 @@ function createInitialState(): GameState {
           ]),
         ),
         businessHours: parsed.businessHours && typeof parsed.businessHours === "object" ? parsed.businessHours : {},
+        cashFlowHistory: Array.isArray(parsed.cashFlowHistory) ? parsed.cashFlowHistory.slice(-7) : [],
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
         // Older saves never tracked momentum — assume they sustained their current budget.
         trainingMomentum: typeof parsed.trainingMomentum === "number" ? parsed.trainingMomentum : (parsed.trainingBudget || 0),
@@ -781,10 +792,39 @@ function rollEvent(state: GameState, days: number): GameState {
 }
 
 // ---------- the daily simulation ----------
+function appendCashFlow(history: DailyCashFlow[], entry: DailyCashFlow): DailyCashFlow[] {
+  const next = history.map((item) => ({ ...item }));
+  const existing = next.find((item) => item.day === entry.day);
+  if (existing) {
+    existing.salary += entry.salary;
+    existing.business += entry.business;
+    existing.investments += entry.investments;
+    existing.costs += entry.costs;
+  } else {
+    next.push({ ...entry });
+  }
+  return next.sort((a, b) => a.day - b.day).slice(-7);
+}
+
+/** Advance in calendar-day pieces so offline progress produces a real seven-day history. */
 function advance(state: GameState, days: number, now: number): GameState {
+  let next = state;
+  let remaining = days;
+  while (remaining > 0.0001) {
+    const toBoundary = Math.max(0.0001, Math.floor(next.day) + 1 - next.day);
+    const chunk = Math.min(remaining, 1, toBoundary);
+    const elapsed = days - remaining + chunk;
+    next = advanceChunk(next, chunk, now - Math.max(0, days - elapsed) * 1000);
+    remaining -= chunk;
+  }
+  return { ...next, lastTick: now };
+}
+
+function advanceChunk(state: GameState, days: number, now: number): GameState {
   let s: GameState = { ...state, stats: { ...state.stats, jobEarned: { ...state.stats.jobEarned }, jobDays: { ...state.stats.jobDays }, shifts: { ...state.stats.shifts }, investEarnedById: { ...state.stats.investEarnedById }, businessEarnedById: { ...state.stats.businessEarnedById } } };
   const stats = s.stats;
   let cash = s.cash;
+  const flowDay = Math.floor(s.day);
   const taxRate = getTaxRate(s);
 
   // Education in progress — study speed follows the hours you allocate
@@ -879,8 +919,9 @@ function advance(state: GameState, days: number, now: number): GameState {
     businesses[id] = { ...biz, condition, takings: lastTakings, season };
   }
   const bizTax = bizGross * taxRate;
-  cash += bizGross - bizTax;
-  stats.businessEarned += bizGross - bizTax;
+  const netBusiness = bizGross - bizTax;
+  cash += netBusiness;
+  stats.businessEarned += netBusiness;
   stats.taxesPaid += bizTax;
 
   // Operating costs
@@ -892,6 +933,7 @@ function advance(state: GameState, days: number, now: number): GameState {
 
   // Investments — lognormal so the long-run average matches the stated return
   const investments: Record<string, InvestmentState> = {};
+  let investmentGain = 0;
   const mult = investMultiplier(s);
   const volDamp = s.consultants.includes("quant") ? 0.5 : 1;
   for (const [id, inv] of Object.entries(s.investments)) {
@@ -916,6 +958,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     const factor = Math.exp(Math.log(1 + mu) * t + sigma * Math.sqrt(t) * z);
     const newValue = Math.max(0, holding.value * factor);
     const gain = newValue - holding.value;
+    investmentGain += gain;
     stats.investmentGains += gain;
     stats.investEarnedById[id] = (stats.investEarnedById[id] || 0) + gain;
     investments[id] = { ...holding, value: newValue };
@@ -924,6 +967,7 @@ function advance(state: GameState, days: number, now: number): GameState {
   // Loan servicing — interest accrues on the remaining balance only
   const loans: Record<string, LoanState> = {};
   const loansRepaid = [...s.loansRepaid];
+  let loanPaymentsActual = 0;
   for (const [id, loan] of Object.entries(s.loans)) {
     if (loan.remaining <= 0) { loans[id] = loan; continue; }
     const def = LOANS.find((l) => l.id === id);
@@ -934,6 +978,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     let remaining = grown;
     const due = Math.min(loan.dailyPayment * days, remaining);
     cash -= due;
+    loanPaymentsActual += due;
     remaining -= due;
     if (remaining <= 0.5) {
       if (!loansRepaid.includes(id)) loansRepaid.push(id);
@@ -945,6 +990,7 @@ function advance(state: GameState, days: number, now: number): GameState {
 
   // Student debt — interest always accrues, payments only start after the grace period
   let studentLoan = s.studentLoan || { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 };
+  let studentPaymentActual = 0;
   if (studentLoan.balance > 0) {
     const grown = studentLoan.balance * Math.pow(1 + STUDENT_LOAN_RATE / DAYS_PER_YEAR, days);
     stats.loanInterestPaid += grown - studentLoan.balance;
@@ -952,6 +998,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     if (!s.studying && s.day >= studentLoan.dueFrom) {
       const due = Math.min(getStudentLoanPayment({ ...s, studentLoan: { ...studentLoan, balance } }) * days, balance);
       cash -= due;
+      studentPaymentActual += due;
       balance -= due;
       studentLoan = { ...studentLoan, balance: Math.max(0, balance), repaid: studentLoan.repaid + due };
     } else {
@@ -961,6 +1008,7 @@ function advance(state: GameState, days: number, now: number): GameState {
 
   // Credit card: anything you cannot cover becomes revolving debt
   let ccDebt = s.ccDebt;
+  let ccPaymentActual = 0;
   if (ccDebt > 0) {
     const interest = ccDebt * (Math.pow(1 + CC_APR / DAYS_PER_YEAR, days) - 1);
     ccDebt += interest;
@@ -971,6 +1019,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     const pay = Math.min(cash, Math.max(ccDebt * CC_MIN_PAYMENT_RATE * days, Math.min(ccDebt, cash * 0.5)));
     cash -= pay;
     ccDebt -= pay;
+    ccPaymentActual = pay;
   }
 
   // Over the limit: you get cut off and forced down to the cheapest life
@@ -990,6 +1039,13 @@ function advance(state: GameState, days: number, now: number): GameState {
     businesses, investments, loans, loansRepaid, studentLoan,
     trainingMomentum,
     trainingBudget: prepRate,
+    cashFlowHistory: appendCashFlow(s.cashFlowHistory || [], {
+      day: flowDay,
+      salary: netSalary,
+      business: netBusiness,
+      investments: investmentGain,
+      costs: living + training + operating + loanPaymentsActual + studentPaymentActual + ccPaymentActual,
+    }),
     stats, lastTick: now,
   };
   next = rollEvent(next, days);
@@ -1030,6 +1086,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         cash: state.cash + pay,
         lastShiftDay: today,
+        cashFlowHistory: appendCashFlow(state.cashFlowHistory || [], {
+          day: today, salary: pay, business: 0, investments: 0, costs: 0,
+        }),
         stats,
       };
     }
@@ -1421,6 +1480,12 @@ export interface DerivedState {
   ccInterestPerDay: number;
   ccPaymentPerDay: number;
   netPerDay: number;
+  recentCashFlowDays: number;
+  recentSalary: number;
+  recentBusiness: number;
+  recentInvestments: number;
+  recentCosts: number;
+  recentNet: number;
   investmentTotal: number;
   loanTotal: number;
   studentDebt: number;
@@ -1471,6 +1536,12 @@ function calculateDerived(state: GameState): DerivedState {
   const businessValue = getBusinessValue(state);
   const incomePerDay = salaryPerDay + businessPerDay + investmentPerDay;
   const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay - studentLoanPayment;
+  const recent = (state.cashFlowHistory || []).slice(-7);
+  const recentSalary = recent.reduce((sum, item) => sum + item.salary, 0);
+  const recentBusiness = recent.reduce((sum, item) => sum + item.business, 0);
+  const recentInvestments = recent.reduce((sum, item) => sum + item.investments, 0);
+  const recentCosts = recent.reduce((sum, item) => sum + item.costs, 0);
+  const recentNet = recentSalary + recentBusiness + recentInvestments - recentCosts;
 
   const job = getJob(state);
   return {
@@ -1478,6 +1549,7 @@ function calculateDerived(state: GameState): DerivedState {
     netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt - studentDebt,
     salaryPerDay, businessPerDay, investmentPerDay, incomePerDay,
     livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
+    recentCashFlowDays: recent.length, recentSalary, recentBusiness, recentInvestments, recentCosts, recentNet,
     investmentTotal, loanTotal, studentDebt, studentLoanPayment, assetValue, businessValue, businessCapital,
     shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,
