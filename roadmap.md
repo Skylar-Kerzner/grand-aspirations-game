@@ -44,3 +44,4 @@
 - [ ] Generate remaining artwork as build files (165 of 356 done; blocked on AI credits)
 - [ ] Digital Assets: hidden per-holding drift with regime re-draws + entry/exit spread so it can't be reroll-farmed
 - [ ] Career balance: give each of the 8 tracks a distinct perk so none is strictly best
+- [ ] Generate remaining ~99 images with the agent image tool (not app credits)
