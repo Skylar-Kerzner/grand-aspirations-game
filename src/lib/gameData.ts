@@ -687,6 +687,7 @@ export const ASSETS: AssetDef[] = [
       { name: "Thrifted Basics", dailyCost: 3, hoursBonus: -1, image: "wardrobe-t1", benefit: "Costs you 1h a week — laundry, repairs, nothing quite fits" },
       { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "Buys back 1h a week — easy wardrobe, little upkeep" },
       { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "Buys back 2h a week — a tailor keeps it all ready" },
+      { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "Buys back 4h a week — a stylist and valet service" },
       { name: "Couture Fittings", dailyCost: 720, hoursBonus: 5, image: "wardrobe-t5", benefit: "Buys back 5h a week — a house keeps your wardrobe fitted and ready" },
       { name: "Private Wardrobe Hall", dailyCost: 2600, hoursBonus: 7, image: "wardrobe-t6", benefit: "Buys back 7h a week — a dressing team packs, styles and travels with you" },
     ],
