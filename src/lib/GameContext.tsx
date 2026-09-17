@@ -412,9 +412,11 @@ export function getCreditCardPayment(state: GameState): number {
   return Math.min(balanceAfterInterest, balanceAfterInterest * CC_MIN_PAYMENT_RATE);
 }
 
-export function getCareerProgressMultiplier(state: GameState): number {
-  const training = Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE);
-  return 1 + training;
+// Courses and coaching raise the pay of every job offer you seek out,
+// on a diminishing curve up to +35%.
+export const TRAINING_OFFER_CAP = 0.35;
+export function getOfferTrainingBonus(state: GameState): number {
+  return Math.min(TRAINING_OFFER_CAP, 0.15 * Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE));
 }
 
 export function getBusinessValue(state: GameState): number {
@@ -840,7 +842,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "GENERATE_JOB_OFFERS": {
       const next = JOBS[state.jobIndex + 1];
       if (!next) return state;
-      if (state.xp < getJob(state).xpToPromote) return state;
       const tier = state.jobIndex + 1;
       const homeTrack = getCareerTrack(state.currentJob.employer).id;
       const tenure = getTrackTenure(state);
@@ -878,6 +879,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Restless records are paid less wherever they land.
       const lastStart = state.jobHistory.length > 0 ? state.jobHistory[state.jobHistory.length - 1].startDay : 0;
       const hop = jobHopMultiplier(Math.floor(state.day) - lastStart);
+      // Courses and coaching sharpen every offer you seek out.
+      const training = 1 + getOfferTrainingBonus(state);
       const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
         const track = trackPayMultiplier(variant.employer, state.jobIndex + 1);
@@ -888,9 +891,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
           : 1 - trackSwitchPenalty(homeTrack, offerTrack, hasMajor);
-        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty * hop) };
+        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty * hop * training) };
       }).sort(() => Math.random() - 0.5);
-      return { ...state, careerOffers, xp: Math.max(0, state.xp - getJob(state).xpToPromote) };
+      return { ...state, careerOffers };
     }
 
     case "ACCEPT_JOB_OFFER": {
@@ -898,7 +901,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const next = JOBS[state.jobIndex + 1];
       if (!offer || !next) return state;
       return {
-        ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [], xp: 0,
+        ...state, jobIndex: state.jobIndex + 1, currentJob: offer, careerOffers: [],
         jobHistory: [...state.jobHistory, { ...offer, startDay: Math.floor(state.day) }],
       };
     }
@@ -1148,8 +1151,6 @@ function calculateDerived(state: GameState): DerivedState {
   const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay;
 
   const job = getJob(state);
-  const jobMajor = getTrackMajor(getCareerTrack(job.employer).id);
-  const lacksMajor = !!jobMajor && !state.majors.includes(jobMajor.id);
   return {
     // you owe the principal, not the future interest
     netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt,
@@ -1159,8 +1160,7 @@ function calculateDerived(state: GameState): DerivedState {
     shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
-    xpNeeded: Math.round(job.xpToPromote * (lacksMajor ? noDegreeXpMultiplier(state.jobIndex + 1) : 1)),
-    focus: getCareerProgressMultiplier(state),
+    offerTrainingBonus: getOfferTrainingBonus(state),
     creditTier: state.loansRepaid.length,
     creditLimit: getCreditLimit(state),
     taxRate,
