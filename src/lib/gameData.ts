@@ -1300,7 +1300,7 @@ export function getBusinessTierIndex(level: number): number {
  * Waking hours you can actually direct in a week before lifestyle and career are
  * taken into account. A bare-bones life spends a chunk of it on chores and commuting.
  */
-export const BASE_TIME_BUDGET = 52;
+export const BASE_TIME_BUDGET = 40;
 
 // ---------- Student loans ----------
 // Modelled on US federal borrowing as it stands after 1 July 2026: Grad PLUS is
