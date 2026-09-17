@@ -1203,6 +1203,8 @@ function calculateDerived(state: GameState): DerivedState {
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
     offerTrainingBonus: getOfferTrainingBonus(state),
+    interviewReadiness: getInterviewReadiness(state),
+    interviewPrepRate: getInterviewPrepRate(state),
     creditTier: state.loansRepaid.length,
     creditLimit: getCreditLimit(state),
     taxRate,
