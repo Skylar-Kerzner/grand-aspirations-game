@@ -27,9 +27,15 @@ export interface BusinessState {
   condition: number;                   // the slow trading trend — this is what moves the value
   takings?: number;                    // how today's takings compared with a normal day
   season?: number;                     // slow multi-week wave in trade (good and bad runs cluster)
-  fortune?: number;                    // lasting quality of this particular venture
+  fortune?: number;                    // how well this particular business is doing — it drifts
+  fortunePeak?: number;                // the best it has ever run at, so cooling can be shown
   choices?: Record<string, string>;    // location / market / product chosen when opening
+  buildUntil?: number;                 // day the newest expansion opens and starts earning
+  buildFromLevel?: number;             // size that keeps trading while the build is under way
+  lastExpandedOn?: number;             // day of the most recent expansion
+  listedUntil?: number;                // day a buyer is expected, when on the market
 }
+
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number; lockedUntil?: number; drift?: number; regimeUntil?: number }
 /**
