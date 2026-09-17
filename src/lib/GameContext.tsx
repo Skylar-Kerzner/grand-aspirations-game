@@ -1600,25 +1600,32 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = BUSINESSES.find((b) => b.id === action.id);
       if (!def || !isBusinessUnlocked(state, action.id)) return state;
       const cur = state.businesses[action.id] || { level: 0, condition: 1 };
+      if (cur.level >= BUSINESS_MAX_LEVEL) return state;
+      // A business on the market, or still being built, cannot be expanded.
+      if (cur.listedUntil || cur.buildUntil) return state;
       const cost = upgradeCostFor(state, action.id);
       if (state.cash < cost) return state;
       const opening = cur.level === 0;
       if (opening && !action.choices) return state;
+      const build = businessBuildDays(cur.level + 1);
       const next: BusinessState = opening
         ? {
             level: 1,
             condition: 1,
             choices: action.choices,
             fortune: rollBusinessFortune() * (1 + trackPerk(state, "ventureLuck")),
+            buildUntil: state.day + build,
+            buildFromLevel: 0,
+            lastExpandedOn: state.day,
           }
         : (() => {
-            // Only a tier step puts part of the venture's fortune back on the table,
-            // and only then can it be rebranded.
+            // Only a tier step puts part of the business's fortune back on the
+            // table, and only then can it be rebranded.
             const tierUp =
               getBusinessTierIndex(cur.level + 1) !== getBusinessTierIndex(cur.level);
             const nextChoices = tierUp ? action.choices || cur.choices : cur.choices;
             // Keeping the product and the city carries more of what you built over;
-            // changing both starts far closer to a fresh venture.
+            // changing both starts far closer to a fresh business.
             const changed =
               (nextChoices?.concept !== cur.choices?.concept ? 1 : 0) +
               (nextChoices?.location !== cur.choices?.location ? 1 : 0);
@@ -1627,6 +1634,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               ...cur,
               level: cur.level + 1,
               choices: nextChoices,
+              buildUntil: state.day + build,
+              buildFromLevel: cur.level,
+              lastExpandedOn: state.day,
               fortune: Math.min(
                 6,
                 Math.max(
@@ -1635,7 +1645,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                     ? (cur.fortune ?? 1) * (1 - rerollWeight) +
                       rollBusinessFortune() * (1 + trackPerk(state, "ventureLuck")) * rerollWeight
                     : (cur.fortune ?? 1)) *
-                    // every level nudges success a little, up or down
+                    // every expansion nudges success a little, up or down
                     (0.9 + Math.random() * 0.2),
                 ),
               ),
@@ -1650,14 +1660,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "SELL_BUSINESS": {
       const biz = state.businesses[action.id];
-      if (!biz || biz.level === 0) return state;
-      const proceeds = getBusinessSalePrice(state, action.id);
+      if (!biz || biz.level === 0 || biz.listedUntil) return state;
+      // Businesses are not liquid: you put it on the market and wait for a buyer.
       return {
-        ...state, cash: state.cash + proceeds,
-        businesses: { ...state.businesses, [action.id]: { level: 0, condition: 1 } },
-        stats: { ...state.stats, businessSold: state.stats.businessSold + proceeds },
+        ...state,
+        businesses: {
+          ...state.businesses,
+          [action.id]: { ...biz, listedUntil: state.day + BUSINESS_SALE_DAYS },
+        },
       };
     }
+
+    case "CANCEL_BUSINESS_SALE": {
+      const biz = state.businesses[action.id];
+      if (!biz || !biz.listedUntil) return state;
+      return {
+        ...state,
+        businesses: { ...state.businesses, [action.id]: { ...biz, listedUntil: undefined } },
+      };
+    }
+
 
     case "INVEST": {
       const def = INVESTMENTS.find((i) => i.id === action.id);
