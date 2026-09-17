@@ -18,15 +18,29 @@ export default function FinancePanel() {
         <div className="space-y-2 text-sm">
           <Row label="Salary (after tax)" value={formatMoney(derived.recentSalary)} tone="pos" />
           <Row label="Business profit" value={formatMoney(derived.recentBusiness)} tone="pos" />
-          <Row label="Recurring costs" value={`-${formatMoney(derived.recentCosts)}`} tone="neg" />
+          <Row label="Lifestyle and running costs" value={`-${formatMoney(derived.recentLifestyleCosts)}`} tone="neg" />
+          <Row label="Loan interest paid" value={`-${formatMoney(derived.recentInterestPaid)}`} tone="neg" />
+          <Row label="Debt paid down" value={`-${formatMoney(derived.recentPrincipalPaid)}`} tone="neg" />
           <div className="flex justify-between border-t border-border pt-2">
             <span>Net</span>
             <span className={`font-mono-nums font-semibold ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
               {derived.recentNet >= 0 ? "+" : ""}{formatMoney(derived.recentNet)}
             </span>
           </div>
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>Change in what you are worth</span>
+            <span className="font-mono-nums">
+              {derived.recentNet + derived.recentPrincipalPaid - derived.recentInterestAccrued >= 0 ? "+" : ""}
+              {formatMoney(derived.recentNet + derived.recentPrincipalPaid - derived.recentInterestAccrued)}
+            </span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Paying down debt takes cash but leaves you no poorer, so it is added back above.
+            {derived.recentInterestAccrued > 0.5 && ` Unpaid interest of ${formatMoney(derived.recentInterestAccrued)} was added to your balances.`}
+          </p>
         </div>
       </div>
+
 
       {/* Credit card */}
       <div className="surface-card rounded-xl p-4">
