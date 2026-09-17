@@ -469,7 +469,8 @@ export interface BusinessDef {
   baseCost: number;
   annualROI: number; // baseline profit per year as a share of capital invested
   costMultiplier: number;
-  risk: number; // annual volatility of profit; higher means bigger swings and more shocks
+  risk: number; // annual volatility of the slow trading trend — this is what moves the venture's value
+  dailyNoise: number; // how much a single day's takings swing around normal (does not move the value)
   track: string; // career industry whose experience helps you run it
   description: string;
   tierNames: string[];
@@ -491,49 +492,49 @@ export const BUSINESS_NETWORK_MILESTONES = [
 export const BUSINESSES: BusinessDef[] = [
   {
     id: "coffee", name: "Coffee Shop", sector: "Food & Beverage",
-    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.55, track: "hospitality",
+    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.3, dailyNoise: 0.38, track: "hospitality",
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
   },
   {
     id: "restaurant", name: "Restaurant", sector: "Food & Beverage",
-    baseCost: 25000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.5, track: "hospitality",
+    baseCost: 25000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.28, dailyNoise: 0.34, track: "hospitality",
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Neighbourhood Bistro", "Fine Dining Room", "Culinary Empire"],
   },
   {
     id: "tech", name: "Tech Startup", sector: "Technology",
-    baseCost: 100000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.6, track: "tech",
+    baseCost: 100000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.45, dailyNoise: 0.3, track: "tech",
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Series A Office", "Tech Campus", "Tech Giant HQ"],
   },
   {
     id: "hotel", name: "Hotel", sector: "Hospitality",
-    baseCost: 400000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.4, track: "hospitality",
+    baseCost: 400000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.24, dailyNoise: 0.24, track: "hospitality",
     description: "Luxury accommodations worldwide.",
     tierNames: ["Roadside Motel", "Boutique Hotel", "Luxury Resort", "Grand Hotel Empire"],
   },
   {
     id: "fashion", name: "Fashion Brand", sector: "Retail",
-    baseCost: 1500000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.38, track: "hospitality",
+    baseCost: 1500000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.26, dailyNoise: 0.28, track: "hospitality",
     description: "Define style itself.",
     tierNames: ["Market Stall", "Flagship Boutique", "Department Store", "Fashion House"],
   },
   {
     id: "themepark", name: "Theme Park", sector: "Entertainment",
-    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.32, track: "operations",
+    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.22, dailyNoise: 0.32, track: "operations",
     description: "Create worlds of wonder.",
     tierNames: ["Travelling Carnival", "Family Fun Park", "Destination Theme Park", "Entertainment Empire"],
   },
   {
     id: "media", name: "Media Network", sector: "Media",
-    baseCost: 25000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.3, track: "tech",
+    baseCost: 25000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.2, dailyNoise: 0.16, track: "tech",
     description: "Own the attention itself.",
     tierNames: ["Podcast Studio", "Streaming Channel", "Broadcast Network", "Global Media Conglomerate"],
   },
   {
     id: "city", name: "City Development", sector: "Infrastructure",
-    baseCost: 100000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.24, track: "corporate",
+    baseCost: 100000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.16, dailyNoise: 0.1, track: "corporate",
     description: "Build the skyline everyone else lives in.",
     tierNames: ["City Block", "Mixed-Use District", "Waterfront Downtown", "Sovereign Metropolis"],
   },
@@ -590,46 +591,55 @@ export const ASSETS: AssetDef[] = [
   {
     id: "house", name: "Housing", category: "Home",
     tiers: [
-      { name: "Shared Room", dailyCost: 34, hoursBonus: 0, image: "house-t1", benefit: "No time bought back yet" },
-      { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "+2h of your week back — no commute, building services" },
-      { name: "Modern Loft", dailyCost: 165, hoursBonus: 4, image: "house-t3", benefit: "+4h of your week back — doorman, cleaning, concierge" },
-      { name: "Penthouse", dailyCost: 520, hoursBonus: 7, image: "house-t4", benefit: "+7h of your week back — full household staff" },
+      { name: "Shared Room", dailyCost: 34, hoursBonus: -3, image: "house-t1", benefit: "Costs you 3h a week — long commute, chores, queues for the bathroom" },
+      { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "Buys back 2h a week — close in, building handles the basics" },
+      { name: "Modern Loft", dailyCost: 165, hoursBonus: 5, image: "house-t3", benefit: "Buys back 5h a week — doorman, cleaning and concierge" },
+      { name: "Penthouse", dailyCost: 520, hoursBonus: 9, image: "house-t4", benefit: "Buys back 9h a week — a full household staff runs it all" },
     ],
   },
   {
     id: "food", name: "Food", category: "Daily life",
     tiers: [
-      { name: "Simple Groceries", dailyCost: 12, hoursBonus: 0, image: "food-t1", benefit: "No time bought back yet" },
-      { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 2, image: "food-t2", benefit: "+2h of your week back — delivery and meal prep" },
-      { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "+3h of your week back — every meal handled" },
-      { name: "Private Chef", dailyCost: 320, hoursBonus: 5, image: "food-t4", benefit: "+5h of your week back — a chef runs your kitchen" },
+      { name: "Simple Groceries", dailyCost: 12, hoursBonus: -2, image: "food-t1", benefit: "Costs you 2h a week — shopping, cooking and washing up" },
+      { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 1, image: "food-t2", benefit: "Buys back 1h a week — deliveries and prepped ingredients" },
+      { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "Buys back 3h a week — every meal handled elsewhere" },
+      { name: "Private Chef", dailyCost: 320, hoursBonus: 6, image: "food-t4", benefit: "Buys back 6h a week — a chef runs your kitchen" },
     ],
   },
   {
     id: "wardrobe", name: "Clothing", category: "Presentation",
     tiers: [
-      { name: "Thrifted Basics", dailyCost: 3, hoursBonus: 0, image: "wardrobe-t1", benefit: "No time bought back yet" },
-      { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "+1h of your week back — easy wardrobe, less upkeep" },
-      { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "+2h of your week back — a tailor keeps it all ready" },
-      { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "+4h of your week back — a stylist and valet service" },
+      { name: "Thrifted Basics", dailyCost: 3, hoursBonus: -1, image: "wardrobe-t1", benefit: "Costs you 1h a week — laundry, repairs, nothing quite fits" },
+      { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "Buys back 1h a week — easy wardrobe, little upkeep" },
+      { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "Buys back 2h a week — a tailor keeps it all ready" },
+      { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "Buys back 4h a week — a stylist and valet service" },
     ],
   },
   {
     id: "car", name: "Car", category: "Transport",
     tiers: [
-      { name: "Used Sedan", dailyCost: 19, hoursBonus: 0, image: "car-t1", benefit: "No time bought back yet" },
-      { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "+2h of your week back — driver service on tap" },
-      { name: "Sports Car", dailyCost: 165, hoursBonus: 4, image: "car-t3", benefit: "+4h of your week back — a driver handles the road" },
-      { name: "Hypercar", dailyCost: 880, hoursBonus: 8, image: "car-t4", benefit: "+8h of your week back — chauffeur and fleet care included" },
+      { name: "Used Sedan", dailyCost: 19, hoursBonus: -2, image: "car-t1", benefit: "Costs you 2h a week — breakdowns, repairs, slow going" },
+      { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "Buys back 2h a week — reliable, driver service on tap" },
+      { name: "Sports Car", dailyCost: 165, hoursBonus: 5, image: "car-t3", benefit: "Buys back 5h a week — a driver handles the road" },
+      { name: "Hypercar", dailyCost: 880, hoursBonus: 9, image: "car-t4", benefit: "Buys back 9h a week — chauffeur and fleet care included" },
+    ],
+  },
+  {
+    id: "health", name: "Health & Fitness", category: "Wellbeing",
+    tiers: [
+      { name: "No Routine", dailyCost: 0, hoursBonus: -4, image: "health-t1", benefit: "Costs you 4h a week — low energy and days lost to illness" },
+      { name: "Gym Membership", dailyCost: 9, hoursBonus: 1, image: "health-t2", benefit: "Buys back 1h a week — steadier energy through the day" },
+      { name: "Personal Trainer", dailyCost: 95, hoursBonus: 4, image: "health-t3", benefit: "Buys back 4h a week — training, physio and check-ups handled" },
+      { name: "Full Wellness Team", dailyCost: 420, hoursBonus: 8, image: "health-t4", benefit: "Buys back 8h a week — doctor, chef and recovery team on call" },
     ],
   },
   {
     id: "watch", name: "Watch", category: "Accessories",
     tiers: [
-      { name: "Digital Watch", dailyCost: 1, hoursBonus: 0, image: "watch-t1", benefit: "No time bought back yet" },
-      { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "+1h of your week back — club and concierge access" },
-      { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "+2h of your week back — a concierge runs your errands" },
-      { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 3, image: "watch-t4", benefit: "+3h of your week back — a personal assistant on call" },
+      { name: "Digital Watch", dailyCost: 1, hoursBonus: 0, image: "watch-t1", benefit: "No time bought back — it tells the time, that is all" },
+      { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "Buys back 1h a week — club and concierge access" },
+      { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "Buys back 2h a week — a concierge runs your errands" },
+      { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 4, image: "watch-t4", benefit: "Buys back 4h a week — a personal assistant on call" },
     ],
   },
 ];
@@ -664,11 +674,11 @@ export const INVESTMENTS: InvestmentDef[] = [
   { id: "savings", name: "Savings Account", description: "FDIC-safe. 2.0% a year, never moves.", minInvestment: 250, annualReturn: 0.02, annualVolatility: 0, risk: "None", access: "open" },
   { id: "bonds", name: "Treasury Bonds", description: "4.5% a year, barely wobbles.", minInvestment: 5000, annualReturn: 0.045, annualVolatility: 0.02, risk: "Low", access: "open" },
   { id: "index", name: "Index Fund", description: "9% a year on average. It will dip.", minInvestment: 2500, annualReturn: 0.09, annualVolatility: 0.16, risk: "Moderate", access: "open" },
-  { id: "crypto", name: "Digital Assets", description: "30% a year in the long run. Wild ride.", minInvestment: 1000, annualReturn: 0.3, annualVolatility: 0.7, risk: "Very High", access: "open" },
+  { id: "crypto", name: "Digital Assets", description: "30% a year in the long run. Wild ride.", minInvestment: 1000, annualReturn: 0.3, annualVolatility: 0.55, risk: "Very High", access: "open" },
   { id: "realestate", name: "Real Estate Fund", description: "12% a year. Your money sits for half a year.", minInvestment: 150000, annualReturn: 0.12, annualVolatility: 0.2, risk: "Moderate-High", access: "accredited", lockupDays: 180 },
   { id: "art", name: "Art & Collectibles", description: "14% a year, and it sells when it sells.", minInvestment: 2000000, annualReturn: 0.14, annualVolatility: 0.25, risk: "Moderate-High", access: "accredited", lockupDays: 365 },
   { id: "pe", name: "Private Equity", description: "22% a year. Locked up, leveraged.", minInvestment: 20000000, annualReturn: 0.22, annualVolatility: 0.3, risk: "High", access: "qualified", lockupDays: 1095 },
-  { id: "vc", name: "Venture Capital", description: "35% a year in theory. Mostly zeros and one rocket.", minInvestment: 100000000, annualReturn: 0.35, annualVolatility: 0.6, risk: "Extreme", access: "qualified", lockupDays: 1460 },
+  { id: "vc", name: "Venture Capital", description: "35% a year in theory. Mostly zeros and one rocket.", minInvestment: 100000000, annualReturn: 0.35, annualVolatility: 0.45, risk: "Extreme", access: "qualified", lockupDays: 1460 },
   { id: "sovereign", name: "Sovereign Wealth Portfolio", description: "11% a year on an enormous base. Calm at scale.", minInvestment: 1000000000, annualReturn: 0.11, annualVolatility: 0.09, risk: "Low", access: "institutional", lockupDays: 730 },
 ];
 
