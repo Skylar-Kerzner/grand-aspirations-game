@@ -7,7 +7,7 @@ import {
   credentialLevelFrom, requiredCredentialLevel, CREDENTIAL_YEARS_PER_LEVEL, CREDENTIAL_EXPERIENCE_CAP,
   CREDENTIAL_LEVEL_CEILING, PROMOTION_MIN_DAYS, LEVELS_PER_YEAR_IN_TRACK, TRACK_TRANSFER_SHARE, TRACK_TRANSFER_ADJACENT_BONUS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
-  DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
+  DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, WORKDAYS_PER_WEEK, WORKDAYS_PER_YEAR, WORK_HOURS_PER_YEAR, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_BASELINE_ROI, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   WEEKDAY_RHYTHM, BUSINESS_SEASON_REVERSION, BUSINESS_SEASON_VOL, BUSINESS_SEASON_MIN, BUSINESS_SEASON_MAX, BUSINESS_WASHOUT_CHANCE, BUSINESS_BUMPER_CHANCE,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
@@ -322,16 +322,45 @@ export function getInvestmentPerDay(state: GameState): number {
   return total;
 }
 
-export function getGrossSalary(state: GameState): number {
-  const job = getJob(state);
-  let pay = job.dailyPay * (getWorkHours(state) / WEEK_HOURS);
+/** Gross annual salary represented by a role's legacy pay value, at a chosen weekly schedule. */
+export function annualSalaryAt(dailyPay: number, weeklyHours = WEEK_HOURS): number {
+  return dailyPay * DAYS_PER_YEAR * (weeklyHours / WEEK_HOURS);
+}
+
+/** Monday-Friday repeat every seven game days; day zero is Monday. */
+export function isCareerWorkday(day: number): boolean {
+  return ((Math.floor(day) % 7) + 7) % 7 < WORKDAYS_PER_WEEK;
+}
+
+/** Current base salary, before tax, including temporary raises or cuts. */
+export function getGrossAnnualSalary(state: GameState): number {
+  let salary = annualSalaryAt(getJob(state).dailyPay, getWorkHours(state));
+  if (state.day < state.payUntil) salary *= state.payMult;
+  return salary;
+}
+
+/** Regular gross salary deposited on each of the year's 260 workdays. */
+export function getGrossWorkdayPay(state: GameState): number {
+  return getGrossAnnualSalary(state) / WORKDAYS_PER_YEAR;
+}
+
+/** Gross value of one optional extra hour, from the same annual salary basis. */
+export function getGrossHourlyPay(state: GameState): number {
+  let pay = annualSalaryAt(getJob(state).dailyPay) / WORK_HOURS_PER_YEAR;
   if (state.day < state.payUntil) pay *= state.payMult;
-  if (job.perfFee) {
-    // 2 and 20 on the money you run
-    pay += (getInvestmentTotal(state) * MGMT_FEE) / DAYS_PER_YEAR;
-    pay += Math.max(0, getInvestmentPerDay(state)) * PERF_FEE;
-  }
   return pay;
+}
+
+function getPerformancePayPerDay(state: GameState): number {
+  const job = getJob(state);
+  if (!job.perfFee) return 0;
+  return (getInvestmentTotal(state) * MGMT_FEE) / DAYS_PER_YEAR
+    + Math.max(0, getInvestmentPerDay(state)) * PERF_FEE;
+}
+
+/** Average daily career income, used for forecasts and lending capacity. */
+export function getGrossSalary(state: GameState): number {
+  return getGrossAnnualSalary(state) / DAYS_PER_YEAR + getPerformancePayPerDay(state);
 }
 
 export function businessMultiplier(state: GameState): number {
@@ -633,7 +662,7 @@ function getTotalDebt(state: GameState): number {
 
 /** What a private lender will put up: they look at your pay and your assets, not your degree. */
 export function getPrivateLoanRoom(state: GameState): number {
-  const annualPay = getGrossSalary(state) * DAYS_PER_YEAR;
+  const annualPay = getGrossAnnualSalary(state) + getPerformancePayPerDay(state) * DAYS_PER_YEAR;
   const assets = state.cash + getInvestmentTotal(state) + getBusinessValue(state);
   const capacity = annualPay * PRIVATE_INCOME_MULTIPLE + assets * PRIVATE_NET_WORTH_SHARE;
   return Math.max(0, capacity - getTotalDebt(state));
@@ -691,7 +720,7 @@ export function getBusinessValue(state: GameState): number {
 
 export function getCreditLimit(state: GameState): number {
   const positive = state.cash + getInvestmentTotal(state) + getBusinessValue(state);
-  return Math.max(CC_BASE_LIMIT, positive * 0.08, getGrossSalary(state) * 60);
+  return Math.max(CC_BASE_LIMIT, positive * 0.08, getGrossAnnualSalary(state) / 6);
 }
 
 /** Every venture is open to anyone who can pay for it. */
@@ -867,7 +896,7 @@ function rollEvent(state: GameState, days: number): GameState {
   let delta = 0;
   if (def.cashFlat) delta += def.cashFlat * era;
   // Bonuses and penalties measured in days of pay follow your career upward.
-  if (def.cashDaysOfPay) delta += getGrossSalary(s) * def.cashDaysOfPay;
+  if (def.cashDaysOfPay) delta += getGrossWorkdayPay(s) * def.cashDaysOfPay;
   if (def.cashPctOfNetWorth) delta += netWorthish * def.cashPctOfNetWorth;
   if (delta !== 0) {
     s.cash += delta;
@@ -897,7 +926,7 @@ function rollEvent(state: GameState, days: number): GameState {
   if (def.businessBoostDays) parts.push(`Business profits doubled for ${def.businessBoostDays} days`);
   if (def.livingCostShift && def.livingCostShiftDays) parts.push(`Living costs ${def.livingCostShift >= 1 ? "+" : ""}${Math.round((def.livingCostShift - 1) * 100)}% for ${def.livingCostShiftDays} days`);
   if (def.payShift && def.payShiftDays) parts.push(`Pay ${def.payShift >= 1 ? "+" : ""}${Math.round((def.payShift - 1) * 100)}% for ${def.payShiftDays} days`);
-  if (def.jobLoss && state.jobIndex > 0) parts.push(`Your new position pays ${formatMoney(s.currentJob.dailyPay)} a day`);
+  if (def.jobLoss && state.jobIndex > 0) parts.push(`Your new position pays ${formatMoney(annualSalaryAt(s.currentJob.dailyPay))} a year`);
 
   s.events = [{ day: Math.floor(s.day), title: def.title, text: def.text, effect: parts.join(" · "), tone: def.tone }, ...s.events].slice(0, 30);
   return s;
@@ -953,16 +982,17 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
   // No enrollment, no school hours — the time goes back to your week.
   s = { ...s, studying, majors, studyHours: studying ? s.studyHours : 0 };
 
-  // Salary
+  // Regular salary lands Monday-Friday. Performance compensation continues daily.
   const job = getJob(s);
-  const gross = getGrossSalary(s) * days;
+  const regularGross = isCareerWorkday(flowDay) ? getGrossWorkdayPay(s) * days : 0;
+  const gross = regularGross + getPerformancePayPerDay(s) * days;
   const tax = gross * taxRate;
   const netSalary = gross - tax;
   cash += netSalary;
   stats.salaryEarned += netSalary;
   stats.taxesPaid += tax;
   stats.jobEarned[job.id] = (stats.jobEarned[job.id] || 0) + netSalary;
-  stats.jobDays[job.id] = (stats.jobDays[job.id] || 0) + days;
+  if (isCareerWorkday(flowDay)) stats.jobDays[job.id] = (stats.jobDays[job.id] || 0) + days;
 
   // Living and interview prep (a steady retainer while it is switched on)
   const living = getLivingCosts(s) * days;
@@ -1207,7 +1237,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const today = Math.floor(state.day);
       if (state.lastShiftDay === today) return state;
       const job = getJob(state);
-      const pay = (getJob(state).dailyPay / 8) * (1 - getTaxRate(state));
+      const pay = getGrossHourlyPay(state) * (1 - getTaxRate(state));
       const stats = { ...state.stats, shifts: { ...state.stats.shifts }, jobEarned: { ...state.stats.jobEarned } };
       stats.shiftEarned += pay;
       stats.shifts[job.id] = (stats.shifts[job.id] || 0) + 1;
@@ -1686,6 +1716,8 @@ export interface DerivedState {
   creditLimit: number;
   taxRate: number;
   workHours: number;
+  annualSalary: number;
+  grossWorkdayPay: number;
 }
 
 function calculateDerived(state: GameState): DerivedState {
@@ -1736,7 +1768,7 @@ function calculateDerived(state: GameState): DerivedState {
     livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
     recentCashFlowDays: recent.length, recentSalary, recentBusiness, recentInvestments, recentCosts, recentNet,
     investmentTotal, loanTotal, studentDebt, studentLoanPayment, assetValue, businessValue, businessCapital,
-    shiftPay: (job.dailyPay / 8) * (1 - taxRate),
+    shiftPay: getGrossHourlyPay(state) * (1 - taxRate),
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
     offerTrainingBonus: getOfferTrainingBonus(state),
@@ -1746,6 +1778,8 @@ function calculateDerived(state: GameState): DerivedState {
     creditLimit: getCreditLimit(state),
     taxRate,
     workHours: getWorkHours(state),
+    annualSalary: getGrossAnnualSalary(state),
+    grossWorkdayPay: getGrossWorkdayPay(state),
   };
 }
 

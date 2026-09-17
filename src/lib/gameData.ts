@@ -9,6 +9,9 @@ import { pickImage } from "./gameImages";
 export const DAYS_PER_YEAR = 365;
 export const TAX_RATE = 0.22;
 export const WEEK_HOURS = 40;
+export const WORKDAYS_PER_WEEK = 5;
+export const WORKDAYS_PER_YEAR = 260;
+export const WORK_HOURS_PER_YEAR = WEEK_HOURS * 52;
 // A venture only reaches its full return on the hours you personally put in.
 export const BUSINESS_ATTENTION_FLOOR = 0.25;     // an unattended venture limps along at a quarter of its potential
 export const BUSINESS_ATTENTION_FULL_HOURS = 15;  // hours a week in one venture for full performance
@@ -103,7 +106,8 @@ export interface JobDef {
   title: string;
   employer: string;
   education: number; // index into EDUCATION required
-  dailyPay: number; // gross, per day at 40 hrs
+  /** Legacy pay basis. Multiply by 365 for the role's gross annual salary at 40 hours/week. */
+  dailyPay: number;
   xpToPromote: number;
   scene: string; // background image key
   perfFee?: boolean; // earns 2 & 20 on the portfolio
