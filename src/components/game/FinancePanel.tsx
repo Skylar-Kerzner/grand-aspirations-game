@@ -18,7 +18,6 @@ export default function FinancePanel() {
         <div className="space-y-2 text-sm">
           <Row label="Salary (after tax)" value={formatMoney(derived.recentSalary)} tone="pos" />
           <Row label="Business profit" value={formatMoney(derived.recentBusiness)} tone="pos" />
-          <Row label="Investment returns (not in net)" value={formatMoney(derived.recentInvestments)} tone={derived.recentInvestments >= 0 ? "pos" : "neg"} />
           <Row label="Recurring costs" value={`-${formatMoney(derived.recentCosts)}`} tone="neg" />
           <div className="flex justify-between border-t border-border pt-2">
             <span>Net</span>
