@@ -1341,7 +1341,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const cred = getTrackCredential(state, trackId);
         // Schooling and years in the field set a hard ceiling on the rank
         // anybody will hire you into — in your own industry too.
-        const ceiling = CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)];
+        const ceiling = Math.min(
+          CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)],
+          licensedCeiling(trackId, cred.studied),
+        );
         if (trackId === homeTrack) {
           // Without enough time in the post, the market only offers you moves
           // at the rank you already hold.
