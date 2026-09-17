@@ -93,22 +93,31 @@ export default function InvestmentPanel() {
                 </div>
 
                 {inv.value > 0 && (
-                  <div className="mt-2 flex gap-2">
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "WITHDRAW", id: def.id, amount: inv.value * 0.5 })}
-                      className="h-8 px-3 rounded-lg surface-button text-xs transition-game"
-                    >
-                      Withdraw half
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "WITHDRAW", id: def.id, amount: inv.value })}
-                      className="h-8 px-3 rounded-lg surface-button text-xs transition-game"
-                    >
-                      Withdraw all
-                    </motion.button>
-                  </div>
+                  <>
+                    <div className="mt-2 flex gap-2">
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        disabled={lockLeft > 0}
+                        onClick={() => dispatch({ type: "WITHDRAW", id: def.id, amount: inv.value * 0.5 })}
+                        className="h-8 px-3 rounded-lg surface-button text-xs transition-game disabled:opacity-30"
+                      >
+                        Withdraw half
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        disabled={lockLeft > 0}
+                        onClick={() => dispatch({ type: "WITHDRAW", id: def.id, amount: inv.value })}
+                        className="h-8 px-3 rounded-lg surface-button text-xs transition-game disabled:opacity-30"
+                      >
+                        Withdraw all
+                      </motion.button>
+                    </div>
+                    {lockLeft > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        This money is committed for {lockLeft} more days. Adding more restarts the clock.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}
