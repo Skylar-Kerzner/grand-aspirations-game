@@ -58,7 +58,6 @@ export default function CareerPanel() {
         </div>
         <p className="text-[11px] text-muted-foreground mb-2">
           Offers below are quoted at 40h — compare them with the 40h line above.
-          Market range at 40h: {formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max)}/day
         </p>
         {job.perfFee && (
           <p className="text-[11px] text-primary mb-2">
