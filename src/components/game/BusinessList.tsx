@@ -129,6 +129,9 @@ export default function BusinessList() {
                   <div className="mt-1 space-y-0.5">
                     <p className="font-mono-nums text-[11px] text-primary">{formatRate(income)}</p>
                     <p className="font-mono-nums text-[10px] text-muted-foreground">
+                      {formatCompact(getBusinessCapital(def, biz.level))} invested
+                    </p>
+                    <p className="font-mono-nums text-[10px] text-muted-foreground">
                       At {BUSINESS_ATTENTION_FULL_HOURS}h: {(getBusinessROIAt(state, def.id, 1) * 100).toFixed(0)}% a year
                     </p>
                     <p className="font-mono-nums text-[10px] text-muted-foreground">
