@@ -28,6 +28,7 @@ import {
   businessFortuneLabel,
   BUSINESS_ATTENTION_FLOOR,
   BUSINESS_ATTENTION_FULL_HOURS,
+  getBusinessCapital,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
@@ -488,7 +489,7 @@ export default function BusinessList() {
                           <p className="text-center text-[11px] text-muted-foreground mt-1 mb-2">
                             {confirmSell
                               ? "You keep the cash and give up every level. Opening again starts fresh."
-                              : "The price reflects how well it has actually done. Open it again to try different choices."}
+                              : `${formatCompact(getBusinessCapital(selectedDef, selectedBiz.level))} invested · ${(selectedBiz.fortune ?? 1).toFixed(2)}x for how it has done`}
                           </p>
                         </>
                       )}

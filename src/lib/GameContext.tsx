@@ -8,7 +8,7 @@ import {
   CREDENTIAL_LEVEL_CEILING, LEVELS_PER_YEAR_IN_TRACK, TRACK_TRANSFER_SHARE, TRACK_TRANSFER_ADJACENT_BONUS,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
-  BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
+  BUSINESS_BASELINE_ROI, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   WEEKDAY_RHYTHM, BUSINESS_SEASON_REVERSION, BUSINESS_SEASON_VOL, BUSINESS_SEASON_MIN, BUSINESS_SEASON_MAX, BUSINESS_WASHOUT_CHANCE, BUSINESS_BUMPER_CHANCE,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
   BASE_TIME_BUDGET, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS, studentLoanCap,
@@ -419,13 +419,13 @@ export function getBusinessValueOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * (biz.fortune ?? 1)
-    * getBusinessAttentionOf(state, id)
-    * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+  // A venture worth the baseline 30% return on capital sells for exactly what
+  // has been put into it; success above or below scales it in proportion.
+  return getBusinessCapital(def, biz.level) * ((biz.fortune ?? 1) * def.annualROI) / BUSINESS_BASELINE_ROI;
 }
 
 export function getBusinessSalePrice(state: GameState, id: string): number {
-  return getBusinessValueOf(state, id) * BUSINESS_SALE_DISCOUNT;
+  return getBusinessValueOf(state, id);
 }
 
 export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
@@ -527,11 +527,8 @@ export function getOfferTrainingBonus(state: GameState): number {
 
 export function getBusinessValue(state: GameState): number {
   let total = 0;
-  for (const [id, biz] of Object.entries(state.businesses)) {
-    const def = BUSINESSES.find((b) => b.id === id);
-    if (!def || biz.level === 0) continue;
-    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1)
-      * getBusinessAttentionOf(state, id) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+  for (const id of Object.keys(state.businesses)) {
+    total += getBusinessValueOf(state, id);
   }
   return total;
 }
@@ -844,7 +841,9 @@ function advance(state: GameState, days: number, now: number): GameState {
     const sigma = def.annualVolatility * volDamp;
     const t = days / DAYS_PER_YEAR;
     const z = gaussian();
-    const factor = Math.exp((Math.log(1 + mu) - (sigma * sigma) / 2) * t + sigma * Math.sqrt(t) * z);
+    // No variance drag: the stated return is what a typical year actually gives,
+    // with good years above it and bad years below.
+    const factor = Math.exp(Math.log(1 + mu) * t + sigma * Math.sqrt(t) * z);
     const newValue = Math.max(0, inv.value * factor);
     const gain = newValue - inv.value;
     stats.investmentGains += gain;
