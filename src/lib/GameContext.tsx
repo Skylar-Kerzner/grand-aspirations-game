@@ -10,6 +10,9 @@ import {
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, WORKDAYS_PER_WEEK, WORKDAYS_PER_YEAR, WORK_HOURS_PER_YEAR, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_BASELINE_ROI, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
+  businessScaleEfficiency, BUSINESS_MAX_LEVEL, BUSINESS_SALE_DISCOUNT, BUSINESS_SALE_RECENT_DAYS, BUSINESS_SALE_RECENT_PENALTY, BUSINESS_SALE_DAYS, businessBuildDays,
+  BUSINESS_FORTUNE_ANCHOR, BUSINESS_FORTUNE_DECAY_UP, BUSINESS_FORTUNE_DECAY_DOWN, BUSINESS_FORTUNE_NOISE,
+
   WEEKDAY_RHYTHM, BUSINESS_SEASON_REVERSION, BUSINESS_SEASON_VOL, BUSINESS_SEASON_MIN, BUSINESS_SEASON_MAX, BUSINESS_WASHOUT_CHANCE, BUSINESS_BUMPER_CHANCE,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
   BASE_TIME_BUDGET, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS,
@@ -27,9 +30,15 @@ export interface BusinessState {
   condition: number;                   // the slow trading trend — this is what moves the value
   takings?: number;                    // how today's takings compared with a normal day
   season?: number;                     // slow multi-week wave in trade (good and bad runs cluster)
-  fortune?: number;                    // lasting quality of this particular venture
+  fortune?: number;                    // how well this particular business is doing — it drifts
+  fortunePeak?: number;                // the best it has ever run at, so cooling can be shown
   choices?: Record<string, string>;    // location / market / product chosen when opening
+  buildUntil?: number;                 // day the newest expansion opens and starts earning
+  buildFromLevel?: number;             // size that keeps trading while the build is under way
+  lastExpandedOn?: number;             // day of the most recent expansion
+  listedUntil?: number;                // day a buyer is expected, when on the market
 }
+
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number; lockedUntil?: number; drift?: number; regimeUntil?: number }
 /**
@@ -91,8 +100,13 @@ export interface Stats {
   businessEarnedById: Record<string, number>;
 }
 
+/** Bumped when the expansion ladder changes shape, so old saves can be rescaled. */
+export const BUSINESS_SCALE_VERSION = 2;
+
 export interface GameState {
+  businessScale?: number;
   cash: number;
+
   ccDebt: number;
   day: number;
   jobIndex: number;
@@ -139,6 +153,8 @@ export type GameAction =
   | { type: "REPAY_STUDENT_LOAN"; amount?: number }
   | { type: "BUY_BUSINESS"; id: string; choices?: Record<string, string> }
   | { type: "SELL_BUSINESS"; id: string }
+  | { type: "CANCEL_BUSINESS_SALE"; id: string }
+
   | { type: "INVEST"; id: string; amount: number }
   | { type: "WITHDRAW"; id: string; amount: number }
   | { type: "TAKE_LOAN"; id: string; amount: number }
@@ -533,12 +549,34 @@ export function getBusinessIncomeAt(state: GameState, id: string, attention: num
   return getBusinessSteadyIncomeAt(state, id, attention) * (biz.condition ?? 1) * (biz.takings ?? 1);
 }
 
+/** The size actually trading today: a build-out earns nothing until it opens. */
+export function getBusinessEarningLevel(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz) return 0;
+  if (biz.buildUntil && state.day < biz.buildUntil) return Math.max(0, biz.buildFromLevel ?? biz.level - 1);
+  return biz.level;
+}
+
+/** Days left before a build-out opens, 0 when nothing is under construction. */
+export function getBuildDaysLeft(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz?.buildUntil) return 0;
+  return Math.max(0, Math.ceil(biz.buildUntil - state.day));
+}
+
+/** Days left before a listed business finds its buyer, 0 when not on the market. */
+export function getSaleDaysLeft(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz?.listedUntil) return 0;
+  return Math.max(0, Math.ceil(biz.listedUntil - state.day));
+}
+
 /** Steady income at a given attention level (1 = full hours) — used for valuation and planning. */
 export function getBusinessSteadyIncomeAt(state: GameState, id: string, attention: number): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
+  return getBusinessIncome(def, getBusinessEarningLevel(state, id)) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
     * attention;
 }
 
@@ -547,19 +585,29 @@ export function getBusinessSteadyIncomeOf(state: GameState, id: string): number 
   return getBusinessSteadyIncomeAt(state, id, getBusinessAttentionOf(state, id));
 }
 
-/** What this single venture would fetch if sold today. */
+/** What this single business is worth before the cost of getting out of it. */
 export function getBusinessValueOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  // A venture worth the baseline 30% return on capital sells for exactly what
-  // has been put into it; success above or below scales it in proportion.
-  return getBusinessCapital(def, biz.level) * ((biz.fortune ?? 1) * def.annualROI) / BUSINESS_BASELINE_ROI;
+  // A business performing as expected is worth what has been put into it; luck
+  // and the lower returns that come with size scale it in proportion.
+  return getBusinessCapital(def, biz.level) * (biz.fortune ?? 1) * businessScaleEfficiency(def, biz.level);
+}
+
+/** Fees, diligence and the buyer's discount, steeper right after an expansion. */
+export function getBusinessSaleDiscount(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz || biz.level === 0) return BUSINESS_SALE_DISCOUNT;
+  const since = state.day - (biz.lastExpandedOn ?? 0);
+  const recency = Math.max(0, 1 - since / BUSINESS_SALE_RECENT_DAYS);
+  return BUSINESS_SALE_DISCOUNT + BUSINESS_SALE_RECENT_PENALTY * recency;
 }
 
 export function getBusinessSalePrice(state: GameState, id: string): number {
-  return getBusinessValueOf(state, id);
+  return getBusinessValueOf(state, id) * (1 - getBusinessSaleDiscount(state, id));
 }
+
 
 export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
   const biz = state.businesses[id] || { level: 0, condition: 1 };
@@ -771,7 +819,7 @@ export function upgradeCostFor(state: GameState, id: string): number {
 function createFresh(): GameState {
   const firstJob = JOBS[0];
   return {
-    cash: 400, ccDebt: 0, day: 0,
+    cash: 400, ccDebt: 0, day: 0, businessScale: BUSINESS_SCALE_VERSION,
     jobIndex: 0,
     currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
     careerOffers: [],
@@ -855,12 +903,31 @@ function createInitialState(): GameState {
                 ?? (parsed.studentLoan.gradBorrowed !== undefined ? 0 : parsed.studentLoan.borrowed || 0),
             }
           : { ...EMPTY_STUDENT_LOAN },
+        businessScale: BUSINESS_SCALE_VERSION,
         businesses: Object.fromEntries(
-          Object.entries(parsed.businesses || {}).map(([id, biz]) => [
-            id,
-            { level: biz.level || 0, condition: biz.condition ?? 1, fortune: biz.fortune, choices: biz.choices },
-          ]),
+          Object.entries(parsed.businesses || {}).map(([id, biz]) => {
+            // Expansions used to be forty small steps; they are now sixteen large
+            // ones. Old saves keep their place on the ladder, rescaled.
+            const rawLevel = biz.level || 0;
+            const level = parsed.businessScale === BUSINESS_SCALE_VERSION
+              ? Math.min(BUSINESS_MAX_LEVEL, rawLevel)
+              : rawLevel > 0
+                ? Math.max(1, Math.min(BUSINESS_MAX_LEVEL, Math.round((rawLevel * BUSINESS_MAX_LEVEL) / 40)))
+                : 0;
+            return [id, {
+              level,
+              condition: biz.condition ?? 1,
+              fortune: biz.fortune,
+              fortunePeak: biz.fortunePeak ?? biz.fortune,
+              choices: biz.choices,
+              buildUntil: biz.buildUntil,
+              buildFromLevel: biz.buildFromLevel,
+              lastExpandedOn: biz.lastExpandedOn,
+              listedUntil: biz.listedUntil,
+            }];
+          }),
         ),
+
         businessHours: parsed.businessHours && typeof parsed.businessHours === "object" ? parsed.businessHours : {},
         cashFlowHistory: Array.isArray(parsed.cashFlowHistory) ? parsed.cashFlowHistory.slice(-8) : [],
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
@@ -1033,6 +1100,8 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     let condition = biz.condition ?? 1;
     let gain = 0;
     let lastTakings = biz.takings ?? 1;
+    let fortune = biz.fortune ?? 1;
+
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
     // The slow trend: months-long swings in how the venture is doing.
     const trendVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
@@ -1073,11 +1142,53 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
         }
       }
       condition = Math.min(1.8, Math.max(0.15, condition));
+      // How well the business is doing is not a permanent verdict: competition
+      // pulls a winner back toward normal faster than a struggler recovers.
+      const pull = fortune > BUSINESS_FORTUNE_ANCHOR ? BUSINESS_FORTUNE_DECAY_UP : BUSINESS_FORTUNE_DECAY_DOWN;
+      fortune = BUSINESS_FORTUNE_ANCHOR + (fortune - BUSINESS_FORTUNE_ANCHOR) * (1 - pull)
+        + (Math.random() - 0.5) * BUSINESS_FORTUNE_NOISE * fortune;
+      fortune = Math.min(6, Math.max(0.1, fortune));
     }
     bizGross += gain;
     stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
-    businesses[id] = { ...biz, condition, takings: lastTakings, season };
+    let updated: BusinessState = {
+      ...biz, condition, takings: lastTakings, season,
+      fortune,
+      fortunePeak: Math.max(biz.fortunePeak ?? biz.fortune ?? 1, fortune),
+    };
+    const endDay = s.day + days;
+    // A build-out finishes and the new capacity starts trading.
+    if (updated.buildUntil && endDay >= updated.buildUntil) {
+      if (shockEvents.length < 4) {
+        shockEvents.push({
+          day: Math.floor(updated.buildUntil),
+          title: `${def.name} reopens`,
+          text: `The building work at your ${def.name.toLowerCase()} is finished and the new space is trading.`,
+          effect: "The money put in is now earning.",
+          tone: "good",
+        });
+      }
+      updated = { ...updated, buildUntil: undefined, buildFromLevel: undefined };
+    }
+    // A buyer turns up for a business that was put on the market.
+    if (updated.listedUntil && endDay >= updated.listedUntil) {
+      const proceeds = getBusinessSalePrice(s, id);
+      cash += proceeds;
+      stats.businessSold += proceeds;
+      if (shockEvents.length < 4) {
+        shockEvents.push({
+          day: Math.floor(updated.listedUntil),
+          title: `${def.name} sold`,
+          text: `A buyer completed on your ${def.name.toLowerCase()}.`,
+          effect: `+${Math.round(proceeds).toLocaleString()} after fees and the buyer's discount.`,
+          tone: "good",
+        });
+      }
+      updated = { level: 0, condition: 1 };
+    }
+    businesses[id] = updated;
   }
+
   const bizTax = bizGross * taxRate;
   const netBusiness = bizGross - bizTax;
   cash += netBusiness;
@@ -1515,25 +1626,32 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = BUSINESSES.find((b) => b.id === action.id);
       if (!def || !isBusinessUnlocked(state, action.id)) return state;
       const cur = state.businesses[action.id] || { level: 0, condition: 1 };
+      if (cur.level >= BUSINESS_MAX_LEVEL) return state;
+      // A business on the market, or still being built, cannot be expanded.
+      if (cur.listedUntil || cur.buildUntil) return state;
       const cost = upgradeCostFor(state, action.id);
       if (state.cash < cost) return state;
       const opening = cur.level === 0;
       if (opening && !action.choices) return state;
+      const build = businessBuildDays(cur.level + 1);
       const next: BusinessState = opening
         ? {
             level: 1,
             condition: 1,
             choices: action.choices,
             fortune: rollBusinessFortune() * (1 + trackPerk(state, "ventureLuck")),
+            buildUntil: state.day + build,
+            buildFromLevel: 0,
+            lastExpandedOn: state.day,
           }
         : (() => {
-            // Only a tier step puts part of the venture's fortune back on the table,
-            // and only then can it be rebranded.
+            // Only a tier step puts part of the business's fortune back on the
+            // table, and only then can it be rebranded.
             const tierUp =
               getBusinessTierIndex(cur.level + 1) !== getBusinessTierIndex(cur.level);
             const nextChoices = tierUp ? action.choices || cur.choices : cur.choices;
             // Keeping the product and the city carries more of what you built over;
-            // changing both starts far closer to a fresh venture.
+            // changing both starts far closer to a fresh business.
             const changed =
               (nextChoices?.concept !== cur.choices?.concept ? 1 : 0) +
               (nextChoices?.location !== cur.choices?.location ? 1 : 0);
@@ -1542,6 +1660,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               ...cur,
               level: cur.level + 1,
               choices: nextChoices,
+              buildUntil: state.day + build,
+              buildFromLevel: cur.level,
+              lastExpandedOn: state.day,
               fortune: Math.min(
                 6,
                 Math.max(
@@ -1550,7 +1671,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                     ? (cur.fortune ?? 1) * (1 - rerollWeight) +
                       rollBusinessFortune() * (1 + trackPerk(state, "ventureLuck")) * rerollWeight
                     : (cur.fortune ?? 1)) *
-                    // every level nudges success a little, up or down
+                    // every expansion nudges success a little, up or down
                     (0.9 + Math.random() * 0.2),
                 ),
               ),
@@ -1565,14 +1686,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "SELL_BUSINESS": {
       const biz = state.businesses[action.id];
-      if (!biz || biz.level === 0) return state;
-      const proceeds = getBusinessSalePrice(state, action.id);
+      if (!biz || biz.level === 0 || biz.listedUntil) return state;
+      // Businesses are not liquid: you put it on the market and wait for a buyer.
       return {
-        ...state, cash: state.cash + proceeds,
-        businesses: { ...state.businesses, [action.id]: { level: 0, condition: 1 } },
-        stats: { ...state.stats, businessSold: state.stats.businessSold + proceeds },
+        ...state,
+        businesses: {
+          ...state.businesses,
+          [action.id]: { ...biz, listedUntil: state.day + BUSINESS_SALE_DAYS },
+        },
       };
     }
+
+    case "CANCEL_BUSINESS_SALE": {
+      const biz = state.businesses[action.id];
+      if (!biz || !biz.listedUntil) return state;
+      return {
+        ...state,
+        businesses: { ...state.businesses, [action.id]: { ...biz, listedUntil: undefined } },
+      };
+    }
+
 
     case "INVEST": {
       const def = INVESTMENTS.find((i) => i.id === action.id);

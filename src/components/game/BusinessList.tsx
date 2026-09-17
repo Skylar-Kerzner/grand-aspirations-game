@@ -12,6 +12,10 @@ import {
   getNextBusinessNetworkMilestone,
   getBusinessUpgradeIncomeGain,
   getBusinessSalePrice,
+  getBusinessSaleDiscount,
+  getBusinessValueOf,
+  getBuildDaysLeft,
+  getSaleDaysLeft,
   getBusinessAttentionOf,
 } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate } from "@/lib/formatters";
@@ -30,7 +34,12 @@ import {
   BUSINESS_ATTENTION_FLOOR,
   BUSINESS_ATTENTION_FULL_HOURS,
   getBusinessCapital,
+  marginalBusinessROI,
+  businessBuildDays,
+  BUSINESS_MAX_LEVEL,
+  BUSINESS_SALE_DAYS,
 } from "@/lib/gameData";
+
 import { getImage } from "@/lib/gameImages";
 import { Lock } from "lucide-react";
 
@@ -116,9 +125,14 @@ export default function BusinessList() {
                 )}
                 {biz.level > 0 && (
                   <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[10px] font-medium">
-                    {condition.text}
+                    {biz.listedUntil
+                      ? `On the market · ${getSaleDaysLeft(state, def.id)}d`
+                      : getBuildDaysLeft(state, def.id) > 0
+                        ? `Building · ${getBuildDaysLeft(state, def.id)}d`
+                        : condition.text}
                   </div>
                 )}
+
               </div>
               <div className="p-3">
                 <h3 className="font-semibold text-sm leading-tight">{displayName}</h3>
@@ -431,7 +445,25 @@ export default function BusinessList() {
                     <p className="text-[11px] text-muted-foreground mt-1">
                       That return is the potential at 15h of your week — give it less time and it earns a share of it.
                     </p>
+                    {(() => {
+                      const now = selectedBiz.fortune ?? 1;
+                      const peak = selectedBiz.fortunePeak ?? now;
+                      const off = peak > 0 ? 1 - now / peak : 0;
+                      if (off > 0.05) {
+                        return (
+                          <p className="text-[11px] text-destructive mt-1">
+                            Cooling — {Math.round(off * 100)}% off its best run as competition catches up.
+                          </p>
+                        );
+                      }
+                      return (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Holding its form — though no run lasts forever once rivals notice.
+                        </p>
+                      );
+                    })()}
                     <p className="text-[11px] text-muted-foreground mt-1">{ventureName(selectedDef.id, selectedBiz.choices)}</p>
+
 
                   </div>
                 )}
@@ -441,29 +473,73 @@ export default function BusinessList() {
                   const canAfford = state.cash >= cost;
                   const addedIncome = getBusinessUpgradeIncomeGain(state, selectedDef.id);
                   const salePrice = getBusinessSalePrice(state, selectedDef.id);
+                  const discount = getBusinessSaleDiscount(state, selectedDef.id);
+                  const buildLeft = getBuildDaysLeft(state, selectedDef.id);
+                  const saleLeft = getSaleDaysLeft(state, selectedDef.id);
+                  const listed = !!selectedBiz.listedUntil;
+                  const maxed = selectedBiz.level >= BUSINESS_MAX_LEVEL;
+                  const nextRate = marginalBusinessROI(selectedDef, selectedBiz.level + 1);
+                  const lastRate = marginalBusinessROI(selectedDef, Math.max(1, selectedBiz.level));
+                  const buildDays = businessBuildDays(selectedBiz.level + 1);
                   return (
                     <>
-                      <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() =>
-                          dispatch({
-                            type: "BUY_BUSINESS",
-                            id: selectedDef.id,
-                            choices,
-                          })
-                        }
-                        disabled={!canAfford}
-                        className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40 mb-1"
-                      >
-                        {selectedBiz.level === 0 ? "Open" : "Upgrade"} ·{" "}
-                        <span className="font-mono-nums">{formatCompact(cost)}</span>
-                      </motion.button>
-                      <p className="text-center text-[11px] text-muted-foreground mb-2">
-                        {selectedBiz.level === 0
-                          ? "Adds income once you see how it trades"
-                          : `Adds ${formatRate(addedIncome)} across your businesses`}
-                      </p>
+                      {buildLeft > 0 && (
+                        <p className="text-center text-[11px] text-primary mb-2">
+                          Building — the money you just put in starts earning in {buildLeft} days.
+                        </p>
+                      )}
+                      {listed ? (
+                        <>
+                          <p className="text-center text-[11px] text-muted-foreground mb-2">
+                            On the market — a buyer is expected in {saleLeft} days at about{" "}
+                            <span className="font-mono-nums">{formatCompact(salePrice)}</span>.
+                          </p>
+                          <button
+                            onClick={() => dispatch({ type: "CANCEL_BUSINESS_SALE", id: selectedDef.id })}
+                            className="w-full h-10 rounded-lg border border-border text-sm transition-game"
+                          >
+                            Take it off the market
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() =>
+                              dispatch({
+                                type: "BUY_BUSINESS",
+                                id: selectedDef.id,
+                                choices,
+                              })
+                            }
+                            disabled={!canAfford || maxed || buildLeft > 0}
+                            className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40 mb-1"
+                          >
+                            {maxed ? "Fully built" : (
+                              <>
+                                {selectedBiz.level === 0 ? "Open" : "Expand"} ·{" "}
+                                <span className="font-mono-nums">{formatCompact(cost)}</span>
+                              </>
+                            )}
+                          </motion.button>
+                          {!maxed && (
+                            <p className="text-center text-[11px] text-muted-foreground mb-2">
+                              {selectedBiz.level === 0
+                                ? `Takes ${buildDays} days to fit out before it earns anything`
+                                : `Adds ${formatRate(addedIncome)} once built, ${buildDays} days from now`}
+                            </p>
+                          )}
+                          {!maxed && selectedBiz.level > 0 && (
+                            <p className={`text-center text-[11px] mb-2 ${nextRate < lastRate * 0.9 ? "text-destructive" : "text-muted-foreground"}`}>
+                              This expansion earns {(nextRate * 100).toFixed(0)}% a year on the money put in — the last
+                              one earns {(lastRate * 100).toFixed(0)}%. Size costs you return.
+                            </p>
+                          )}
+                        </>
+                      )}
                       {selectedBiz.level > 0 &&
+                        !listed &&
+                        !maxed &&
                         getBusinessTierIndex(selectedBiz.level + 1) !== getBusinessTierIndex(selectedBiz.level) && (
                         <p className="text-center text-[11px] text-muted-foreground mb-2">
                           Moving up a tier puts part of its luck back on the table — a great business can come
@@ -471,7 +547,7 @@ export default function BusinessList() {
                         </p>
                       )}
 
-                      {selectedBiz.level > 0 && (
+                      {selectedBiz.level > 0 && !listed && (
                         <>
                           <button
                             onClick={() => {
@@ -481,19 +557,20 @@ export default function BusinessList() {
                             }}
                             className="w-full h-10 rounded-lg border border-border text-sm transition-game"
                           >
-                            {confirmSell ? "Confirm sale" : "Sell"} ·{" "}
+                            {confirmSell ? "Confirm — put it on the market" : "Sell"} ·{" "}
                             <span className="font-mono-nums">{formatCompact(salePrice)}</span>
                           </button>
                           <p className="text-center text-[11px] text-muted-foreground mt-1 mb-2">
                             {confirmSell
-                              ? "You keep the cash and give up every level. Opening again starts fresh."
-                              : `${formatCompact(getBusinessCapital(selectedDef, selectedBiz.level))} invested · ${(selectedBiz.fortune ?? 1).toFixed(2)}x for how it has done`}
+                              ? `It keeps trading for about ${BUSINESS_SALE_DAYS} days while a buyer is found, then you give up every level.`
+                              : `${formatCompact(getBusinessCapital(selectedDef, selectedBiz.level))} invested · worth ${formatCompact(getBusinessValueOf(state, selectedDef.id))} · ${(discount * 100).toFixed(0)}% goes on fees and the buyer's discount`}
                           </p>
                         </>
                       )}
                     </>
                   );
                 })()}
+
 
               </div>
             </div>

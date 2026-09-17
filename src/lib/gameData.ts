@@ -706,63 +706,66 @@ export const INDUSTRY_YEAR_STEP = 0.02;
 export const INDUSTRY_YEAR_CAP = 0.16;
 export const INDUSTRY_RISK_RELIEF = 0.2;
 
-export const BUSINESS_TIER_THRESHOLDS = [1, 8, 20, 40];
+// Expansions are few, large and deliberate: sixteen steps from first day to empire.
+export const BUSINESS_MAX_LEVEL = 16;
+export const BUSINESS_TIER_THRESHOLDS = [1, 4, 9, 16];
 export const BUSINESS_NETWORK_MILESTONES = [
-  { level: 8, bonus: 0.1 },
-  { level: 20, bonus: 0.2 },
-  { level: 40, bonus: 0.35 },
+  { level: 4, bonus: 0.1 },
+  { level: 9, bonus: 0.2 },
+  { level: 16, bonus: 0.35 },
 ];
 
 export const BUSINESSES: BusinessDef[] = [
   {
     id: "coffee", name: "Coffee Shop", sector: "Food & Beverage",
-    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.3, dailyNoise: 0.38, track: "hospitality",
+    baseCost: 6000, annualROI: 0.24, costMultiplier: 1.45, risk: 0.3, dailyNoise: 0.38, track: "hospitality",
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
   },
   {
     id: "restaurant", name: "Restaurant", sector: "Food & Beverage",
-    baseCost: 25000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.28, dailyNoise: 0.34, track: "hospitality",
+    baseCost: 25000, annualROI: 0.22, costMultiplier: 1.45, risk: 0.28, dailyNoise: 0.34, track: "hospitality",
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Neighbourhood Bistro", "Fine Dining Room", "Culinary Empire"],
   },
   {
     id: "tech", name: "Tech Startup", sector: "Technology",
-    baseCost: 100000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.45, dailyNoise: 0.3, track: "tech",
+    baseCost: 100000, annualROI: 0.26, costMultiplier: 1.42, risk: 0.45, dailyNoise: 0.3, track: "tech",
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Series A Office", "Tech Campus", "Tech Giant HQ"],
   },
   {
     id: "hotel", name: "Hotel", sector: "Hospitality",
-    baseCost: 400000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.24, dailyNoise: 0.24, track: "hospitality",
+    baseCost: 400000, annualROI: 0.17, costMultiplier: 1.39, risk: 0.24, dailyNoise: 0.24, track: "hospitality",
     description: "Luxury accommodations worldwide.",
     tierNames: ["Roadside Motel", "Boutique Hotel", "Luxury Resort", "Grand Hotel Empire"],
   },
   {
     id: "fashion", name: "Fashion Brand", sector: "Retail",
-    baseCost: 1500000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.26, dailyNoise: 0.28, track: "hospitality",
+    baseCost: 1500000, annualROI: 0.18, costMultiplier: 1.36, risk: 0.26, dailyNoise: 0.28, track: "hospitality",
     description: "Define style itself.",
     tierNames: ["Market Stall", "Flagship Boutique", "Department Store", "Fashion House"],
   },
   {
     id: "themepark", name: "Theme Park", sector: "Entertainment",
-    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.22, dailyNoise: 0.32, track: "operations",
+    baseCost: 6000000, annualROI: 0.15, costMultiplier: 1.33, risk: 0.22, dailyNoise: 0.32, track: "operations",
     description: "Create worlds of wonder.",
     tierNames: ["Travelling Carnival", "Family Fun Park", "Destination Theme Park", "Entertainment Empire"],
   },
   {
     id: "media", name: "Media Network", sector: "Media",
-    baseCost: 25000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.2, dailyNoise: 0.16, track: "tech",
+    baseCost: 25000000, annualROI: 0.14, costMultiplier: 1.33, risk: 0.2, dailyNoise: 0.16, track: "tech",
     description: "Own the attention itself.",
     tierNames: ["Podcast Studio", "Streaming Channel", "Broadcast Network", "Global Media Conglomerate"],
   },
   {
     id: "city", name: "City Development", sector: "Infrastructure",
-    baseCost: 100000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.16, dailyNoise: 0.1, track: "corporate",
+    baseCost: 100000000, annualROI: 0.12, costMultiplier: 1.3, risk: 0.16, dailyNoise: 0.1, track: "corporate",
     description: "Build the skyline everyone else lives in.",
     tierNames: ["City Block", "Mixed-Use District", "Waterfront Downtown", "Sovereign Metropolis"],
   },
 ];
+
 
 // Trading conditions drift day to day and revert toward normal at this rate.
 export const BUSINESS_CONDITION_REVERSION = 0.04;
@@ -797,9 +800,11 @@ export const BUSINESS_SHOCK_TEXTS = [
   "a licensing dispute halted trade",
   "a competitor opened across the street",
 ];
-/** The baseline return on capital every sector is built around. A venture running
- *  at exactly this success sells for 100% of the money invested in it. */
-export const BUSINESS_BASELINE_ROI = 0.3;
+/** The return on capital a typical business is built around, before scale and luck. */
+export const BUSINESS_BASELINE_ROI = 0.18;
+
+/** Each expansion earns a little less on the money than the one before it. */
+export const BUSINESS_SCALE_DECAY = 0.948;
 
 /** Cost of the NEXT level (levels are 0-indexed: level 0 means you own nothing yet). */
 export function getBusinessCost(baseCost: number, costMultiplier: number, level: number): number {
@@ -813,10 +818,50 @@ export function getBusinessCapital(def: BusinessDef, level: number): number {
   return def.baseCost * (Math.pow(m, level) - 1) / (m - 1);
 }
 
-/** Gross profit per day. Constant ROI — tiers never reduce your return. */
-export function getBusinessIncome(def: BusinessDef, level: number): number {
-  return (getBusinessCapital(def, level) * def.annualROI) / DAYS_PER_YEAR;
+/** Return on capital earned by the money put in at a given expansion step. */
+export function marginalBusinessROI(def: BusinessDef, level: number): number {
+  return def.annualROI * Math.pow(BUSINESS_SCALE_DECAY, Math.max(0, level - 1));
 }
+
+/** Gross profit per day. Later expansions earn less on the money than earlier ones. */
+export function getBusinessIncome(def: BusinessDef, level: number): number {
+  if (level <= 0) return 0;
+  let annual = 0;
+  for (let i = 1; i <= level; i++) {
+    annual += getBusinessCost(def.baseCost, def.costMultiplier, i - 1) * marginalBusinessROI(def, i);
+  }
+  return annual / DAYS_PER_YEAR;
+}
+
+/** Blended return on all capital in the business, as a share of the headline rate. */
+export function businessScaleEfficiency(def: BusinessDef, level: number): number {
+  const capital = getBusinessCapital(def, level);
+  if (capital <= 0) return 1;
+  return (getBusinessIncome(def, level) * DAYS_PER_YEAR) / (capital * def.annualROI);
+}
+
+// ---------- Business luck over time ----------
+/** Competition drags the great ones back; the weak ones limp upward slowly. */
+export const BUSINESS_FORTUNE_ANCHOR = 0.9;
+export const BUSINESS_FORTUNE_DECAY_UP = 0.0019;   // a winner gives up half its edge in a year
+export const BUSINESS_FORTUNE_DECAY_DOWN = 0.0006; // a struggler recovers about a fifth in a year
+export const BUSINESS_FORTUNE_NOISE = 0.004;
+
+// ---------- Building out ----------
+/** Days a new build takes before the money put in starts earning. */
+export function businessBuildDays(level: number): number {
+  return Math.round(Math.min(150, 18 + 9 * Math.max(0, level - 1)));
+}
+
+// ---------- Selling ----------
+/** Days it takes to find a buyer once a business is put on the market. */
+export const BUSINESS_SALE_DAYS = 45;
+/** Fees, diligence and the buyer's discount. */
+export const BUSINESS_SALE_DISCOUNT = 0.12;
+/** Selling straight after an expansion costs more: the work is not proven yet. */
+export const BUSINESS_SALE_RECENT_DAYS = 180;
+export const BUSINESS_SALE_RECENT_PENALTY = 0.15;
+
 
 // ---------- Lifestyle (all costs recur daily) ----------
 /** One look at a tier. Same cost, same hours — only the name and the picture differ. */
@@ -1296,9 +1341,10 @@ export function businessFortuneLabel(f: number): string {
 
 // ---------- helpers ----------
 export function getBusinessTierIndex(level: number): number {
-  if (level >= 40) return 3;
-  if (level >= 20) return 2;
-  if (level >= 8) return 1;
+  if (level >= BUSINESS_TIER_THRESHOLDS[3]) return 3;
+  if (level >= BUSINESS_TIER_THRESHOLDS[2]) return 2;
+  if (level >= BUSINESS_TIER_THRESHOLDS[1]) return 1;
+
   return 0;
 }
 
