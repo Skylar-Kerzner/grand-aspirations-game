@@ -703,7 +703,7 @@ function advance(state: GameState, days: number, now: number): GameState {
   stats.livingSpent += living;
   stats.trainingSpent += training;
 
-  // Businesses — profit swings with trading conditions and the odd setback
+  // Businesses — a day's takings swing a lot; the slow trading trend moves the value
   const businesses: Record<string, BusinessState> = {};
   const shockEvents: GameEvent[] = [];
   let bizGross = 0;
@@ -713,13 +713,19 @@ function advance(state: GameState, days: number, now: number): GameState {
     const steady = getBusinessSteadyIncomeOf(s, id);
     let condition = biz.condition ?? 1;
     let gain = 0;
+    let lastTakings = biz.takings ?? 1;
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
-    const dailyVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
+    // The slow trend: months-long swings in how the venture is doing.
+    const trendVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
+    // Day-to-day takings: weather, footfall, a quiet Tuesday. Big, but it averages out.
+    const noiseScale = def.dailyNoise * relief;
     for (let d = 0; d < days; d++) {
-      gain += steady * condition;
-      // mean-reverting drift around normal conditions
-      const noise = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * dailyVol;
-      condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + noise;
+      const dayNoise = 1 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * noiseScale;
+      lastTakings = Math.max(0, dayNoise);
+      gain += steady * condition * lastTakings;
+      // mean-reverting drift around normal trading conditions
+      const drift = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * trendVol;
+      condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + drift;
       if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk * relief) {
         const shock = 0.35 + Math.random() * 0.25;
         condition *= shock;
@@ -737,7 +743,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     }
     bizGross += gain;
     stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
-    businesses[id] = { ...biz, condition };
+    businesses[id] = { ...biz, condition, takings: lastTakings };
   }
   const bizTax = bizGross * taxRate;
   cash += bizGross - bizTax;
