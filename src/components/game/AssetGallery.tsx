@@ -205,12 +205,12 @@ export default function AssetGallery() {
                             <p className="text-[11px] text-muted-foreground mb-2">
                               {settled
                                 ? `Same price, same hours. You already live with ${chosenLook?.name} here — moving to another costs ${formatMoney(switchFee)}.`
-                                : "Same price, same hours — pick the one you want to live with. You only see it once you move in."}
+                                : `Same price, same hours — pick the one you want to live with. Moving in costs ${formatMoney(switchFee)}, and you only see it once you move in.`}
                             </p>
                             <div className="grid grid-cols-3 gap-2">
                               {looks.map((look, li) => {
                                 const isChosen = settled && li === chosenIdx;
-                                const fee = settled && !isChosen ? switchFee : 0;
+                                const fee = isChosen ? 0 : switchFee;
                                 const afford = state.cash >= fee;
                                 return (
                                   <button
