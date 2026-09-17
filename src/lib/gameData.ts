@@ -131,6 +131,19 @@ export interface CareerTrack {
   livingDiscount?: number;
   /** Extra hours in your week from the way this life is organised. */
   hoursBonus?: number;
+  /** Share added to the luck of a venture you open or tier up. */
+  ventureLuck?: number;
+  /** Share off what it costs to open or grow a venture. */
+  ventureCostDiscount?: number;
+}
+
+/**
+ * Every perk gets stronger the further you climb that path: 40% of it at the
+ * bottom, all of it at the top. Keeps low-paying paths worth staying in.
+ */
+export function trackPerkScale(level: number, maxLevel: number): number {
+  if (maxLevel <= 0) return 1;
+  return 0.4 + 0.6 * Math.min(1, Math.max(0, level / maxLevel));
 }
 
 export const CAREER_TRACKS: Record<string, CareerTrack> = {
@@ -138,29 +151,29 @@ export const CAREER_TRACKS: Record<string, CareerTrack> = {
     id: "hospitality", name: "Hospitality & Retail", curve: -0.6,
     outlook: "Pays well right away, but the ceiling is low.",
     middle: "Rises quickly at first, then flattens out by the middle.",
-    perks: ["Runs coffee shops, restaurants, hotels and fashion labels better", "Meals and rooms comped: 10% off your lifestyle"],
-    ventureTracks: ["hospitality"], livingDiscount: 0.1,
+    perks: ["Runs coffee shops, restaurants, hotels and fashion labels better", "Meals and rooms comped: 10% off your lifestyle", "You read a site before you sign: ventures open luckier"],
+    ventureTracks: ["hospitality"], livingDiscount: 0.1, ventureLuck: 0.12,
   },
   operations: {
     id: "operations", name: "Operations & Industry", curve: -0.25,
     outlook: "Steady pay that rises slowly and reliably.",
     middle: "Even, predictable steps the whole way up.",
-    perks: ["Runs theme parks and large sites better", "Cheapest schooling of the hands-on paths"],
-    ventureTracks: ["operations"],
+    perks: ["Runs theme parks and large sites better", "Cheapest schooling of the hands-on paths", "You know the trades: 14% off opening and growing ventures"],
+    ventureTracks: ["operations"], ventureCostDiscount: 0.14,
   },
   corporate: {
     id: "corporate", name: "Corporate Leadership", curve: 0.2,
     outlook: "Modest early, strong once you reach the top table.",
     middle: "Slow through the middle, then jumps at director level.",
-    perks: ["Runs city developments better", "Boardroom contacts: +4% on everything invested"],
-    ventureTracks: ["corporate"], investBonus: 0.04,
+    perks: ["Runs city developments better", "Boardroom contacts: +4% on everything invested", "Deals come to you first: ventures open luckier"],
+    ventureTracks: ["corporate"], investBonus: 0.04, ventureLuck: 0.1,
   },
   tech: {
     id: "tech", name: "Technology", curve: 0.5,
     outlook: "A slow start that compounds into very high pay.",
     middle: "Climbs fast through the middle once you can build.",
-    perks: ["Runs tech ventures and media networks better", "Remote and flexible: +3h of your week"],
-    ventureTracks: ["tech"], hoursBonus: 3,
+    perks: ["Runs tech ventures and media networks better", "Remote and flexible: +3h of your week", "You build the systems yourself: 7% off venture costs"],
+    ventureTracks: ["tech"], hoursBonus: 3, ventureCostDiscount: 0.07,
   },
   finance: {
     id: "finance", name: "Finance & Investing", curve: 0.85,
@@ -173,22 +186,22 @@ export const CAREER_TRACKS: Record<string, CareerTrack> = {
     id: "arts", name: "Arts & Entertainment", curve: 1.1,
     outlook: "Almost nothing for years, then fame pays enormously.",
     middle: "A brutal middle — many years at little pay.",
-    perks: ["Runs fashion labels, theme parks and media better", "Sponsorships and invitations: 20% off your lifestyle"],
-    ventureTracks: ["hospitality", "tech", "operations"], livingDiscount: 0.2,
+    perks: ["Runs fashion labels, theme parks and media better", "Sponsorships and invitations: 20% off your lifestyle", "Your name on the door: ventures open a little luckier"],
+    ventureTracks: ["hospitality", "tech", "operations"], livingDiscount: 0.2, ventureLuck: 0.06,
   },
   education: {
     id: "education", name: "Education & Public Service", curve: -0.7,
     outlook: "Low pay throughout, but nothing ever goes backwards.",
     middle: "Gentle, certain steps and long holidays.",
-    perks: ["Study runs 30% faster and costs 25% less", "Term breaks: +5h of your week"],
-    studyBonus: 0.3, hoursBonus: 5,
+    perks: ["Study runs 30% faster and costs 25% less", "Term breaks: +5h of your week", "Public rates: 8% off your lifestyle"],
+    studyBonus: 0.3, hoursBonus: 5, livingDiscount: 0.08,
   },
   medicine: {
     id: "medicine", name: "Health & Medicine", curve: 0.6,
     outlook: "The longest, costliest schooling, then very high steady pay.",
     middle: "Nothing much until you qualify, then a steep, safe climb.",
-    perks: ["Your own health is handled: +2h of your week", "Pay barely moves with the economy"],
-    hoursBonus: 2,
+    perks: ["Your own health is handled: +4h of your week", "Pay barely moves with the economy", "Everything looked after: 8% off your lifestyle"],
+    hoursBonus: 4, livingDiscount: 0.08,
   },
 };
 
