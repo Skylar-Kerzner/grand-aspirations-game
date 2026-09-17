@@ -961,3 +961,20 @@ export function getBusinessTierIndex(level: number): number {
   if (level >= 8) return 1;
   return 0;
 }
+
+// ---------- Time ----------
+/**
+ * Waking hours you can actually direct in a week before lifestyle and career are
+ * taken into account. A bare-bones life spends a chunk of it on chores and commuting.
+ */
+export const BASE_TIME_BUDGET = 52;
+
+// ---------- Student loans ----------
+export const STUDENT_LOAN_RATE = 0.06;          // annual interest
+export const STUDENT_LOAN_TERM_DAYS = 3650;     // repaid over ten years
+export const STUDENT_LOAN_GRACE_DAYS = 180;     // nothing due until six months after you finish
+/** The most you can owe in student debt, by the highest level of study you have reached. */
+export const STUDENT_LOAN_CAPS = [30000, 120000, 400000];
+export function studentLoanCap(highestLevel: number): number {
+  return STUDENT_LOAN_CAPS[Math.max(0, Math.min(2, highestLevel - 1))] ?? STUDENT_LOAN_CAPS[0];
+}
