@@ -927,6 +927,7 @@ export interface EventDef {
   // effects
   cashPctOfNetWorth?: number; // + or -
   cashFlat?: number;          // scaled by era via multiplier below
+  cashDaysOfPay?: number;     // + or -, measured in days of your current gross pay
   businessBoostDays?: number; // days of doubled business profit
   livingCostShiftDays?: number;
   livingCostShift?: number;   // multiplier on living costs while active
@@ -937,7 +938,7 @@ export interface EventDef {
 
 export const EVENTS: EventDef[] = [
   { id: "inherit", title: "An uncle's estate closes", text: "The executor found your name in the will and transferred your share of the estate.", tone: "good", weight: 3, minDay: 120, cashPctOfNetWorth: 0.12, cashFlat: 4000 },
-  { id: "bonus", title: "Quarterly bonus", text: "Your team beat its quarterly target, and payroll added a one-time performance bonus.", tone: "good", weight: 8, cashFlat: 900 },
+  { id: "bonus", title: "Quarterly bonus", text: "Your team beat its quarterly target, and payroll added a one-time performance bonus.", tone: "good", weight: 8, cashDaysOfPay: 22 },
   { id: "raise", title: "Retention raise", text: "A senior colleague resigned, so your employer raised your pay to keep you from following.", tone: "good", weight: 6, payShift: 1.15, payShiftDays: 120 },
   { id: "boom", title: "A review goes viral", text: "A customer video takes off overnight, and your business spends two weeks handling the rush.", tone: "good", weight: 8, gateBusiness: true, businessBoostDays: 14 },
   { id: "headhunt", title: "Recruiter calls your boss", text: "A recruiter asks for a reference. Your employer counters with a temporary retention package.", tone: "good", weight: 6, payShift: 1.1, payShiftDays: 90 },
