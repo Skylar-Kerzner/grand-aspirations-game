@@ -268,8 +268,12 @@ export default function CareerPanel() {
           Years worked in an industry can stand in for the first two, never for the graduate degree.
         </p>
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
-          You can pay for a program outright or take a student loan: 6% a year, nothing due while you study or
-          for six months after, then ten years of payments. You can still borrow {formatCompact(loanHeadroom)}.
+          You can pay outright or borrow. Government loans come first — 6.5% a year for courses and bachelor's
+          degrees, 8.1% for graduate study, nothing due until six months after you finish — and they are capped
+          at {formatCompact(FEDERAL_CAPS.undergrad)} for undergraduate study, {formatCompact(FEDERAL_CAPS.graduate)} for
+          graduate degrees and {formatCompact(FEDERAL_CAPS.professional)} for medicine. Anything beyond that comes
+          from a bank at 12%, sized against your pay and what you own, and it starts charging interest immediately.
+          A master's needs a bachelor's behind it.
         </p>
         <div className="space-y-4">
           {openTracks.map((track) => {
