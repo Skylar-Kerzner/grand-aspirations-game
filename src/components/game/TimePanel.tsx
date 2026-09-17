@@ -8,7 +8,7 @@ export default function TimePanel() {
   const bizHours = getTotalBusinessHours(state);
   const budget = getTimeBudget(state);
   const lifestyleHours = getLifestyleHours(state);
-  const careerHours = getCareerTrack(state.currentJob.employer).hoursBonus || 0;
+  const careerHours = trackPerk(state, "hoursBonus");
   const workHours = getWorkHours(state);
   const freeHours = Math.max(0, budget - workHours - state.studyHours - bizHours);
 

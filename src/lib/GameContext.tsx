@@ -601,7 +601,9 @@ export function upgradeCostFor(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   if (!def) return Infinity;
   const level = state.businesses[id]?.level || 0;
-  const raw = calcBusinessCost(def.baseCost, def.costMultiplier, level);
+  let raw = calcBusinessCost(def.baseCost, def.costMultiplier, level);
+  // Some working lives make building things cheaper.
+  raw *= 1 - trackPerk(state, "ventureCostDiscount");
   return state.consultants.includes("banker") ? raw * 0.8 : raw;
 }
 
@@ -1203,7 +1205,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             level: 1,
             condition: 1,
             choices: action.choices,
-            fortune: rollBusinessFortune(),
+            fortune: rollBusinessFortune() * (1 + trackPerk(state, "ventureLuck")),
           }
         : (() => {
             // Only a tier step puts part of the venture's fortune back on the table,
@@ -1227,7 +1229,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                   0.15,
                   (tierUp
                     ? (cur.fortune ?? 1) * (1 - rerollWeight) +
-                      rollBusinessFortune() * rerollWeight
+                      rollBusinessFortune() * (1 + trackPerk(state, "ventureLuck")) * rerollWeight
                     : (cur.fortune ?? 1)) *
                     // every level nudges success a little, up or down
                     (0.9 + Math.random() * 0.2),
