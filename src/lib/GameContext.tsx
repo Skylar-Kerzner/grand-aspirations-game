@@ -1130,14 +1130,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = ASSETS.find((asset) => asset.id === action.id);
       if (!def || action.tier < 1 || action.tier > def.tiers.length) return state;
       const looksHere = [...(state.assetLooks[action.id] || def.tiers.map(() => -1))];
-      // The first look at a step is free. Changing your mind later means
-      // moving costs: paid up front, or the switch does not happen.
+      // Every move-in costs the moving fee — the first pick at a step too.
+      // Paid up front, or the switch does not happen.
       let cash = state.cash;
       if (action.look !== undefined) {
         const current = looksHere[action.tier - 1] ?? -1;
-        if (current < 0) {
-          looksHere[action.tier - 1] = action.look;
-        } else if (current !== action.look) {
+        if (current !== action.look) {
           const fee = lookSwitchCost(def.tiers[action.tier - 1]);
           if (cash < fee) return state;
           cash -= fee;
