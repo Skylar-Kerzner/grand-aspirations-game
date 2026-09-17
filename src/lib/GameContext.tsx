@@ -784,10 +784,12 @@ function advance(state: GameState, days: number, now: number): GameState {
     for (let d = 0; d < days; d++) {
       const weekday = Math.floor(s.day + d) % 7;
       const r = Math.random();
+      // standout days hit small ventures hard; a city district barely notices one
+      const standoutScale = Math.min(1, noiseScale / 0.3);
       const luck = r < BUSINESS_WASHOUT_CHANCE
-        ? 0.15 + Math.random() * 0.2
+        ? 1 - (0.65 + Math.random() * 0.2) * standoutScale
         : r > 1 - BUSINESS_BUMPER_CHANCE
-          ? 2 + Math.random()
+          ? 1 + (1 + Math.random()) * standoutScale
           : 1 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * noiseScale;
       lastTakings = Math.max(0, rhythm[weekday] * season * luck);
       gain += steady * condition * lastTakings;
