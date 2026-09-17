@@ -1154,6 +1154,8 @@ export interface DerivedState {
   job: (typeof JOBS)[number];
   nextJob: (typeof JOBS)[number] | null;
   offerTrainingBonus: number;
+  interviewReadiness: number;
+  interviewPrepRate: number;
   
   creditTier: number;
   creditLimit: number;
