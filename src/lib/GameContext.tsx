@@ -1074,6 +1074,8 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     let condition = biz.condition ?? 1;
     let gain = 0;
     let lastTakings = biz.takings ?? 1;
+    let fortune = biz.fortune ?? 1;
+
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
     // The slow trend: months-long swings in how the venture is doing.
     const trendVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
