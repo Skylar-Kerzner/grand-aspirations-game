@@ -1003,9 +1003,22 @@ function rollEvent(state: GameState, days: number): GameState {
     s.payUntil = s.day + def.payShiftDays;
   }
   if (def.jobLoss && s.jobIndex > 0) {
-    s.jobIndex -= 1;
-    const fallback = JOBS[s.jobIndex];
-    s.currentJob = { title: fallback.title, employer: fallback.employer, dailyPay: fallback.dailyPay };
+    // A consolidation demotes you inside your own industry — it never moves
+    // you into a different field.
+    const trackId = getCareerTrack(s.currentJob.employer).id;
+    let level = s.jobIndex - 1;
+    let role = roleAtLevel(trackId, level);
+    while (!role && level > 0) {
+      level -= 1;
+      role = roleAtLevel(trackId, level);
+    }
+    const fallback = role ?? JOBS[level];
+    s.jobIndex = level;
+    s.currentJob = {
+      title: fallback.title,
+      employer: fallback.employer,
+      dailyPay: clampRoleDailyPay(fallback.title, JOBS[level].dailyPay, TRAINING_OFFER_SWING),
+    };
     s.jobHistory = [...s.jobHistory, { ...s.currentJob, startDay: Math.floor(s.day) }];
     s.careerOffers = [];
   }
