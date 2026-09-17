@@ -419,13 +419,13 @@ export function getBusinessValueOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * (biz.fortune ?? 1)
-    * getBusinessAttentionOf(state, id)
-    * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+  // A venture worth the baseline 30% return on capital sells for exactly what
+  // has been put into it; success above or below scales it in proportion.
+  return getBusinessCapital(def, biz.level) * ((biz.fortune ?? 1) * def.annualROI) / BUSINESS_BASELINE_ROI;
 }
 
 export function getBusinessSalePrice(state: GameState, id: string): number {
-  return getBusinessValueOf(state, id) * BUSINESS_SALE_DISCOUNT;
+  return getBusinessValueOf(state, id);
 }
 
 export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
@@ -527,11 +527,8 @@ export function getOfferTrainingBonus(state: GameState): number {
 
 export function getBusinessValue(state: GameState): number {
   let total = 0;
-  for (const [id, biz] of Object.entries(state.businesses)) {
-    const def = BUSINESSES.find((b) => b.id === id);
-    if (!def || biz.level === 0) continue;
-    total += getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id)) * (biz.fortune ?? 1)
-      * getBusinessAttentionOf(state, id) * DAYS_PER_YEAR * BUSINESS_VALUATION_MULTIPLE;
+  for (const id of Object.keys(state.businesses)) {
+    total += getBusinessValueOf(state, id);
   }
   return total;
 }
