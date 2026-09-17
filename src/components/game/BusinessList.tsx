@@ -287,7 +287,7 @@ export default function BusinessList() {
                   </p>
                 )}
                 {selectedBiz.level > 0 && (
-                  <p className="text-xs text-primary mb-1">
+                  <p className={`text-xs mb-1 ${businessIncomeOf(state, selectedDef.id) < 0 ? "text-destructive" : "text-primary"}`}>
                     {formatRate(businessIncomeOf(state, selectedDef.id))}
                     <span className="text-muted-foreground ml-1">
                       (normal trade {formatPerDay(getBusinessSteadyIncomeOf(state, selectedDef.id))})
