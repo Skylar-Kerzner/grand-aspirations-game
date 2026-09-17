@@ -197,7 +197,7 @@ export function getBusinessAttentionOf(state: GameState, id: string): number {
 /** Weekly hours you can direct: a base week, what your lifestyle buys back, and what your field allows. */
 export function getTimeBudget(state: GameState): number {
   const lifestyle = ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
-  const career = getCareerTrack(state.currentJob.employer).hoursBonus || 0;
+  const career = trackPerk(state, "hoursBonus");
   return Math.max(10, BASE_TIME_BUDGET + lifestyle + career);
 }
 
@@ -489,7 +489,7 @@ export function getLivingCosts(state: GameState): number {
   let total = 0;
   for (const def of ASSETS) total += getLifestyleTier(state, def.id)?.dailyCost || 0;
   // Some lives come partly comped: meals, rooms, clothes, invitations.
-  total *= 1 - (getCareerTrack(state.currentJob.employer).livingDiscount || 0);
+  total *= 1 - trackPerk(state, "livingDiscount");
   if (state.day < state.livingUntil) total *= state.livingMult;
   return total;
 }
@@ -767,7 +767,7 @@ function advance(state: GameState, days: number, now: number): GameState {
   let majors = s.majors;
   if (studying) {
     // Teaching lives run alongside study: the same hours go further.
-    const rate = (s.studyHours / 40) * (1 + (getCareerTrack(s.currentJob.employer).studyBonus || 0));
+    const rate = (s.studyHours / 40) * (1 + trackPerk(s, "studyBonus"));
     const left = studying.daysLeft - days * rate;
     if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
