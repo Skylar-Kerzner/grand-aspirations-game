@@ -1,5 +1,5 @@
-import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getBusinessEffectiveROI, getBusinessROIAt, getBusinessSteadyIncomeAt, businessIncomeOf } from "@/lib/GameContext";
-import { BUSINESSES, MAJORS, WEEK_HOURS, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital } from "@/lib/gameData";
+import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessSteadyIncomeAt, businessIncomeOf } from "@/lib/GameContext";
+import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital, getCareerTrack } from "@/lib/gameData";
 import { formatMoney } from "@/lib/formatters";
 
 export default function TimePanel() {
@@ -7,7 +7,8 @@ export default function TimePanel() {
   const owned = BUSINESSES.filter((b) => (state.businesses[b.id]?.level || 0) > 0);
   const bizHours = getTotalBusinessHours(state);
   const budget = getTimeBudget(state);
-  const lifestyleHours = budget - WEEK_HOURS;
+  const lifestyleHours = getLifestyleHours(state);
+  const careerHours = getCareerTrack(state.currentJob.employer).hoursBonus || 0;
   const workHours = getWorkHours(state);
   const freeHours = Math.max(0, budget - workHours - state.studyHours - bizHours);
 
@@ -59,10 +60,10 @@ export default function TimePanel() {
         </p>
         <p className="text-[11px] text-muted-foreground mb-3">
           Pay scales with the hours you work. Your ventures only reach their full return on the hours you
-          personally put in.
-          {lifestyleHours > 0
-            ? ` Your lifestyle buys back ${lifestyleHours}h a week — better housing, food, clothing and a chauffeur.`
-            : " A finer lifestyle buys hours back: staff, services and convenience."}
+          personally put in. {BASE_TIME_BUDGET}h base
+          {lifestyleHours >= 0 ? ` + ${lifestyleHours}h` : ` − ${Math.abs(lifestyleHours)}h`} from your lifestyle
+          {careerHours ? ` + ${careerHours}h from your line of work` : ""} = {budget}h.
+          {lifestyleHours <= 0 ? " A finer lifestyle buys hours back: staff, services and convenience." : ""}
         </p>
         {state.studying && (
           <>
