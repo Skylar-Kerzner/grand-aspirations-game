@@ -706,63 +706,66 @@ export const INDUSTRY_YEAR_STEP = 0.02;
 export const INDUSTRY_YEAR_CAP = 0.16;
 export const INDUSTRY_RISK_RELIEF = 0.2;
 
-export const BUSINESS_TIER_THRESHOLDS = [1, 8, 20, 40];
+// Expansions are few, large and deliberate: sixteen steps from first day to empire.
+export const BUSINESS_MAX_LEVEL = 16;
+export const BUSINESS_TIER_THRESHOLDS = [1, 4, 9, 16];
 export const BUSINESS_NETWORK_MILESTONES = [
-  { level: 8, bonus: 0.1 },
-  { level: 20, bonus: 0.2 },
-  { level: 40, bonus: 0.35 },
+  { level: 4, bonus: 0.1 },
+  { level: 9, bonus: 0.2 },
+  { level: 16, bonus: 0.35 },
 ];
 
 export const BUSINESSES: BusinessDef[] = [
   {
     id: "coffee", name: "Coffee Shop", sector: "Food & Beverage",
-    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.3, dailyNoise: 0.38, track: "hospitality",
+    baseCost: 6000, annualROI: 0.24, costMultiplier: 1.45, risk: 0.3, dailyNoise: 0.38, track: "hospitality",
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
   },
   {
     id: "restaurant", name: "Restaurant", sector: "Food & Beverage",
-    baseCost: 25000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.28, dailyNoise: 0.34, track: "hospitality",
+    baseCost: 25000, annualROI: 0.22, costMultiplier: 1.45, risk: 0.28, dailyNoise: 0.34, track: "hospitality",
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Neighbourhood Bistro", "Fine Dining Room", "Culinary Empire"],
   },
   {
     id: "tech", name: "Tech Startup", sector: "Technology",
-    baseCost: 100000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.45, dailyNoise: 0.3, track: "tech",
+    baseCost: 100000, annualROI: 0.26, costMultiplier: 1.42, risk: 0.45, dailyNoise: 0.3, track: "tech",
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Series A Office", "Tech Campus", "Tech Giant HQ"],
   },
   {
     id: "hotel", name: "Hotel", sector: "Hospitality",
-    baseCost: 400000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.24, dailyNoise: 0.24, track: "hospitality",
+    baseCost: 400000, annualROI: 0.17, costMultiplier: 1.39, risk: 0.24, dailyNoise: 0.24, track: "hospitality",
     description: "Luxury accommodations worldwide.",
     tierNames: ["Roadside Motel", "Boutique Hotel", "Luxury Resort", "Grand Hotel Empire"],
   },
   {
     id: "fashion", name: "Fashion Brand", sector: "Retail",
-    baseCost: 1500000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.26, dailyNoise: 0.28, track: "hospitality",
+    baseCost: 1500000, annualROI: 0.18, costMultiplier: 1.36, risk: 0.26, dailyNoise: 0.28, track: "hospitality",
     description: "Define style itself.",
     tierNames: ["Market Stall", "Flagship Boutique", "Department Store", "Fashion House"],
   },
   {
     id: "themepark", name: "Theme Park", sector: "Entertainment",
-    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.22, dailyNoise: 0.32, track: "operations",
+    baseCost: 6000000, annualROI: 0.15, costMultiplier: 1.33, risk: 0.22, dailyNoise: 0.32, track: "operations",
     description: "Create worlds of wonder.",
     tierNames: ["Travelling Carnival", "Family Fun Park", "Destination Theme Park", "Entertainment Empire"],
   },
   {
     id: "media", name: "Media Network", sector: "Media",
-    baseCost: 25000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.2, dailyNoise: 0.16, track: "tech",
+    baseCost: 25000000, annualROI: 0.14, costMultiplier: 1.33, risk: 0.2, dailyNoise: 0.16, track: "tech",
     description: "Own the attention itself.",
     tierNames: ["Podcast Studio", "Streaming Channel", "Broadcast Network", "Global Media Conglomerate"],
   },
   {
     id: "city", name: "City Development", sector: "Infrastructure",
-    baseCost: 100000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.16, dailyNoise: 0.1, track: "corporate",
+    baseCost: 100000000, annualROI: 0.12, costMultiplier: 1.3, risk: 0.16, dailyNoise: 0.1, track: "corporate",
     description: "Build the skyline everyone else lives in.",
     tierNames: ["City Block", "Mixed-Use District", "Waterfront Downtown", "Sovereign Metropolis"],
   },
 ];
+
 
 // Trading conditions drift day to day and revert toward normal at this rate.
 export const BUSINESS_CONDITION_REVERSION = 0.04;
