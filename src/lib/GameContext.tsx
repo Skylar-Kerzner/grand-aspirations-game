@@ -1516,7 +1516,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Restless records are paid less wherever they land.
       const lastStart = state.jobHistory.length > 0 ? state.jobHistory[state.jobHistory.length - 1].startDay : 0;
       const hop = jobHopMultiplier(Math.floor(state.day) - lastStart);
-      // Courses and coaching sharpen every offer you seek out.
+      // Coaching moves an offer around the going rate for the role: unprepared lands below it,
+      // fully warmed up lands above it.
       const training = 1 + getOfferTrainingBonus(state);
       const careerOffers: CareerOffer[] = chosen.map((variant) => {
         const base = JOBS[Math.min(variant.level, maxLevel)].dailyPay;
@@ -1528,7 +1529,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
           : 1 - trackSwitchPenalty(homeTrack, variant.track, hasMajor);
-        const pay = clampRoleDailyPay(variant.title, Math.round(base * factor * track * loyalty * hop * training));
+        // Clamp to the real-world band for the role first, then let preparation swing it
+        // symmetrically around that figure.
+        const pay = clampRoleDailyPay(variant.title, Math.round(base * factor * track * loyalty * hop)) * training;
+
         return {
           title: variant.title,
           employer: variant.employer,
