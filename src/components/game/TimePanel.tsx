@@ -134,12 +134,12 @@ export default function TimePanel() {
                   <span className="text-muted-foreground">Now, at {hours}h a week</span>
                   <span className="text-right font-mono-nums">
                     <span className={currentROI >= 0.15 ? "text-primary" : ""}>{(currentROI * 100).toFixed(0)}%</span>
-                    {" · "}{formatMoney(currentPerDay)}/day
+                    {" · "}{formatMoney(currentPerWeek)}/week
                   </span>
                   <span className="text-muted-foreground">At {BUSINESS_ATTENTION_FULL_HOURS}h a week</span>
                   <span className="text-right font-mono-nums">
                     <span className={fullROI >= 0.15 ? "text-primary" : ""}>{(fullROI * 100).toFixed(0)}%</span>
-                    {" · "}{formatMoney(fullPerDay)}/day
+                    {" · "}{formatMoney(fullPerWeek)}/week
                   </span>
                 </div>
                 <input
