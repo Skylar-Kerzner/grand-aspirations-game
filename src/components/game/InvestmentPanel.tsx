@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useGame, isInvestmentUnlocked } from "@/lib/GameContext";
+import { useGame, isInvestmentUnlocked, getLockDaysLeft, getInvestorNetWorth } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { INVESTMENTS } from "@/lib/gameData";
+import { INVESTMENTS, INVESTOR_ACCESS } from "@/lib/gameData";
 
 const STEPS = [1, 10, 100, 1000, 10000];
 
