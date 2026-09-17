@@ -168,6 +168,13 @@ export default function CareerPanel() {
                           Level {level + 1} of {JOBS.length} · {stepWord}
                         </span>
                       </span>
+                      {step > 0 && delta40 < 0 && (
+                        <span className="block text-[11px] text-muted-foreground mt-1">
+                          A rung up that pays less for now — this kind of post is a stepping stone, and the
+                          ranks above it pay far more than where you are today.
+                        </span>
+                      )}
+
                       <span className="block text-[11px] text-muted-foreground">
                         {getCareerTrack(offer.employer).outlook}
                       </span>
