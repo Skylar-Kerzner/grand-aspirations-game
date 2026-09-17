@@ -17,7 +17,10 @@ export default function CareerPanel() {
     ? Math.floor(state.day) - state.jobHistory[state.jobHistory.length - 1].startDay
     : 0;
   const settled = daysInJob >= JOB_HOP_SETTLED_DAYS;
-  const canSeekOffers = !!next && state.careerOffers.length === 0;
+  const neededLevel = requiredCredentialLevel(state.jobIndex + 1);
+  const qualifiedTracks = openTracks.filter((t) => getTrackCredential(state, t.id).effective >= neededLevel);
+  const canSeekOffers = !!next && state.careerOffers.length === 0 && qualifiedTracks.length > 0;
+  const levelWord = ["", "short course", "diploma", "degree"][neededLevel] || "degree";
 
   return (
     <div className="space-y-6">
