@@ -390,6 +390,7 @@ export function businessMultiplier(state: GameState): number {
   return m;
 }
 
+/** Flat return-on-capital points earned from network milestones (+0.02 per milestone per partner). */
 export function getBusinessNetworkBonus(state: GameState, id: string): number {
   const index = BUSINESSES.findIndex((business) => business.id === id);
   if (index < 0) return 0;

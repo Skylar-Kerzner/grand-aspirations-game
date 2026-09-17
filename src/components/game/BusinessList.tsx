@@ -151,7 +151,7 @@ export default function BusinessList() {
                       Now, at {state.businessHours[def.id] || 0}h: {(getBusinessEffectiveROI(state, def.id) * 100).toFixed(0)}% a year
                     </p>
                     {networkBonus > 0 && (
-                      <p className="text-[10px] text-primary">+{(networkBonus * 100).toFixed(0)}% network</p>
+                      <p className="text-[10px] text-primary">+{(networkBonus * 100).toFixed(0)}% ROI from the network</p>
                     )}
                   </div>
                 )}
@@ -245,7 +245,7 @@ export default function BusinessList() {
                   {(getBusinessEffectiveROI(state, selectedDef.id) * 100).toFixed(0)}% annual return on capital at{" "}
                   {state.businessHours[selectedDef.id] || 0}h a week
                   {getBusinessNetworkBonus(state, selectedDef.id) > 0
-                    ? ` · +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% network bonus`
+                    ? ` · includes +${(getBusinessNetworkBonus(state, selectedDef.id) * 100).toFixed(0)}% ROI from the network, at any hours`
                     : ` · up to ${(getBusinessROIAt(state, selectedDef.id, 1) * 100).toFixed(0)}% annual return on capital at ${BUSINESS_ATTENTION_FULL_HOURS} hours a week`}
                 </p>
                 {(() => {
@@ -310,7 +310,7 @@ export default function BusinessList() {
                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Next network milestone</p>
                       <p className="text-sm font-semibold mt-1">{selectedDef.name} + {next.partner.name}</p>
                       <p className="text-[11px] text-muted-foreground mt-1">
-                        Reach level {next.level} in both for +{(next.bonus * 100).toFixed(0)}% income on each.
+                        Reach level {next.level} in both for +{(next.bonus * 100).toFixed(0)}% return on capital on each — at any hours you give them.
                       </p>
                       <p className="text-[11px] text-primary mt-1">
                         {next.ownLevelsNeeded > 0 ? `${selectedDef.name}: ${next.ownLevelsNeeded} levels` : `${selectedDef.name}: ready`}
