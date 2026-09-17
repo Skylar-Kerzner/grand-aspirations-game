@@ -1015,7 +1015,7 @@ export function ventureImageAtTier(businessId: string, tierIdx: number, choices?
 }
 
 /** How much of the sale price you actually walk away with. */
-export const BUSINESS_SALE_DISCOUNT = 0.9;
+
 
 /** How much of a venture's fortune is put back on the table with each expansion. */
 /** How much of a venture's luck goes back on the table at a tier step. */
