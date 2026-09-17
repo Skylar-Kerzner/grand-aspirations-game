@@ -221,11 +221,19 @@ export function getCareerTrack(employer: string): CareerTrack {
   return CAREER_TRACKS[EMPLOYER_TRACKS[employer] || "operations"];
 }
 
-/** The room you actually work in: one per industry, at three stages of seniority. */
+/** The room you actually work in: one per industry, at seven stages of seniority. */
+export const WORKPLACE_STAGES = 7;
+
 export function workplaceImage(employer: string, level: number): string {
   const track = getCareerTrack(employer).id;
-  const stage = level <= 4 ? 1 : level <= 9 ? 2 : 3;
-  return `work-${track}-s${stage}`;
+  const stage = Math.max(1, Math.min(WORKPLACE_STAGES, Math.ceil((level + 1) / 2)));
+  // Nearest available stage, so a missing room never leaves a blank frame.
+  const order = [stage];
+  for (let step = 1; step < WORKPLACE_STAGES; step++) {
+    if (stage - step >= 1) order.push(stage - step);
+    if (stage + step <= WORKPLACE_STAGES) order.push(stage + step);
+  }
+  return pickImage(...order.map((s) => `work-${track}-s${s}`));
 }
 
 /** How a track's pay compares with the standard ladder at a given career level. */
