@@ -1242,7 +1242,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "WORK": {
       const today = Math.floor(state.day);
-      if (state.lastShiftDay === today) return state;
       const job = getJob(state);
       const pay = getGrossHourlyPay(state) * (1 - getTaxRate(state));
       const stats = { ...state.stats, shifts: { ...state.stats.shifts }, jobEarned: { ...state.stats.jobEarned } };
