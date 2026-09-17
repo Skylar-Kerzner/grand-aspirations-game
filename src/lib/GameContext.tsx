@@ -454,12 +454,16 @@ export function getNextBusinessNetworkMilestone(state: GameState, id: string) {
 }
 
 export function businessIncomeOf(state: GameState, id: string): number {
-  const def = BUSINESSES.find((b) => b.id === id);
+  return getBusinessIncomeAt(state, id, getBusinessAttentionOf(state, id));
+}
+
+/** Actual income at a chosen attention level, under the same trend and takings. */
+export function getBusinessIncomeAt(state: GameState, id: string, attention: number): number {
   const biz = state.businesses[id];
-  if (!def || !biz || biz.level === 0) return 0;
+  if (!biz || biz.level === 0) return 0;
   // Today's actual rate: steady income x trading trend x today's takings,
   // so the income you watch swings with the day's trade.
-  return getBusinessSteadyIncomeOf(state, id) * (biz.condition ?? 1) * (biz.takings ?? 1);
+  return getBusinessSteadyIncomeAt(state, id, attention) * (biz.condition ?? 1) * (biz.takings ?? 1);
 }
 
 /** Steady income at a given attention level (1 = full hours) — used for valuation and planning. */
