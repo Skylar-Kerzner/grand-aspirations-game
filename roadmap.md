@@ -49,3 +49,4 @@
 - Hide business concept/city preview art while choosing — reveal only once opened
 - [x] Lead net displays with actual operating net from the last seven game days; retain current daily pace
 - [x] Make career pay a five-day workweek and show annual salary consistently
+- [x] Keep frontline medical salaries within realistic U.S. ranges
