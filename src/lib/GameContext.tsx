@@ -816,7 +816,7 @@ function createInitialState(): GameState {
           ]),
         ),
         businessHours: parsed.businessHours && typeof parsed.businessHours === "object" ? parsed.businessHours : {},
-        cashFlowHistory: Array.isArray(parsed.cashFlowHistory) ? parsed.cashFlowHistory.slice(-7) : [],
+        cashFlowHistory: Array.isArray(parsed.cashFlowHistory) ? parsed.cashFlowHistory.slice(-8) : [],
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
         // Older saves never tracked momentum — assume they sustained their current budget.
         trainingMomentum: typeof parsed.trainingMomentum === "number" ? parsed.trainingMomentum : (parsed.trainingBudget || 0),
@@ -915,7 +915,8 @@ function appendCashFlow(history: DailyCashFlow[], entry: DailyCashFlow): DailyCa
   } else {
     next.push({ ...entry });
   }
-  return next.sort((a, b) => a.day - b.day).slice(-7);
+  // keep eight: seven finished days plus the day in progress
+  return next.sort((a, b) => a.day - b.day).slice(-8);
 }
 
 /** Advance in calendar-day pieces so offline progress produces a real seven-day history. */
@@ -1717,7 +1718,9 @@ function calculateDerived(state: GameState): DerivedState {
   const businessValue = getBusinessValue(state);
   const incomePerDay = salaryPerDay + businessPerDay + investmentPerDay;
   const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay - studentLoanPayment;
-  const recent = (state.cashFlowHistory || []).slice(-7);
+  // Only finished days count, so the figure does not dip every time a new day starts.
+  const today = Math.floor(state.day);
+  const recent = (state.cashFlowHistory || []).filter((item) => item.day < today).slice(-7);
   const recentSalary = recent.reduce((sum, item) => sum + item.salary, 0);
   const recentBusiness = recent.reduce((sum, item) => sum + item.business, 0);
   const recentInvestments = recent.reduce((sum, item) => sum + item.investments, 0);
