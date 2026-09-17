@@ -9,6 +9,7 @@ import {
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
+  WEEKDAY_RHYTHM, BUSINESS_SEASON_REVERSION, BUSINESS_SEASON_VOL, BUSINESS_SEASON_MIN, BUSINESS_SEASON_MAX, BUSINESS_WASHOUT_CHANCE, BUSINESS_BUMPER_CHANCE,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
   BASE_TIME_BUDGET, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS, studentLoanCap,
 } from "./gameData";
@@ -22,6 +23,7 @@ export interface BusinessState {
   level: number;
   condition: number;                   // the slow trading trend — this is what moves the value
   takings?: number;                    // how today's takings compared with a normal day
+  season?: number;                     // slow multi-week wave in trade (good and bad runs cluster)
   fortune?: number;                    // lasting quality of this particular venture
   choices?: Record<string, string>;    // location / market / product chosen when opening
 }
@@ -775,12 +777,25 @@ function advance(state: GameState, days: number, now: number): GameState {
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
     // The slow trend: months-long swings in how the venture is doing.
     const trendVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
-    // Day-to-day takings: weather, footfall, a quiet Tuesday. Big, but it averages out.
+    // Day-to-day takings: weekly rhythm x season x luck. Big, but it averages out.
     const noiseScale = def.dailyNoise * relief;
+    const rhythm = WEEKDAY_RHYTHM[def.track === "hospitality" || def.id === "themepark" ? "weekend" : "weekday"];
+    let season = Math.min(BUSINESS_SEASON_MAX, Math.max(BUSINESS_SEASON_MIN, biz.season ?? 1));
     for (let d = 0; d < days; d++) {
-      const dayNoise = 1 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * noiseScale;
-      lastTakings = Math.max(0, dayNoise);
+      const weekday = Math.floor(s.day + d) % 7;
+      const r = Math.random();
+      // standout days hit small ventures hard; a city district barely notices one
+      const standoutScale = Math.min(1, noiseScale / 0.3);
+      const luck = r < BUSINESS_WASHOUT_CHANCE
+        ? 1 - (0.65 + Math.random() * 0.2) * standoutScale
+        : r > 1 - BUSINESS_BUMPER_CHANCE
+          ? 1 + (1 + Math.random()) * standoutScale
+          : 1 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * noiseScale;
+      lastTakings = Math.max(0, rhythm[weekday] * season * luck);
       gain += steady * condition * lastTakings;
+      // the season drifts slowly and reverts toward normal over about a month
+      season = 1 + (season - 1) * (1 - BUSINESS_SEASON_REVERSION) + (Math.random() + Math.random() - 1) * BUSINESS_SEASON_VOL;
+      season = Math.min(BUSINESS_SEASON_MAX, Math.max(BUSINESS_SEASON_MIN, season));
       // mean-reverting drift around normal trading conditions
       const drift = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * trendVol;
       condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + drift;
@@ -801,7 +816,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     }
     bizGross += gain;
     stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
-    businesses[id] = { ...biz, condition, takings: lastTakings };
+    businesses[id] = { ...biz, condition, takings: lastTakings, season };
   }
   const bizTax = bizGross * taxRate;
   cash += bizGross - bizTax;
