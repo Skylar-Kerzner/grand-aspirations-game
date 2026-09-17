@@ -69,6 +69,12 @@ export default function CareerPanel() {
             <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-3">
               <motion.div className="h-full bg-primary" animate={{ width: `${xpPct}%` }} transition={{ duration: 0.3 }} />
             </div>
+            {degreeDrag && (
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Without a degree in this industry, each next step takes longer. Study {trackMajor?.name} below to
+                keep climbing at full pace.
+              </p>
+            )}
             {gatedTier && openTracks.length === 0 && (
               <p className="text-[11px] text-muted-foreground mb-2">
                 To climb further, either stay in {getCareerTrack(job.employer).name} until you have{" "}
