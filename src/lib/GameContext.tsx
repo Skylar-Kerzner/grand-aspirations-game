@@ -1075,6 +1075,11 @@ function appendCashFlow(history: DailyCashFlow[], entry: DailyCashFlow): DailyCa
     existing.business += entry.business;
     existing.investments += entry.investments;
     existing.costs += entry.costs;
+    existing.lifestyle = (existing.lifestyle ?? 0) + (entry.lifestyle ?? 0);
+    existing.debtInterest = (existing.debtInterest ?? 0) + (entry.debtInterest ?? 0);
+    existing.debtPrincipal = (existing.debtPrincipal ?? 0) + (entry.debtPrincipal ?? 0);
+    existing.debtAccrued = (existing.debtAccrued ?? 0) + (entry.debtAccrued ?? 0);
+
   } else {
     next.push({ ...entry });
   }
