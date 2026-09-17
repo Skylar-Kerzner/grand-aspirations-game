@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential } from "@/lib/GameContext";
+import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudentLoanHeadroom } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
 import { CAREER_SALARY_RANGE, CAREER_TRACKS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, getTrackPrograms, requiredCredentialLevel } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
+  const [showPaths, setShowPaths] = useState(false);
+  const loanHeadroom = getStudentLoanHeadroom(state);
   const job = derived.job;
   const next = derived.nextJob;
   const homeTrack = getCareerTrack(job.employer).id;
@@ -20,7 +23,7 @@ export default function CareerPanel() {
   const neededLevel = requiredCredentialLevel(state.jobIndex + 1);
   const qualifiedTracks = openTracks.filter((t) => getTrackCredential(state, t.id).effective >= neededLevel);
   const canSeekOffers = !!next && state.careerOffers.length === 0 && qualifiedTracks.length > 0;
-  const levelWord = ["", "short course", "diploma", "degree"][neededLevel] || "degree";
+  const levelWord = ["", "short course", "bachelor's degree", "graduate degree"][neededLevel] || "graduate degree";
 
   return (
     <div className="space-y-6">
@@ -169,14 +172,66 @@ export default function CareerPanel() {
         </motion.button>
       </div>
 
+      {/* Career paths — how each industry pays over a working life */}
+      <div className="surface-card rounded-xl p-4">
+        <div className="flex justify-between items-baseline mb-1">
+          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Career paths</h3>
+          <button
+            onClick={() => setShowPaths((v) => !v)}
+            className="text-[11px] text-primary hover:underline"
+          >
+            {showPaths ? "Hide" : "Compare all eight"}
+          </button>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Some fields pay well from the first day and level off. Others ask for years and a graduate degree,
+          then pay for the rest of your life. Each also changes your week, your costs and what you understand
+          as an owner and investor.
+        </p>
+        {showPaths && (
+          <div className="space-y-3 mt-3">
+            {openTracks.map((track) => {
+              const shape = track.curve <= -0.5
+                ? "Pays from day one, flattens early"
+                : track.curve < 0.2
+                  ? "Steady climb, moderate ceiling"
+                  : track.curve < 0.8
+                    ? "Slow start, strong later years"
+                    : "Modest for years, then a very high ceiling";
+              return (
+                <div key={track.id} className="rounded-lg p-3 surface-button">
+                  <div className="flex justify-between items-baseline gap-3">
+                    <h4 className="font-semibold text-sm">{track.name}</h4>
+                    <span className="text-[11px] text-primary shrink-0">{shape}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">{track.outlook}</p>
+                  <p className="text-[11px] text-muted-foreground">Mid-career: {track.middle}</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {track.perks.map((perk) => (
+                      <li key={perk} className="text-[11px] text-primary">{perk}</li>
+                    ))}
+                  </ul>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Study: {getTrackPrograms(track.id).map((p) => p.name).join(" · ")}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-      {/* Education — short courses, diplomas and degrees, one per industry */}
+      {/* Education — short courses, bachelor's and graduate degrees, one per industry */}
       <div>
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Education</h3>
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
-          Every industry has a short course, a diploma and a full degree. Junior roles ask for the course,
-          senior roles for the diploma, and the very top of an industry only opens with its degree. Years
-          worked in an industry can stand in for the first two, never for the degree.
+          Every industry has a short course, a bachelor's degree and a graduate degree. Junior roles ask for the
+          course, senior roles for the bachelor's, and the very top of an industry only opens with graduate study.
+          Years worked in an industry can stand in for the first two, never for the graduate degree.
+        </p>
+        <p className="text-[11px] text-muted-foreground mb-3 px-1">
+          You can pay for a program outright or take a student loan: 6% a year, nothing due while you study or
+          for six months after, then ten years of payments. You can still borrow {formatCompact(loanHeadroom)}.
         </p>
         <div className="space-y-4">
           {openTracks.map((track) => {
@@ -217,14 +272,24 @@ export default function CareerPanel() {
                             {Math.ceil(state.studying?.daysLeft || 0)}d of work left
                           </span>
                         ) : (
-                          <motion.button
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
-                            disabled={!!state.studying || state.cash < def.cost}
-                            className="h-9 px-4 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40 shrink-0"
-                          >
-                            Enroll
-                          </motion.button>
+                          <div className="flex gap-2 shrink-0">
+                            <motion.button
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
+                              disabled={!!state.studying || state.cash < def.cost}
+                              className="h-9 px-3 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
+                            >
+                              Pay now
+                            </motion.button>
+                            <motion.button
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => dispatch({ type: "STUDY", majorId: def.id, financed: true })}
+                              disabled={!!state.studying || loanHeadroom < def.cost}
+                              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium transition-game disabled:opacity-40"
+                            >
+                              Student loan
+                            </motion.button>
+                          </div>
                         )}
                       </div>
                     );

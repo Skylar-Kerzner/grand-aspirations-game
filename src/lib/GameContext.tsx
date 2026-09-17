@@ -9,21 +9,25 @@ import {
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
+  BASE_TIME_BUDGET, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS, studentLoanCap,
 } from "./gameData";
 import { formatMoney } from "./formatters";
 
-const SAVE_KEY = "empire-tycoon-save-v4";
-const LEGACY_SAVE_KEY = "empire-tycoon-save-v3";
+const SAVE_KEY = "empire-tycoon-save-v5";
+const LEGACY_SAVE_KEY = "empire-tycoon-save-v4";
 const MAX_OFFLINE_DAYS = 240;
 
 export interface BusinessState {
   level: number;
-  condition: number;
+  condition: number;                   // the slow trading trend — this is what moves the value
+  takings?: number;                    // how today's takings compared with a normal day
   fortune?: number;                    // lasting quality of this particular venture
   choices?: Record<string, string>;    // location / market / product chosen when opening
 }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number; lockedUntil?: number }
+/** Money borrowed to study. Nothing is due while enrolled or during the grace period. */
+export interface StudentLoanState { balance: number; borrowed: number; repaid: number; dueFrom: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number }
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
@@ -76,6 +80,7 @@ export interface GameState {
   assets: Record<string, number>;
   investments: Record<string, InvestmentState>;
   loans: Record<string, LoanState>;
+  studentLoan: StudentLoanState;
   loansRepaid: string[];
   consultants: string[];
   payMult: number; payUntil: number;
@@ -95,7 +100,8 @@ export type GameAction =
   | { type: "SET_LIFESTYLE"; id: string; tier: number }
   | { type: "GENERATE_JOB_OFFERS" }
   | { type: "ACCEPT_JOB_OFFER"; index: number }
-  | { type: "STUDY"; majorId: string }
+  | { type: "STUDY"; majorId: string; financed?: boolean }
+  | { type: "REPAY_STUDENT_LOAN"; amount?: number }
   | { type: "BUY_BUSINESS"; id: string; choices?: Record<string, string> }
   | { type: "SELL_BUSINESS"; id: string }
   | { type: "INVEST"; id: string; amount: number }
@@ -185,9 +191,16 @@ export function getBusinessAttentionOf(state: GameState, id: string): number {
   return getBusinessAttentionFor(state, id, state.businessHours[id] || 0);
 }
 
-/** Weekly hours available: 40, plus whatever your lifestyle buys back. */
+/** Weekly hours you can direct: a base week, what your lifestyle buys back, and what your field allows. */
 export function getTimeBudget(state: GameState): number {
-  return WEEK_HOURS + ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
+  const lifestyle = ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
+  const career = getCareerTrack(state.currentJob.employer).hoursBonus || 0;
+  return Math.max(10, BASE_TIME_BUDGET + lifestyle + career);
+}
+
+/** Hours a week your lifestyle choices currently buy back (negative when they cost you). */
+export function getLifestyleHours(state: GameState): number {
+  return ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
 }
 
 export function getLifestyleTier(state: GameState, id: string) {
@@ -205,6 +218,8 @@ function investMultiplier(state: GameState): number {
   let m = 1;
   if (state.consultants.includes("finance")) m *= 1.1;
   if (state.consultants.includes("quant")) m *= 1.2;
+  // Working in a field that lives off markets helps your own money too.
+  m *= 1 + (getCareerTrack(state.currentJob.employer).investBonus || 0);
   return m;
 }
 
@@ -281,9 +296,13 @@ export function getIndustryKnowledge(state: GameState, id: string) {
   const def = BUSINESSES.find((business) => business.id === id);
   if (!def) return { returnBonus: 0, riskRelief: 0, hasMajor: false, years: 0, track: undefined };
   const track = CAREER_TRACKS[def.track];
-  const studied = credentialLevelFrom(state.majors, def.track);
+  // Some working lives give you a feel for more than their own industry.
+  const helpingTracks = Object.values(CAREER_TRACKS)
+    .filter((t) => t.id === def.track || (t.ventureTracks || []).includes(def.track))
+    .map((t) => t.id);
+  const studied = Math.max(...helpingTracks.map((t) => credentialLevelFrom(state.majors, t)), 0);
   const hasMajor = studied >= 2;
-  const years = getTrackYears(state, def.track);
+  const years = helpingTracks.reduce((sum, t) => sum + getTrackYears(state, t), 0);
   const yearBonus = Math.min(INDUSTRY_YEAR_CAP, years * INDUSTRY_YEAR_STEP);
   const returnBonus = INDUSTRY_MAJOR_BONUS * (studied / 3) + yearBonus;
   const maxBonus = INDUSTRY_MAJOR_BONUS + INDUSTRY_YEAR_CAP;
@@ -394,6 +413,8 @@ export function getBusinessGross(state: GameState): number {
 export function getLivingCosts(state: GameState): number {
   let total = 0;
   for (const def of ASSETS) total += getLifestyleTier(state, def.id)?.dailyCost || 0;
+  // Some lives come partly comped: meals, rooms, clothes, invitations.
+  total *= 1 - (getCareerTrack(state.currentJob.employer).livingDiscount || 0);
   if (state.day < state.livingUntil) total *= state.livingMult;
   return total;
 }
@@ -419,6 +440,27 @@ export function getLoanPayments(state: GameState): number {
     if (loan.remaining > 0) total += Math.min(loan.dailyPayment, loan.remaining * 1.5);
   }
   return total;
+}
+
+/** What your student debt costs you a day. Nothing while enrolled or in the grace period. */
+export function getStudentLoanPayment(state: GameState): number {
+  const loan = state.studentLoan;
+  if (!loan || loan.balance <= 0) return 0;
+  if (state.studying || state.day < loan.dueFrom) return 0;
+  return Math.min(loan.balance, amortizedPayment(loan.balance, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS));
+}
+
+/** How much more you could borrow to study, given how far you have got. */
+export function getStudentLoanHeadroom(state: GameState): number {
+  const highest = Math.max(
+    1,
+    ...state.majors.map((id) => MAJORS.find((m) => m.id === id)?.level || 1),
+  );
+  // Enrolling in a higher program raises what lenders will put up.
+  const studyingLevel = state.studying
+    ? MAJORS.find((m) => m.id === state.studying?.majorId)?.level || 1
+    : 1;
+  return Math.max(0, studentLoanCap(Math.max(highest, studyingLevel)) - (state.studentLoan?.balance || 0));
 }
 
 export function getCreditCardPayment(state: GameState): number {
@@ -502,7 +544,8 @@ function createFresh(): GameState {
     majors: [], studying: null,
     studyHours: 0, businessHours: {}, trainingBudget: 0, trainingMomentum: 0,
     lastShiftDay: -1,
-    businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
+    businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, health: 1, watch: 1 }, investments: {}, loans: {},
+    studentLoan: { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
     loansRepaid: [], consultants: [],
     payMult: 1, payUntil: 0, livingMult: 1, livingUntil: 0, boostUntil: 0,
     events: [], stats: emptyStats(), lastTick: Date.now(),
@@ -544,8 +587,12 @@ function createInitialState(): GameState {
           food: legacyAssets.food || (parsed.food === "chef" ? 4 : parsed.food === "eatout" ? 3 : parsed.food === "groceries" ? 2 : 1),
           wardrobe: legacyAssets.wardrobe || (parsed.clothing === "tailored" ? 3 : parsed.clothing === "highstreet" ? 2 : 1),
           car: legacyAssets.car || 1,
+          health: legacyAssets.health || 1,
           watch: legacyAssets.watch || 1,
         },
+        studentLoan: parsed.studentLoan && typeof parsed.studentLoan === "object"
+          ? parsed.studentLoan
+          : { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
         businesses: Object.fromEntries(
           Object.entries(parsed.businesses || {}).map(([id, biz]) => [
             id,
@@ -647,7 +694,8 @@ function advance(state: GameState, days: number, now: number): GameState {
   let studying = s.studying;
   let majors = s.majors;
   if (studying) {
-    const rate = s.studyHours / 40;
+    // Teaching lives run alongside study: the same hours go further.
+    const rate = (s.studyHours / 40) * (1 + (getCareerTrack(s.currentJob.employer).studyBonus || 0));
     const left = studying.daysLeft - days * rate;
     if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
@@ -677,7 +725,7 @@ function advance(state: GameState, days: number, now: number): GameState {
   stats.livingSpent += living;
   stats.trainingSpent += training;
 
-  // Businesses — profit swings with trading conditions and the odd setback
+  // Businesses — a day's takings swing a lot; the slow trading trend moves the value
   const businesses: Record<string, BusinessState> = {};
   const shockEvents: GameEvent[] = [];
   let bizGross = 0;
@@ -687,13 +735,19 @@ function advance(state: GameState, days: number, now: number): GameState {
     const steady = getBusinessSteadyIncomeOf(s, id);
     let condition = biz.condition ?? 1;
     let gain = 0;
+    let lastTakings = biz.takings ?? 1;
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
-    const dailyVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
+    // The slow trend: months-long swings in how the venture is doing.
+    const trendVol = ((def.risk * relief) / Math.sqrt(DAYS_PER_YEAR)) * getBusinessAttentionOf(s, id);
+    // Day-to-day takings: weather, footfall, a quiet Tuesday. Big, but it averages out.
+    const noiseScale = def.dailyNoise * relief;
     for (let d = 0; d < days; d++) {
-      gain += steady * condition;
-      // mean-reverting drift around normal conditions
-      const noise = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * dailyVol;
-      condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + noise;
+      const dayNoise = 1 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * noiseScale;
+      lastTakings = Math.max(0, dayNoise);
+      gain += steady * condition * lastTakings;
+      // mean-reverting drift around normal trading conditions
+      const drift = (Math.random() + Math.random() + Math.random() - 1.5) * 2 * trendVol;
+      condition = 1 + (condition - 1) * (1 - BUSINESS_CONDITION_REVERSION) + drift;
       if (condition > 0.9 && Math.random() < BUSINESS_SHOCK_CHANCE * def.risk * relief) {
         const shock = 0.35 + Math.random() * 0.25;
         condition *= shock;
@@ -711,7 +765,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     }
     bizGross += gain;
     stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
-    businesses[id] = { ...biz, condition };
+    businesses[id] = { ...biz, condition, takings: lastTakings };
   }
   const bizTax = bizGross * taxRate;
   cash += bizGross - bizTax;
@@ -766,6 +820,22 @@ function advance(state: GameState, days: number, now: number): GameState {
     }
   }
 
+  // Student debt — interest always accrues, payments only start after the grace period
+  let studentLoan = s.studentLoan || { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 };
+  if (studentLoan.balance > 0) {
+    const grown = studentLoan.balance * Math.pow(1 + STUDENT_LOAN_RATE / DAYS_PER_YEAR, days);
+    stats.loanInterestPaid += grown - studentLoan.balance;
+    let balance = grown;
+    if (!s.studying && s.day >= studentLoan.dueFrom) {
+      const due = Math.min(getStudentLoanPayment({ ...s, studentLoan: { ...studentLoan, balance } }) * days, balance);
+      cash -= due;
+      balance -= due;
+      studentLoan = { ...studentLoan, balance: Math.max(0, balance), repaid: studentLoan.repaid + due };
+    } else {
+      studentLoan = { ...studentLoan, balance };
+    }
+  }
+
   // Credit card: anything you cannot cover becomes revolving debt
   let ccDebt = s.ccDebt;
   if (ccDebt > 0) {
@@ -794,7 +864,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     cash: Math.max(0, cash), ccDebt,
     assets, events,
     day: s.day + days,
-    businesses, investments, loans, loansRepaid,
+    businesses, investments, loans, loansRepaid, studentLoan,
     trainingMomentum,
     trainingBudget: prepRate,
     stats, lastTick: now,
@@ -963,12 +1033,43 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = MAJORS.find((m) => m.id === action.majorId);
       if (!def || state.studying) return state;
       if (state.majors.includes(def.id)) return state;
-      if (state.cash < def.cost) return state;
+      // Teaching lives get their fees subsidised.
+      const discount = getCareerTrack(state.currentJob.employer).studyBonus ? 0.25 : 0;
+      const cost = Math.round(def.cost * (1 - discount));
+      const loan = state.studentLoan || { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 };
+      if (action.financed) {
+        const headroom = getStudentLoanHeadroom({ ...state, studying: { majorId: def.id, daysLeft: def.days } });
+        if (cost > headroom) return state;
+        return {
+          ...state,
+          studyHours: 20,
+          studying: { majorId: def.id, daysLeft: def.days },
+          studentLoan: {
+            ...loan,
+            balance: loan.balance + cost,
+            borrowed: loan.borrowed + cost,
+            dueFrom: state.day + def.days + STUDENT_LOAN_GRACE_DAYS,
+          },
+          stats: { ...state.stats, educationSpent: state.stats.educationSpent + cost },
+        };
+      }
+      if (state.cash < cost) return state;
       return {
-        ...state, cash: state.cash - def.cost,
+        ...state, cash: state.cash - cost,
         studyHours: 20,
         studying: { majorId: def.id, daysLeft: def.days },
-        stats: { ...state.stats, educationSpent: state.stats.educationSpent + def.cost },
+        stats: { ...state.stats, educationSpent: state.stats.educationSpent + cost },
+      };
+    }
+
+    case "REPAY_STUDENT_LOAN": {
+      const loan = state.studentLoan;
+      if (!loan || loan.balance <= 0) return state;
+      const pay = Math.min(state.cash, action.amount ?? loan.balance, loan.balance);
+      if (pay <= 0) return state;
+      return {
+        ...state, cash: state.cash - pay,
+        studentLoan: { ...loan, balance: loan.balance - pay, repaid: loan.repaid + pay },
       };
     }
 
@@ -1159,6 +1260,8 @@ export interface DerivedState {
   netPerDay: number;
   investmentTotal: number;
   loanTotal: number;
+  studentDebt: number;
+  studentLoanPayment: number;
   assetValue: number;
   businessValue: number;
   businessCapital: number;
@@ -1191,6 +1294,8 @@ function calculateDerived(state: GameState): DerivedState {
 
   let loanTotal = 0;
   for (const l of Object.values(state.loans)) loanTotal += l.remaining;
+  const studentDebt = state.studentLoan?.balance || 0;
+  const studentLoanPayment = getStudentLoanPayment(state);
 
   const assetValue = 0; // lifestyle choices are recurring services, not owned assets
 
@@ -1202,15 +1307,15 @@ function calculateDerived(state: GameState): DerivedState {
 
   const businessValue = getBusinessValue(state);
   const incomePerDay = salaryPerDay + businessPerDay + investmentPerDay;
-  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay;
+  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay - studentLoanPayment;
 
   const job = getJob(state);
   return {
     // you owe the principal, not the future interest
-    netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt,
+    netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt - studentDebt,
     salaryPerDay, businessPerDay, investmentPerDay, incomePerDay,
     livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
-    investmentTotal, loanTotal, assetValue, businessValue, businessCapital,
+    investmentTotal, loanTotal, studentDebt, studentLoanPayment, assetValue, businessValue, businessCapital,
     shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,

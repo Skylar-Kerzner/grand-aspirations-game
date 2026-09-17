@@ -32,24 +32,36 @@ export const MAJOR_GATE_TIER = 4;
 export const MAJORS: MajorDef[] = [
   // Operations & Industry
   { id: "ops-1", name: "Trade Short Course", track: "operations", level: 1, cost: 1200, days: 20, description: "A few weeks of practical training. Opens junior roles in Operations & Industry." },
-  { id: "trade", name: "Trade Certificate", track: "operations", level: 2, cost: 6000, days: 75, description: "A licensed skill. Opens senior roles in Operations & Industry." },
-  { id: "ops-3", name: "Industrial Engineering Degree", track: "operations", level: 3, cost: 42000, days: 220, description: "Opens the top of Operations & Industry." },
+  { id: "trade", name: "Bachelor of Industrial Technology", track: "operations", level: 2, cost: 26000, days: 150, description: "A four-year degree. Opens senior roles in Operations & Industry." },
+  { id: "ops-3", name: "Master of Industrial Engineering", track: "operations", level: 3, cost: 62000, days: 220, description: "Graduate study. Opens the top of Operations & Industry." },
   // Hospitality & Retail
   { id: "hosp-1", name: "Service & Barista Course", track: "hospitality", level: 1, cost: 900, days: 18, description: "The basics of the floor. Opens junior roles in Hospitality & Retail." },
-  { id: "hospitality", name: "Hospitality Diploma", track: "hospitality", level: 2, cost: 9000, days: 90, description: "Opens senior roles in Hospitality & Retail." },
-  { id: "hosp-3", name: "Hotel Management Degree", track: "hospitality", level: 3, cost: 48000, days: 240, description: "Opens the top of Hospitality & Retail." },
+  { id: "hospitality", name: "Bachelor of Hospitality Management", track: "hospitality", level: 2, cost: 24000, days: 150, description: "A four-year degree. Opens senior roles in Hospitality & Retail." },
+  { id: "hosp-3", name: "Master of Hotel Management", track: "hospitality", level: 3, cost: 68000, days: 220, description: "Graduate study. Opens the top of Hospitality & Retail." },
   // Corporate Leadership
   { id: "corp-1", name: "Business Fundamentals Course", track: "corporate", level: 1, cost: 2500, days: 30, description: "Accounts, contracts, people. Opens junior corporate roles." },
-  { id: "business", name: "Business Administration Diploma", track: "corporate", level: 2, cost: 22000, days: 140, description: "Opens senior corporate roles." },
-  { id: "corp-3", name: "MBA", track: "corporate", level: 3, cost: 120000, days: 280, description: "Opens the executive table in Corporate Leadership." },
+  { id: "business", name: "Bachelor of Business Administration", track: "corporate", level: 2, cost: 46000, days: 170, description: "A four-year degree. Opens senior corporate roles." },
+  { id: "corp-3", name: "MBA", track: "corporate", level: 3, cost: 150000, days: 260, description: "Graduate study. Opens the executive table in Corporate Leadership." },
   // Technology
   { id: "tech-1", name: "Coding Bootcamp", track: "tech", level: 1, cost: 4000, days: 35, description: "Enough to ship real work. Opens junior technology roles." },
-  { id: "cs", name: "Software Engineering Diploma", track: "tech", level: 2, cost: 26000, days: 150, description: "Opens senior technology roles." },
-  { id: "tech-3", name: "Computer Science Degree", track: "tech", level: 3, cost: 110000, days: 290, description: "Opens the top of Technology, research and architecture." },
+  { id: "cs", name: "BSc Computer Science", track: "tech", level: 2, cost: 52000, days: 175, description: "A four-year degree. Opens senior technology roles." },
+  { id: "tech-3", name: "MSc Computer Science", track: "tech", level: 3, cost: 140000, days: 250, description: "Graduate study. Opens the top of Technology, research and architecture." },
   // Finance & Investing
   { id: "fin-1", name: "Financial Markets Course", track: "finance", level: 1, cost: 5000, days: 40, description: "Markets, instruments, risk. Opens junior finance roles." },
-  { id: "finance", name: "Finance Diploma", track: "finance", level: 2, cost: 45000, days: 180, description: "Opens senior finance roles — analysts and traders." },
-  { id: "fin-3", name: "Quantitative Finance Degree", track: "finance", level: 3, cost: 220000, days: 320, description: "Opens the top of Finance & Investing — quant, portfolio and fund roles." },
+  { id: "finance", name: "BSc Finance", track: "finance", level: 2, cost: 60000, days: 180, description: "A four-year degree. Opens senior finance roles — analysts and traders." },
+  { id: "fin-3", name: "Master of Quantitative Finance", track: "finance", level: 3, cost: 260000, days: 300, description: "Graduate study. Opens the top of Finance & Investing — quant, portfolio and fund roles." },
+  // Arts & Entertainment
+  { id: "arts-1", name: "Acting & Performance Workshop", track: "arts", level: 1, cost: 1500, days: 25, description: "Scene work, auditions, an agent's phone number. Opens junior roles in Arts & Entertainment." },
+  { id: "arts-2", name: "Bachelor of Fine Arts", track: "arts", level: 2, cost: 38000, days: 170, description: "A four-year conservatory degree. Opens senior roles in Arts & Entertainment." },
+  { id: "arts-3", name: "Master of Fine Arts", track: "arts", level: 3, cost: 95000, days: 230, description: "Graduate study. Opens leading roles and the top of Arts & Entertainment." },
+  // Education & Public Service
+  { id: "edu-1", name: "Teaching Assistant Certificate", track: "education", level: 1, cost: 800, days: 20, description: "Classroom basics. Opens junior roles in Education & Public Service." },
+  { id: "edu-2", name: "Bachelor of Education", track: "education", level: 2, cost: 19000, days: 160, description: "A four-year degree and a teaching licence. Opens senior roles in Education & Public Service." },
+  { id: "edu-3", name: "Master of Education", track: "education", level: 3, cost: 44000, days: 200, description: "Graduate study. Opens principals' offices and district leadership." },
+  // Health & Medicine
+  { id: "med-1", name: "Paramedic Certificate", track: "medicine", level: 1, cost: 3200, days: 45, description: "Emergency care in the field. Opens junior roles in Health & Medicine." },
+  { id: "med-2", name: "Bachelor of Nursing", track: "medicine", level: 2, cost: 58000, days: 200, description: "A four-year clinical degree. Opens senior roles in Health & Medicine." },
+  { id: "med-3", name: "Doctor of Medicine (MD)", track: "medicine", level: 3, cost: 320000, days: 400, description: "Medical school and residency. Opens consultants', surgeons' and chief medical roles." },
 ];
 
 /** The highest-level qualification for a track (its full degree). */
@@ -98,13 +110,84 @@ export interface CareerVariant { title: string; employer: string }
  * over a lifetime: hospitality and trades pay well early and flatten, finance
  * and tech start modest and climb far higher.
  */
-export interface CareerTrack { id: string; name: string; curve: number; outlook: string }
+export interface CareerTrack {
+  id: string;
+  name: string;
+  curve: number;
+  outlook: string;
+  /** How the middle of the ladder feels: a short phrase for the comparison screen. */
+  middle: string;
+  /** Plain-language advantages beyond pay. */
+  perks: string[];
+  /** Venture industries this working life also gives you a feel for. */
+  ventureTracks?: string[];
+  /** Extra return on everything you have invested while you work in this field. */
+  investBonus?: number;
+  /** Study runs this much faster, and programs cost this much less. */
+  studyBonus?: number;
+  /** Share off your daily lifestyle costs — comped, sponsored or subsidised. */
+  livingDiscount?: number;
+  /** Extra hours in your week from the way this life is organised. */
+  hoursBonus?: number;
+}
+
 export const CAREER_TRACKS: Record<string, CareerTrack> = {
-  hospitality: { id: "hospitality", name: "Hospitality & Retail", curve: -0.6, outlook: "Pays well right away, but the ceiling is low." },
-  operations: { id: "operations", name: "Operations & Industry", curve: -0.25, outlook: "Steady pay that rises slowly and reliably." },
-  corporate: { id: "corporate", name: "Corporate Leadership", curve: 0.2, outlook: "Modest early, strong once you reach the top table." },
-  tech: { id: "tech", name: "Technology", curve: 0.5, outlook: "A slow start that compounds into very high pay." },
-  finance: { id: "finance", name: "Finance & Investing", curve: 0.85, outlook: "Lowest pay early, by far the highest ceiling." },
+  hospitality: {
+    id: "hospitality", name: "Hospitality & Retail", curve: -0.6,
+    outlook: "Pays well right away, but the ceiling is low.",
+    middle: "Rises quickly at first, then flattens out by the middle.",
+    perks: ["Runs coffee shops, restaurants, hotels and fashion labels better", "Meals and rooms comped: 10% off your lifestyle"],
+    ventureTracks: ["hospitality"], livingDiscount: 0.1,
+  },
+  operations: {
+    id: "operations", name: "Operations & Industry", curve: -0.25,
+    outlook: "Steady pay that rises slowly and reliably.",
+    middle: "Even, predictable steps the whole way up.",
+    perks: ["Runs theme parks and large sites better", "Cheapest schooling of the hands-on paths"],
+    ventureTracks: ["operations"],
+  },
+  corporate: {
+    id: "corporate", name: "Corporate Leadership", curve: 0.2,
+    outlook: "Modest early, strong once you reach the top table.",
+    middle: "Slow through the middle, then jumps at director level.",
+    perks: ["Runs city developments better", "Boardroom contacts: +4% on everything invested"],
+    ventureTracks: ["corporate"], investBonus: 0.04,
+  },
+  tech: {
+    id: "tech", name: "Technology", curve: 0.5,
+    outlook: "A slow start that compounds into very high pay.",
+    middle: "Climbs fast through the middle once you can build.",
+    perks: ["Runs tech ventures and media networks better", "Remote and flexible: +3h of your week"],
+    ventureTracks: ["tech"], hoursBonus: 3,
+  },
+  finance: {
+    id: "finance", name: "Finance & Investing", curve: 0.85,
+    outlook: "Lowest pay early, by far the highest ceiling.",
+    middle: "Grinding middle years, then compensation runs away.",
+    perks: ["+10% on everything you have invested", "The only path to running your own fund"],
+    ventureTracks: ["corporate"], investBonus: 0.1,
+  },
+  arts: {
+    id: "arts", name: "Arts & Entertainment", curve: 1.1,
+    outlook: "Almost nothing for years, then fame pays enormously.",
+    middle: "A brutal middle — many years at little pay.",
+    perks: ["Runs fashion labels, theme parks and media better", "Sponsorships and invitations: 20% off your lifestyle"],
+    ventureTracks: ["hospitality", "tech", "operations"], livingDiscount: 0.2,
+  },
+  education: {
+    id: "education", name: "Education & Public Service", curve: -0.7,
+    outlook: "Low pay throughout, but nothing ever goes backwards.",
+    middle: "Gentle, certain steps and long holidays.",
+    perks: ["Study runs 30% faster and costs 25% less", "Term breaks: +5h of your week"],
+    studyBonus: 0.3, hoursBonus: 5,
+  },
+  medicine: {
+    id: "medicine", name: "Health & Medicine", curve: 0.6,
+    outlook: "The longest, costliest schooling, then very high steady pay.",
+    middle: "Nothing much until you qualify, then a steep, safe climb.",
+    perks: ["Your own health is handled: +2h of your week", "Pay barely moves with the economy"],
+    hoursBonus: 2,
+  },
 };
 
 const EMPLOYER_TRACKS: Record<string, string> = {
@@ -123,6 +206,15 @@ const EMPLOYER_TRACKS: Record<string, string> = {
   "Ironvale Industrial": "operations",
   "Helix Systems": "tech", "Orbit Cloud": "tech",
   "Hartwell Group": "corporate", "Devon & Rowe": "corporate",
+  // Arts & Entertainment
+  "Lyric Playhouse": "arts", "Silver Reel Studios": "arts", "Marquee Talent": "arts",
+  "Vantage Pictures": "arts", "Nightfall Records": "arts",
+  // Education & Public Service
+  "Hillcrest Public School": "education", "Wren Academy": "education", "City Education Board": "education",
+  "Alderman College": "education", "State Department of Learning": "education",
+  // Health & Medicine
+  "Riverside Clinic": "medicine", "St. Alder Hospital": "medicine", "Meadowbrook Health": "medicine",
+  "Kingsley Medical Group": "medicine", "National Health Institute": "medicine",
 };
 
 export function getCareerTrack(employer: string): CareerTrack {
@@ -178,11 +270,14 @@ export function jobHopMultiplier(daysInCurrentJob: number): number {
  * only reachable by studying that path's major.
  */
 export const TRACK_ADJACENCY: Record<string, string[]> = {
-  hospitality: ["operations", "corporate"],
-  operations: ["hospitality", "corporate"],
-  corporate: ["operations", "hospitality", "finance"],
-  tech: ["corporate"],
+  hospitality: ["operations", "corporate", "arts"],
+  operations: ["hospitality", "corporate", "medicine"],
+  corporate: ["operations", "hospitality", "finance", "education"],
+  tech: ["corporate", "education"],
   finance: ["corporate"],
+  arts: ["hospitality", "education"],
+  education: ["arts", "corporate", "medicine"],
+  medicine: ["education", "operations"],
 };
 
 export function isAdjacentTrack(from: string, to: string): boolean {
@@ -202,6 +297,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Office Runner", employer: "Hartwell Group" },
     { title: "IT Support Trainee", employer: "Helix Systems" },
     { title: "Filing Clerk", employer: "Ashford Mutual" },
+    { title: "Background Extra", employer: "Silver Reel Studios" },
+    { title: "Playground Monitor", employer: "Hillcrest Public School" },
+    { title: "Hospital Porter", employer: "Riverside Clinic" },
   ],
   [
     { title: "Barista", employer: "Roast House" },
@@ -209,6 +307,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Receptionist", employer: "Arclight Group" },
     { title: "Helpdesk Technician", employer: "Orbit Cloud" },
     { title: "Mail Room Clerk", employer: "Halstead Capital" },
+    { title: "Stagehand", employer: "Lyric Playhouse" },
+    { title: "Teaching Assistant", employer: "Hillcrest Public School" },
+    { title: "Care Assistant", employer: "Meadowbrook Health" },
   ],
   [
     { title: "Shift Supervisor", employer: "Juniper Coffee" },
@@ -216,6 +317,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Office Administrator", employer: "Hartwell Group" },
     { title: "Desktop Support Analyst", employer: "Helix Systems" },
     { title: "Bank Teller", employer: "Ashford Mutual" },
+    { title: "Commercial Voice Actor", employer: "Marquee Talent" },
+    { title: "Substitute Teacher", employer: "Wren Academy" },
+    { title: "Phlebotomist", employer: "Riverside Clinic" },
   ],
   [
     { title: "Assistant Manager", employer: "Daily Ritual" },
@@ -223,6 +327,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Executive Assistant", employer: "Sterling Partners" },
     { title: "Junior Developer", employer: "Fieldstone Tech" },
     { title: "Claims Assistant", employer: "Ashford Mutual" },
+    { title: "Repertory Actor", employer: "Lyric Playhouse" },
+    { title: "Classroom Teacher", employer: "Hillcrest Public School" },
+    { title: "Paramedic", employer: "Meadowbrook Health" },
   ],
   [
     { title: "Store Manager", employer: "Alder Grocers" },
@@ -230,6 +337,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Business Analyst", employer: "Hartwell Group" },
     { title: "Software Developer", employer: "Northbeam Labs" },
     { title: "Underwriting Associate", employer: "Ashford Mutual" },
+    { title: "Supporting Screen Actor", employer: "Vantage Pictures" },
+    { title: "Senior Teacher", employer: "Wren Academy" },
+    { title: "Registered Nurse", employer: "St. Alder Hospital" },
   ],
   [
     { title: "General Manager", employer: "Pennington Hall" },
@@ -237,6 +347,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Commercial Analyst", employer: "Summit Advisory" },
     { title: "Software Engineer", employer: "Vanta Works" },
     { title: "Junior Analyst", employer: "Halstead Capital" },
+    { title: "Series Regular", employer: "Silver Reel Studios" },
+    { title: "Head of Department", employer: "Wren Academy" },
+    { title: "Nurse Practitioner", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Area Manager", employer: "Beacon Retail Group" },
@@ -244,6 +357,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Category Manager", employer: "Devon & Rowe" },
     { title: "Product Engineer", employer: "Fieldstone Tech" },
     { title: "Research Analyst", employer: "North & Finch" },
+    { title: "Recording Artist", employer: "Nightfall Records" },
+    { title: "Deputy Principal", employer: "Hillcrest Public School" },
+    { title: "Resident Physician", employer: "Kingsley Medical Group" },
   ],
   [
     { title: "Regional Manager", employer: "Beacon Retail Group" },
@@ -251,6 +367,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Commercial Manager", employer: "Summit Advisory" },
     { title: "Senior Software Engineer", employer: "Northbeam Labs" },
     { title: "Portfolio Associate", employer: "Crown & Vale" },
+    { title: "Lead Actor", employer: "Vantage Pictures" },
+    { title: "Principal", employer: "Wren Academy" },
+    { title: "Attending Physician", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Group Operations Manager", employer: "Larkspur Hotels" },
@@ -258,6 +377,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Strategy Manager", employer: "Arclight Group" },
     { title: "Engineering Lead", employer: "Vanta Works" },
     { title: "Risk Manager", employer: "Ashford Mutual" },
+    { title: "Headline Performer", employer: "Nightfall Records" },
+    { title: "District Superintendent", employer: "City Education Board" },
+    { title: "Specialist Surgeon", employer: "Kingsley Medical Group" },
   ],
   [
     { title: "Head of Retail Operations", employer: "Maison Grove" },
@@ -265,6 +387,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Head of Corporate Development", employer: "Summit Advisory" },
     { title: "Director of Engineering", employer: "Fieldstone Tech" },
     { title: "Senior Quant", employer: "Crown & Vale" },
+    { title: "Leading Film Actor", employer: "Silver Reel Studios" },
+    { title: "College Dean", employer: "Alderman College" },
+    { title: "Head of Surgery", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Retail Director", employer: "Beacon Retail Group" },
@@ -272,6 +397,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Vice President", employer: "Arclight Group" },
     { title: "Vice President of Product", employer: "Aster Group" },
     { title: "Director of Investments", employer: "North & Finch" },
+    { title: "Box-Office Star", employer: "Vantage Pictures" },
+    { title: "University Provost", employer: "Alderman College" },
+    { title: "Chief of Medicine", employer: "Kingsley Medical Group" },
   ],
   [
     { title: "Managing Director of Hotels", employer: "Larkspur Hotels" },
@@ -279,6 +407,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Senior Vice President", employer: "Sterling Partners" },
     { title: "Chief Technology Officer", employer: "Fieldstone Tech" },
     { title: "Head of Capital Markets", employer: "North & Finch" },
+    { title: "Actor-Producer", employer: "Marquee Talent" },
+    { title: "University President", employer: "Alderman College" },
+    { title: "Hospital Chief Executive", employer: "St. Alder Hospital" },
   ],
   [
     { title: "Chief Merchant", employer: "Maison Grove" },
@@ -286,6 +417,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Managing Partner", employer: "Arclight Group" },
     { title: "Chief Executive", employer: "Aster Group" },
     { title: "Head of Private Equity", employer: "Halstead Capital" },
+    { title: "Studio Headliner", employer: "Silver Reel Studios" },
+    { title: "State Education Commissioner", employer: "State Department of Learning" },
+    { title: "Director of Medical Research", employer: "National Health Institute" },
   ],
   [
     { title: "Hospitality Group Owner", employer: "Larkspur Hotels" },
@@ -293,6 +427,9 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Chairman", employer: "Sterling Partners" },
     { title: "Founding Chief Executive", employer: "Orbit Cloud" },
     { title: "Hedge Fund Manager", employer: "Kestrel Capital" },
+    { title: "Studio Owner", employer: "Vantage Pictures" },
+    { title: "National Education Secretary", employer: "State Department of Learning" },
+    { title: "Surgeon General", employer: "National Health Institute" },
     { title: "Founder", employer: "Your own fund" },
   ],
 ];
@@ -332,7 +469,8 @@ export interface BusinessDef {
   baseCost: number;
   annualROI: number; // baseline profit per year as a share of capital invested
   costMultiplier: number;
-  risk: number; // annual volatility of profit; higher means bigger swings and more shocks
+  risk: number; // annual volatility of the slow trading trend — this is what moves the venture's value
+  dailyNoise: number; // how much a single day's takings swing around normal (does not move the value)
   track: string; // career industry whose experience helps you run it
   description: string;
   tierNames: string[];
@@ -354,49 +492,49 @@ export const BUSINESS_NETWORK_MILESTONES = [
 export const BUSINESSES: BusinessDef[] = [
   {
     id: "coffee", name: "Coffee Shop", sector: "Food & Beverage",
-    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.55, track: "hospitality",
+    baseCost: 6000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.3, dailyNoise: 0.38, track: "hospitality",
     description: "From humble cart to global empire.",
     tierNames: ["Coffee Cart", "Corner Café", "Coffee Chain", "Global Coffee Empire"],
   },
   {
     id: "restaurant", name: "Restaurant", sector: "Food & Beverage",
-    baseCost: 25000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.5, track: "hospitality",
+    baseCost: 25000, annualROI: 0.3, costMultiplier: 1.16, risk: 0.28, dailyNoise: 0.34, track: "hospitality",
     description: "Culinary excellence, served daily.",
     tierNames: ["Food Truck", "Neighbourhood Bistro", "Fine Dining Room", "Culinary Empire"],
   },
   {
     id: "tech", name: "Tech Startup", sector: "Technology",
-    baseCost: 100000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.6, track: "tech",
+    baseCost: 100000, annualROI: 0.3, costMultiplier: 1.15, risk: 0.45, dailyNoise: 0.3, track: "tech",
     description: "Disrupt. Scale. Dominate.",
     tierNames: ["Garage Startup", "Series A Office", "Tech Campus", "Tech Giant HQ"],
   },
   {
     id: "hotel", name: "Hotel", sector: "Hospitality",
-    baseCost: 400000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.4, track: "hospitality",
+    baseCost: 400000, annualROI: 0.3, costMultiplier: 1.14, risk: 0.24, dailyNoise: 0.24, track: "hospitality",
     description: "Luxury accommodations worldwide.",
     tierNames: ["Roadside Motel", "Boutique Hotel", "Luxury Resort", "Grand Hotel Empire"],
   },
   {
     id: "fashion", name: "Fashion Brand", sector: "Retail",
-    baseCost: 1500000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.38, track: "hospitality",
+    baseCost: 1500000, annualROI: 0.3, costMultiplier: 1.13, risk: 0.26, dailyNoise: 0.28, track: "hospitality",
     description: "Define style itself.",
     tierNames: ["Market Stall", "Flagship Boutique", "Department Store", "Fashion House"],
   },
   {
     id: "themepark", name: "Theme Park", sector: "Entertainment",
-    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.32, track: "operations",
+    baseCost: 6000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.22, dailyNoise: 0.32, track: "operations",
     description: "Create worlds of wonder.",
     tierNames: ["Travelling Carnival", "Family Fun Park", "Destination Theme Park", "Entertainment Empire"],
   },
   {
     id: "media", name: "Media Network", sector: "Media",
-    baseCost: 25000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.3, track: "tech",
+    baseCost: 25000000, annualROI: 0.3, costMultiplier: 1.12, risk: 0.2, dailyNoise: 0.16, track: "tech",
     description: "Own the attention itself.",
     tierNames: ["Podcast Studio", "Streaming Channel", "Broadcast Network", "Global Media Conglomerate"],
   },
   {
     id: "city", name: "City Development", sector: "Infrastructure",
-    baseCost: 100000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.24, track: "corporate",
+    baseCost: 100000000, annualROI: 0.3, costMultiplier: 1.11, risk: 0.16, dailyNoise: 0.1, track: "corporate",
     description: "Build the skyline everyone else lives in.",
     tierNames: ["City Block", "Mixed-Use District", "Waterfront Downtown", "Sovereign Metropolis"],
   },
@@ -453,46 +591,55 @@ export const ASSETS: AssetDef[] = [
   {
     id: "house", name: "Housing", category: "Home",
     tiers: [
-      { name: "Shared Room", dailyCost: 34, hoursBonus: 0, image: "house-t1", benefit: "No time bought back yet" },
-      { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "+2h of your week back — no commute, building services" },
-      { name: "Modern Loft", dailyCost: 165, hoursBonus: 4, image: "house-t3", benefit: "+4h of your week back — doorman, cleaning, concierge" },
-      { name: "Penthouse", dailyCost: 520, hoursBonus: 7, image: "house-t4", benefit: "+7h of your week back — full household staff" },
+      { name: "Shared Room", dailyCost: 34, hoursBonus: -3, image: "house-t1", benefit: "Costs you 3h a week — long commute, chores, queues for the bathroom" },
+      { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "Buys back 2h a week — close in, building handles the basics" },
+      { name: "Modern Loft", dailyCost: 165, hoursBonus: 5, image: "house-t3", benefit: "Buys back 5h a week — doorman, cleaning and concierge" },
+      { name: "Penthouse", dailyCost: 520, hoursBonus: 9, image: "house-t4", benefit: "Buys back 9h a week — a full household staff runs it all" },
     ],
   },
   {
     id: "food", name: "Food", category: "Daily life",
     tiers: [
-      { name: "Simple Groceries", dailyCost: 12, hoursBonus: 0, image: "food-t1", benefit: "No time bought back yet" },
-      { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 2, image: "food-t2", benefit: "+2h of your week back — delivery and meal prep" },
-      { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "+3h of your week back — every meal handled" },
-      { name: "Private Chef", dailyCost: 320, hoursBonus: 5, image: "food-t4", benefit: "+5h of your week back — a chef runs your kitchen" },
+      { name: "Simple Groceries", dailyCost: 12, hoursBonus: -2, image: "food-t1", benefit: "Costs you 2h a week — shopping, cooking and washing up" },
+      { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 1, image: "food-t2", benefit: "Buys back 1h a week — deliveries and prepped ingredients" },
+      { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "Buys back 3h a week — every meal handled elsewhere" },
+      { name: "Private Chef", dailyCost: 320, hoursBonus: 6, image: "food-t4", benefit: "Buys back 6h a week — a chef runs your kitchen" },
     ],
   },
   {
     id: "wardrobe", name: "Clothing", category: "Presentation",
     tiers: [
-      { name: "Thrifted Basics", dailyCost: 3, hoursBonus: 0, image: "wardrobe-t1", benefit: "No time bought back yet" },
-      { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "+1h of your week back — easy wardrobe, less upkeep" },
-      { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "+2h of your week back — a tailor keeps it all ready" },
-      { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "+4h of your week back — a stylist and valet service" },
+      { name: "Thrifted Basics", dailyCost: 3, hoursBonus: -1, image: "wardrobe-t1", benefit: "Costs you 1h a week — laundry, repairs, nothing quite fits" },
+      { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "Buys back 1h a week — easy wardrobe, little upkeep" },
+      { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "Buys back 2h a week — a tailor keeps it all ready" },
+      { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "Buys back 4h a week — a stylist and valet service" },
     ],
   },
   {
     id: "car", name: "Car", category: "Transport",
     tiers: [
-      { name: "Used Sedan", dailyCost: 19, hoursBonus: 0, image: "car-t1", benefit: "No time bought back yet" },
-      { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "+2h of your week back — driver service on tap" },
-      { name: "Sports Car", dailyCost: 165, hoursBonus: 4, image: "car-t3", benefit: "+4h of your week back — a driver handles the road" },
-      { name: "Hypercar", dailyCost: 880, hoursBonus: 8, image: "car-t4", benefit: "+8h of your week back — chauffeur and fleet care included" },
+      { name: "Used Sedan", dailyCost: 19, hoursBonus: -2, image: "car-t1", benefit: "Costs you 2h a week — breakdowns, repairs, slow going" },
+      { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "Buys back 2h a week — reliable, driver service on tap" },
+      { name: "Sports Car", dailyCost: 165, hoursBonus: 5, image: "car-t3", benefit: "Buys back 5h a week — a driver handles the road" },
+      { name: "Hypercar", dailyCost: 880, hoursBonus: 9, image: "car-t4", benefit: "Buys back 9h a week — chauffeur and fleet care included" },
+    ],
+  },
+  {
+    id: "health", name: "Health & Fitness", category: "Wellbeing",
+    tiers: [
+      { name: "No Routine", dailyCost: 0, hoursBonus: -4, image: "health-t1", benefit: "Costs you 4h a week — low energy and days lost to illness" },
+      { name: "Gym Membership", dailyCost: 9, hoursBonus: 1, image: "health-t2", benefit: "Buys back 1h a week — steadier energy through the day" },
+      { name: "Personal Trainer", dailyCost: 95, hoursBonus: 4, image: "health-t3", benefit: "Buys back 4h a week — training, physio and check-ups handled" },
+      { name: "Full Wellness Team", dailyCost: 420, hoursBonus: 8, image: "health-t4", benefit: "Buys back 8h a week — doctor, chef and recovery team on call" },
     ],
   },
   {
     id: "watch", name: "Watch", category: "Accessories",
     tiers: [
-      { name: "Digital Watch", dailyCost: 1, hoursBonus: 0, image: "watch-t1", benefit: "No time bought back yet" },
-      { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "+1h of your week back — club and concierge access" },
-      { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "+2h of your week back — a concierge runs your errands" },
-      { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 3, image: "watch-t4", benefit: "+3h of your week back — a personal assistant on call" },
+      { name: "Digital Watch", dailyCost: 1, hoursBonus: 0, image: "watch-t1", benefit: "No time bought back — it tells the time, that is all" },
+      { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "Buys back 1h a week — club and concierge access" },
+      { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "Buys back 2h a week — a concierge runs your errands" },
+      { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 4, image: "watch-t4", benefit: "Buys back 4h a week — a personal assistant on call" },
     ],
   },
 ];
@@ -527,11 +674,11 @@ export const INVESTMENTS: InvestmentDef[] = [
   { id: "savings", name: "Savings Account", description: "FDIC-safe. 2.0% a year, never moves.", minInvestment: 250, annualReturn: 0.02, annualVolatility: 0, risk: "None", access: "open" },
   { id: "bonds", name: "Treasury Bonds", description: "4.5% a year, barely wobbles.", minInvestment: 5000, annualReturn: 0.045, annualVolatility: 0.02, risk: "Low", access: "open" },
   { id: "index", name: "Index Fund", description: "9% a year on average. It will dip.", minInvestment: 2500, annualReturn: 0.09, annualVolatility: 0.16, risk: "Moderate", access: "open" },
-  { id: "crypto", name: "Digital Assets", description: "30% a year in the long run. Wild ride.", minInvestment: 1000, annualReturn: 0.3, annualVolatility: 0.7, risk: "Very High", access: "open" },
+  { id: "crypto", name: "Digital Assets", description: "30% a year in the long run. Wild ride.", minInvestment: 1000, annualReturn: 0.3, annualVolatility: 0.55, risk: "Very High", access: "open" },
   { id: "realestate", name: "Real Estate Fund", description: "12% a year. Your money sits for half a year.", minInvestment: 150000, annualReturn: 0.12, annualVolatility: 0.2, risk: "Moderate-High", access: "accredited", lockupDays: 180 },
   { id: "art", name: "Art & Collectibles", description: "14% a year, and it sells when it sells.", minInvestment: 2000000, annualReturn: 0.14, annualVolatility: 0.25, risk: "Moderate-High", access: "accredited", lockupDays: 365 },
   { id: "pe", name: "Private Equity", description: "22% a year. Locked up, leveraged.", minInvestment: 20000000, annualReturn: 0.22, annualVolatility: 0.3, risk: "High", access: "qualified", lockupDays: 1095 },
-  { id: "vc", name: "Venture Capital", description: "35% a year in theory. Mostly zeros and one rocket.", minInvestment: 100000000, annualReturn: 0.35, annualVolatility: 0.6, risk: "Extreme", access: "qualified", lockupDays: 1460 },
+  { id: "vc", name: "Venture Capital", description: "35% a year in theory. Mostly zeros and one rocket.", minInvestment: 100000000, annualReturn: 0.35, annualVolatility: 0.45, risk: "Extreme", access: "qualified", lockupDays: 1460 },
   { id: "sovereign", name: "Sovereign Wealth Portfolio", description: "11% a year on an enormous base. Calm at scale.", minInvestment: 1000000000, annualReturn: 0.11, annualVolatility: 0.09, risk: "Low", access: "institutional", lockupDays: 730 },
 ];
 
@@ -813,4 +960,21 @@ export function getBusinessTierIndex(level: number): number {
   if (level >= 20) return 2;
   if (level >= 8) return 1;
   return 0;
+}
+
+// ---------- Time ----------
+/**
+ * Waking hours you can actually direct in a week before lifestyle and career are
+ * taken into account. A bare-bones life spends a chunk of it on chores and commuting.
+ */
+export const BASE_TIME_BUDGET = 52;
+
+// ---------- Student loans ----------
+export const STUDENT_LOAN_RATE = 0.06;          // annual interest
+export const STUDENT_LOAN_TERM_DAYS = 3650;     // repaid over ten years
+export const STUDENT_LOAN_GRACE_DAYS = 180;     // nothing due until six months after you finish
+/** The most you can owe in student debt, by the highest level of study you have reached. */
+export const STUDENT_LOAN_CAPS = [30000, 120000, 400000];
+export function studentLoanCap(highestLevel: number): number {
+  return STUDENT_LOAN_CAPS[Math.max(0, Math.min(2, highestLevel - 1))] ?? STUDENT_LOAN_CAPS[0];
 }
