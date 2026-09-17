@@ -35,11 +35,18 @@ export default function TimePanel() {
             <span className="font-mono-nums text-primary">{formatMoney(derived.recentSalary + derived.recentBusiness)}</span>
           </div>
           <div className="flex justify-between text-[11px] text-muted-foreground">
-            <span>Living costs, interview prep, loans</span>
-            <span className="font-mono-nums">
-              -{formatMoney(derived.recentCosts)}
-            </span>
+            <span>Lifestyle and running costs</span>
+            <span className="font-mono-nums">-{formatMoney(derived.recentLifestyleCosts)}</span>
           </div>
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>Loan interest</span>
+            <span className="font-mono-nums">-{formatMoney(derived.recentInterestPaid)}</span>
+          </div>
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>Debt paid down</span>
+            <span className="font-mono-nums">-{formatMoney(derived.recentPrincipalPaid)}</span>
+          </div>
+
           <div className="flex justify-between">
             <span className="font-semibold">Net</span>
             <span className={`font-mono-nums font-semibold ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
