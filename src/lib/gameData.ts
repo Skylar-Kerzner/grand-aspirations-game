@@ -677,6 +677,8 @@ export const ASSETS: AssetDef[] = [
       { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 1, image: "food-t2", benefit: "Buys back 1h a week — deliveries and prepped ingredients" },
       { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "Buys back 3h a week — every meal handled elsewhere" },
       { name: "Private Chef", dailyCost: 320, hoursBonus: 6, image: "food-t4", benefit: "Buys back 6h a week — a chef runs your kitchen" },
+      { name: "Private Dining Brigade", dailyCost: 1250, hoursBonus: 8, image: "food-t5", benefit: "Buys back 8h a week — a kitchen team plans, shops and cooks every meal" },
+      { name: "Estate Culinary Team", dailyCost: 4800, hoursBonus: 10, image: "food-t6", benefit: "Buys back 10h a week — kitchen garden, cellar and chefs on call around the clock" },
     ],
   },
   {
