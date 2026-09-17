@@ -143,44 +143,65 @@ export default function CareerPanel() {
         />
       </div>
 
-      {/* Education — pick a major, it opens a career path */}
+      {/* Education — short courses, diplomas and degrees, one per industry */}
       <div>
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Education</h3>
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
-          Each major leads to a different career path. Study any of them, in any order.
+          Every industry has a short course, a diploma and a full degree. Junior roles ask for the course,
+          senior roles for the diploma, and the very top of an industry only opens with its degree. Years
+          worked in an industry can stand in for the first two, never for the degree.
         </p>
-        <div className="space-y-3">
-          {MAJORS.map((def) => {
-            const completed = state.majors.includes(def.id);
-            const inProgress = state.studying?.majorId === def.id;
+        <div className="space-y-4">
+          {openTracks.map((track) => {
+            const programs = getTrackPrograms(track.id);
+            const cred = getTrackCredential(state, track.id);
             return (
-              <div key={def.id} className="surface-card rounded-xl p-4">
-                <div className="flex justify-between items-center gap-3">
-                  <div className="min-w-0">
-                    <h4 className="font-semibold text-sm">{def.name}</h4>
-                    <p className="text-[11px] text-muted-foreground">{def.description}</p>
-                    {!completed && (
-                      <p className="text-[11px] text-muted-foreground font-mono-nums">
-                        {formatCompact(def.cost)} · {def.days} full-time days
-                      </p>
-                    )}
-                  </div>
-                  {completed ? (
-                    <span className="text-xs text-primary shrink-0">Completed</span>
-                  ) : inProgress ? (
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {Math.ceil(state.studying?.daysLeft || 0)}d of work left
-                    </span>
-                  ) : (
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
-                      disabled={!!state.studying || state.cash < def.cost}
-                      className="h-9 px-4 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40 shrink-0"
-                    >
-                      Enroll
-                    </motion.button>
-                  )}
+              <div key={track.id} className="surface-card rounded-xl p-4">
+                <div className="flex justify-between items-baseline gap-3 mb-1">
+                  <h4 className="font-semibold text-sm">{track.name}</h4>
+                  <span className="text-[11px] text-primary shrink-0">
+                    {cred.effective === 0 ? "No standing" : `Counts as level ${cred.effective} of 3`}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  {cred.years >= 1
+                    ? `${cred.years.toFixed(1)} years worked in this industry.`
+                    : "Study here, or work in the industry to build standing."}
+                </p>
+                <div className="space-y-2">
+                  {programs.map((def) => {
+                    const completed = state.majors.includes(def.id);
+                    const inProgress = state.studying?.majorId === def.id;
+                    return (
+                      <div key={def.id} className="flex justify-between items-center gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm">{def.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{def.description}</p>
+                          {!completed && (
+                            <p className="text-[11px] text-muted-foreground font-mono-nums">
+                              {formatCompact(def.cost)} · {def.days} full-time days
+                            </p>
+                          )}
+                        </div>
+                        {completed ? (
+                          <span className="text-xs text-primary shrink-0">Completed</span>
+                        ) : inProgress ? (
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {Math.ceil(state.studying?.daysLeft || 0)}d of work left
+                          </span>
+                        ) : (
+                          <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
+                            disabled={!!state.studying || state.cash < def.cost}
+                            className="h-9 px-4 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40 shrink-0"
+                          >
+                            Enroll
+                          </motion.button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
