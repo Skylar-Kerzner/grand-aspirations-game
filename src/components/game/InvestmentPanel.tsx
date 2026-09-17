@@ -65,7 +65,9 @@ export default function InvestmentPanel() {
             {isExpanded && (
               <div className="mt-3 pt-3 border-t border-border">
                 <p className="text-[11px] text-muted-foreground mb-2">
-                  {(def.annualReturn * 100).toFixed(1)}% a year expected · volatility {(def.annualVolatility * 100).toFixed(0)}%
+                  {(def.annualReturn * 100).toFixed(1)}% a year expected · a typical day moves about ±
+                  {((def.annualVolatility / Math.sqrt(365)) * 100).toFixed(2)}% · a typical month about ±
+                  {((def.annualVolatility / Math.sqrt(12)) * 100).toFixed(1)}%
                   {(state.stats.investEarnedById[def.id] || 0) !== 0 && (
                     <> · lifetime {formatCompact(state.stats.investEarnedById[def.id])}</>
                   )}
