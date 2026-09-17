@@ -28,7 +28,7 @@ export interface BusinessState {
   choices?: Record<string, string>;    // location / market / product chosen when opening
 }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
-export interface InvestmentState { value: number; basis: number; lockedUntil?: number }
+export interface InvestmentState { value: number; basis: number; lockedUntil?: number; drift?: number; regimeUntil?: number }
 /** Money borrowed to study. Nothing is due while enrolled or during the grace period. */
 export interface StudentLoanState { balance: number; borrowed: number; repaid: number; dueFrom: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number; level?: number; note?: string }
