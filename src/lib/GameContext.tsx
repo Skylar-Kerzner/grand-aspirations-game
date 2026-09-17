@@ -125,7 +125,11 @@ export function tierBonus(tier: number, table: number[]): number {
 }
 
 export function getJob(state: GameState) {
-  return { ...JOBS[Math.min(state.jobIndex, JOBS.length - 1)], ...state.currentJob };
+  const base = JOBS[Math.min(state.jobIndex, JOBS.length - 1)];
+  const cur = state.currentJob || base;
+  // Older saves and offers can carry a missing pay figure — never let it poison the maths.
+  const dailyPay = Number.isFinite(cur.dailyPay) ? cur.dailyPay : base.dailyPay;
+  return { ...base, ...cur, dailyPay };
 }
 
 /** How many consecutive positions you have held in your current industry. */
