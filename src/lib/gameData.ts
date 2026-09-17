@@ -699,6 +699,8 @@ export const ASSETS: AssetDef[] = [
       { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "Buys back 2h a week — reliable, driver service on tap" },
       { name: "Sports Car", dailyCost: 165, hoursBonus: 5, image: "car-t3", benefit: "Buys back 5h a week — a driver handles the road" },
       { name: "Hypercar", dailyCost: 880, hoursBonus: 9, image: "car-t4", benefit: "Buys back 9h a week — chauffeur and fleet care included" },
+      { name: "Collector's Garage", dailyCost: 3400, hoursBonus: 12, image: "car-t5", benefit: "Buys back 12h a week — a fleet and drivers on standby wherever you are" },
+      { name: "Private Aviation", dailyCost: 14000, hoursBonus: 15, image: "car-t6", benefit: "Buys back 15h a week — jet, helicopter and cars waiting at both ends" },
     ],
   },
   {
