@@ -4,6 +4,8 @@
 // unless stated otherwise. Yearly figures use 365 days.
 // ============================================================
 
+import { pickImage } from "./gameImages";
+
 export const DAYS_PER_YEAR = 365;
 export const TAX_RATE = 0.22;
 export const WEEK_HOURS = 40;
