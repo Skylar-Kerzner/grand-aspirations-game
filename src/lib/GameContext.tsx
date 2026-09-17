@@ -816,7 +816,7 @@ function createInitialState(): GameState {
           ]),
         ),
         businessHours: parsed.businessHours && typeof parsed.businessHours === "object" ? parsed.businessHours : {},
-        cashFlowHistory: Array.isArray(parsed.cashFlowHistory) ? parsed.cashFlowHistory.slice(-7) : [],
+        cashFlowHistory: Array.isArray(parsed.cashFlowHistory) ? parsed.cashFlowHistory.slice(-8) : [],
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
         // Older saves never tracked momentum — assume they sustained their current budget.
         trainingMomentum: typeof parsed.trainingMomentum === "number" ? parsed.trainingMomentum : (parsed.trainingBudget || 0),
