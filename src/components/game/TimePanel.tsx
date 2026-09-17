@@ -170,8 +170,8 @@ export default function TimePanel() {
           <span className="font-mono-nums text-sm">{formatMoney(state.trainingBudget)}/day</span>
         </div>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Courses, certifications, coaching and conferences for your career. This raises career progress to{" "}
-          {derived.focus.toFixed(2)}×.
+          Courses, certifications, coaching and conferences for your career. Every offer you seek out pays{" "}
+          +{Math.round(derived.offerTrainingBonus * 100)}% (up to +35%).
         </p>
         <input
           type="range"
