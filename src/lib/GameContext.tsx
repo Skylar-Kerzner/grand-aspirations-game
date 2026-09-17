@@ -1260,6 +1260,8 @@ export interface DerivedState {
   netPerDay: number;
   investmentTotal: number;
   loanTotal: number;
+  studentDebt: number;
+  studentLoanPayment: number;
   assetValue: number;
   businessValue: number;
   businessCapital: number;
@@ -1292,6 +1294,8 @@ function calculateDerived(state: GameState): DerivedState {
 
   let loanTotal = 0;
   for (const l of Object.values(state.loans)) loanTotal += l.remaining;
+  const studentDebt = state.studentLoan?.balance || 0;
+  const studentLoanPayment = getStudentLoanPayment(state);
 
   const assetValue = 0; // lifestyle choices are recurring services, not owned assets
 
@@ -1303,12 +1307,12 @@ function calculateDerived(state: GameState): DerivedState {
 
   const businessValue = getBusinessValue(state);
   const incomePerDay = salaryPerDay + businessPerDay + investmentPerDay;
-  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay;
+  const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay - studentLoanPayment;
 
   const job = getJob(state);
   return {
     // you owe the principal, not the future interest
-    netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt,
+    netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt - studentDebt,
     salaryPerDay, businessPerDay, investmentPerDay, incomePerDay,
     livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
     investmentTotal, loanTotal, assetValue, businessValue, businessCapital,
