@@ -1,6 +1,6 @@
 import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessIncomeAt, businessIncomeOf, trackPerk } from "@/lib/GameContext";
 import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital } from "@/lib/gameData";
-import { formatMoney } from "@/lib/formatters";
+import { formatMoney, periodLabel } from "@/lib/formatters";
 
 export default function TimePanel() {
   const { state, derived, dispatch } = useGame();
@@ -11,16 +11,13 @@ export default function TimePanel() {
   const careerHours = trackPerk(state, "hoursBonus");
   const workHours = getWorkHours(state);
   const freeHours = Math.max(0, budget - workHours - state.studyHours - bizHours);
-  const periodLabel = derived.recentCashFlowDays >= 7
-    ? "Last 7 days"
-    : derived.recentCashFlowDays === 1 ? "Today" : derived.recentCashFlowDays > 1
-      ? `Last ${derived.recentCashFlowDays} days` : "No history yet";
+  const period = periodLabel(derived.recentCashFlowDays);
 
   return (
     <div className="space-y-6">
       {/* Where the money lands */}
       <div className="surface-card rounded-xl p-4">
-        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Where your money landed</h3>
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Where your money landed · {period}</h3>
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Job</span>
@@ -30,13 +27,9 @@ export default function TimePanel() {
             <span className="text-muted-foreground">Businesses</span>
             <span className="font-mono-nums">{formatMoney(derived.recentBusiness)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Investments</span>
-            <span className="font-mono-nums">{formatMoney(derived.recentInvestments)}</span>
-          </div>
           <div className="flex justify-between border-t border-border pt-1">
-            <span className="text-muted-foreground">{periodLabel} income</span>
-            <span className="font-mono-nums text-primary">{formatMoney(derived.recentSalary + derived.recentBusiness + derived.recentInvestments)}</span>
+            <span className="text-muted-foreground">Earned in the {period}</span>
+            <span className="font-mono-nums text-primary">{formatMoney(derived.recentSalary + derived.recentBusiness)}</span>
           </div>
           <div className="flex justify-between text-[11px] text-muted-foreground">
             <span>Living costs, interview prep, loans</span>
@@ -51,8 +44,8 @@ export default function TimePanel() {
             </span>
           </div>
           <div className="flex justify-between text-[11px] text-muted-foreground">
-            <span>Current pace</span>
-            <span className="font-mono-nums">{derived.netPerDay >= 0 ? "+" : ""}{formatMoney(derived.netPerDay)}/day</span>
+            <span>Investments moved (not counted above)</span>
+            <span className="font-mono-nums">{derived.recentInvestments >= 0 ? "+" : ""}{formatMoney(derived.recentInvestments)}</span>
           </div>
         </div>
       </div>

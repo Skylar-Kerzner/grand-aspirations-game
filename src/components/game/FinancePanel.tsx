@@ -8,20 +8,17 @@ export default function FinancePanel() {
   const { state, derived, dispatch } = useGame();
   const [confirmReset, setConfirmReset] = useState(false);
   const totalLevels = Object.values(state.businesses).reduce((s, b) => s + b.level, 0);
-  const periodLabel = derived.recentCashFlowDays >= 7
-    ? "Last 7 days"
-    : derived.recentCashFlowDays === 1 ? "Today" : derived.recentCashFlowDays > 1
-      ? `Last ${derived.recentCashFlowDays} days` : "No history yet";
+  const period = periodLabel(derived.recentCashFlowDays);
 
   return (
     <div className="space-y-6">
       {/* Cash flow */}
       <div className="surface-card rounded-xl p-4">
-        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">{periodLabel}</h3>
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Money in the {period}</h3>
         <div className="space-y-2 text-sm">
           <Row label="Salary (after tax)" value={formatMoney(derived.recentSalary)} tone="pos" />
           <Row label="Business profit" value={formatMoney(derived.recentBusiness)} tone="pos" />
-          <Row label="Investment returns" value={formatMoney(derived.recentInvestments)} tone={derived.recentInvestments >= 0 ? "pos" : "neg"} />
+          <Row label="Investment returns (not in net)" value={formatMoney(derived.recentInvestments)} tone={derived.recentInvestments >= 0 ? "pos" : "neg"} />
           <Row label="Recurring costs" value={`-${formatMoney(derived.recentCosts)}`} tone="neg" />
           <div className="flex justify-between border-t border-border pt-2">
             <span>Net</span>
