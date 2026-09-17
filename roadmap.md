@@ -37,3 +37,4 @@
 - [x] School hours forced to zero whenever not enrolled (work hours, graduation, save loading, enrolling resets to 20h)
 
 - [ ] Show job level (e.g. Level 5 of 14) throughout the game — career panel, offers, review history
+- [ ] Review business/investment return volatility realism and propose changes
