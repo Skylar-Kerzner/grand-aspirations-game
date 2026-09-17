@@ -20,7 +20,7 @@ import {
   FEDERAL_CAPS, federalCapFor, federalRateFor, federalBucketFor, FEDERAL_RATE_UNDERGRAD,
   PRIVATE_RATE, PRIVATE_TERM_DAYS, PRIVATE_INCOME_MULTIPLE, PRIVATE_NET_WORTH_SHARE, type MajorDef,
 } from "./gameData";
-import { formatMoney } from "./formatters";
+import { formatMoney, START_AGE } from "./formatters";
 
 const SAVE_KEY = "empire-tycoon-save-v5";
 const LEGACY_SAVE_KEY = "empire-tycoon-save-v4";
