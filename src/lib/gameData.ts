@@ -721,12 +721,14 @@ export const ASSETS: AssetDef[] = [
       { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "Buys back 1h a week — club and concierge access" },
       { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "Buys back 2h a week — a concierge runs your errands" },
       { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 4, image: "watch-t4", benefit: "Buys back 4h a week — a personal assistant on call" },
+      { name: "Grand Complication", dailyCost: 620, hoursBonus: 5, image: "watch-t5", benefit: "Buys back 5h a week — doors open and an assistant clears your diary" },
+      { name: "Private Collection", dailyCost: 2400, hoursBonus: 7, image: "watch-t6", benefit: "Buys back 7h a week — a chief of staff runs your calendar" },
     ],
   },
 ];
 
-export const WARDROBE_BUSINESS_BONUS = [0, 0.04, 0.09, 0.16];
-export const WATCH_INVEST_BONUS = [0, 0.04, 0.09, 0.16];
+export const WARDROBE_BUSINESS_BONUS = [0, 0.04, 0.09, 0.16, 0.22, 0.3];
+export const WATCH_INVEST_BONUS = [0, 0.04, 0.09, 0.16, 0.22, 0.3];
 
 // ---------- Investments ----------
 /** Who a fund will take money from. */
