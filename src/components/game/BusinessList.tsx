@@ -266,7 +266,10 @@ export default function BusinessList() {
                 </p>
                 {selectedBiz.level > 0 && (
                   <p className={`text-xs mb-1 ${conditionLabel(selectedBiz.condition ?? 1).tone}`}>
-                    {conditionLabel(selectedBiz.condition ?? 1).text} — {((selectedBiz.condition ?? 1) * 100).toFixed(0)}% of normal takings
+                    {conditionLabel(selectedBiz.condition ?? 1).text} — trading trend {((selectedBiz.condition ?? 1) * 100).toFixed(0)}%
+                    <span className="text-muted-foreground">
+                      {" "}· today's takings {Math.round((selectedBiz.takings ?? 1) * 100)}% of normal
+                    </span>
                   </p>
                 )}
                 {selectedBiz.level > 0 && (

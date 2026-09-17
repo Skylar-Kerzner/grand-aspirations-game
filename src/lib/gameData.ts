@@ -593,11 +593,12 @@ export const WEEKDAY_RHYTHM = {
   weekday: normaliseWeek([1.05, 1.1, 1.15, 1.1, 1.0, 0.75, 0.6]),
 };
 
-// Each venture rides a slow season: good and bad trade cluster into multi-week runs.
-export const BUSINESS_SEASON_REVERSION = 0.04;
-export const BUSINESS_SEASON_VOL = 0.02;
-export const BUSINESS_SEASON_MIN = 0.75;
-export const BUSINESS_SEASON_MAX = 1.3;
+// Each venture rides a slow season: good and bad trade cluster into multi-week
+// runs. Slow reversion and wide range so the runs are actually felt.
+export const BUSINESS_SEASON_REVERSION = 0.015;
+export const BUSINESS_SEASON_VOL = 0.05;
+export const BUSINESS_SEASON_MIN = 0.65;
+export const BUSINESS_SEASON_MAX = 1.5;
 
 // Rare standout days: a washout (weather, closure) or a bumper day (event, rush).
 export const BUSINESS_WASHOUT_CHANCE = 0.02;
