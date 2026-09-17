@@ -221,6 +221,13 @@ export function getCareerTrack(employer: string): CareerTrack {
   return CAREER_TRACKS[EMPLOYER_TRACKS[employer] || "operations"];
 }
 
+/** The room you actually work in: one per industry, at three stages of seniority. */
+export function workplaceImage(employer: string, level: number): string {
+  const track = getCareerTrack(employer).id;
+  const stage = level <= 4 ? 1 : level <= 9 ? 2 : 3;
+  return `work-${track}-s${stage}`;
+}
+
 /** How a track's pay compares with the standard ladder at a given career level. */
 export function trackPayMultiplier(employer: string, tierIndex: number): number {
   const track = getCareerTrack(employer);
