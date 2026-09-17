@@ -26,7 +26,9 @@ export default function CareerPanel() {
     <div className="space-y-6">
       {/* Current position */}
       <div className="surface-card rounded-xl p-4">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Current position</p>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          Current position · Level {state.jobIndex + 1} of {JOBS.length}
+        </p>
         <h3 className="text-lg font-semibold tracking-tight">{job.title}</h3>
         <p className="text-[11px] text-muted-foreground">{job.employer}</p>
         <p className="text-[11px] text-primary">{getCareerTrack(job.employer).name}</p>
