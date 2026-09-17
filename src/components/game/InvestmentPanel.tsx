@@ -17,7 +17,8 @@ export default function InvestmentPanel() {
         const unlocked = isInvestmentUnlocked(state, def.id);
         const isExpanded = expandedId === def.id && unlocked;
         const gain = inv.value - inv.basis;
-        const prev = INVESTMENTS.find((i) => i.id === def.unlockPrev);
+        const access = INVESTOR_ACCESS[def.access];
+        const lockLeft = getLockDaysLeft(state, def.id);
         // amounts start at the minimum for this fund, so nothing offered is unusable
         const amounts = STEPS.map((s) => s * def.minInvestment).filter((a) => a <= 1e15).slice(0, 4);
 
