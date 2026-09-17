@@ -710,6 +710,8 @@ export const ASSETS: AssetDef[] = [
       { name: "Gym Membership", dailyCost: 9, hoursBonus: 1, image: "health-t2", benefit: "Buys back 1h a week — steadier energy through the day" },
       { name: "Personal Trainer", dailyCost: 95, hoursBonus: 4, image: "health-t3", benefit: "Buys back 4h a week — training, physio and check-ups handled" },
       { name: "Full Wellness Team", dailyCost: 420, hoursBonus: 8, image: "health-t4", benefit: "Buys back 8h a week — doctor, chef and recovery team on call" },
+      { name: "Home Recovery Suite", dailyCost: 1600, hoursBonus: 10, image: "health-t5", benefit: "Buys back 10h a week — gym, pool and therapists all under your own roof" },
+      { name: "Longevity Programme", dailyCost: 6200, hoursBonus: 13, image: "health-t6", benefit: "Buys back 13h a week — a medical team keeps you at full energy every day" },
     ],
   },
   {
