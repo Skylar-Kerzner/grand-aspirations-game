@@ -819,7 +819,7 @@ export function upgradeCostFor(state: GameState, id: string): number {
 function createFresh(): GameState {
   const firstJob = JOBS[0];
   return {
-    cash: 400, ccDebt: 0, day: 0,
+    cash: 400, ccDebt: 0, day: 0, businessScale: BUSINESS_SCALE_VERSION,
     jobIndex: 0,
     currentJob: { title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay },
     careerOffers: [],
