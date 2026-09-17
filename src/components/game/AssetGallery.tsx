@@ -230,11 +230,9 @@ export default function AssetGallery() {
                                     } ${afford ? "" : "opacity-40"}`}
                                   >
                                     <span className="block">{look.name}</span>
-                                    {settled && (
-                                      <span className="block text-[10px] text-muted-foreground font-mono-nums">
-                                        {isChosen ? "Yours" : formatMoney(switchFee)}
-                                      </span>
-                                    )}
+                                     <span className="block text-[10px] text-muted-foreground font-mono-nums">
+                                       {isChosen ? "Yours" : formatMoney(switchFee)}
+                                     </span>
                                   </button>
                                 );
                               })}
