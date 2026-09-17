@@ -244,11 +244,17 @@ export function getBusinessAttentionOf(state: GameState, id: string): number {
   return getBusinessAttentionFor(state, id, state.businessHours[id] || 0);
 }
 
-/** Weekly hours you can direct: a base week, what your lifestyle buys back, and what your field allows. */
+/** Weekly hours you can direct: a base week, what your lifestyle buys back, what your field allows, less what age takes. */
 export function getTimeBudget(state: GameState): number {
   const lifestyle = ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
   const career = trackPerk(state, "hoursBonus");
-  return Math.max(10, BASE_TIME_BUDGET + lifestyle + career);
+  const age = START_AGE + Math.floor(state.day / 365);
+  return Math.max(10, BASE_TIME_BUDGET - getAgeHoursPenalty(age) + lifestyle + career);
+}
+
+/** Hours a week age currently takes off your base week. */
+export function getAgeHours(state: GameState): number {
+  return getAgeHoursPenalty(START_AGE + Math.floor(state.day / 365));
 }
 
 /** Hours a week your lifestyle choices currently buy back (negative when they cost you). */
