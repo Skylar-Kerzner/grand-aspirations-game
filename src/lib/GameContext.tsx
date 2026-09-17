@@ -1718,7 +1718,9 @@ function calculateDerived(state: GameState): DerivedState {
   const businessValue = getBusinessValue(state);
   const incomePerDay = salaryPerDay + businessPerDay + investmentPerDay;
   const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay - studentLoanPayment;
-  const recent = (state.cashFlowHistory || []).slice(-7);
+  // Only finished days count, so the figure does not dip every time a new day starts.
+  const today = Math.floor(state.day);
+  const recent = (state.cashFlowHistory || []).filter((item) => item.day < today).slice(-7);
   const recentSalary = recent.reduce((sum, item) => sum + item.salary, 0);
   const recentBusiness = recent.reduce((sum, item) => sum + item.business, 0);
   const recentInvestments = recent.reduce((sum, item) => sum + item.investments, 0);
