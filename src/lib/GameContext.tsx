@@ -30,7 +30,6 @@ export interface BusinessState {
   level: number;
   condition: number;                   // the slow trading trend — this is what moves the value
   takings?: number;                    // how today's takings compared with a normal day
-  takingsHist?: number[];              // the last 7 days' takings, so a weekly average can be shown
   season?: number;                     // slow multi-week wave in trade (good and bad runs cluster)
   fortune?: number;                    // how well this particular business is doing — it drifts
   fortunePeak?: number;                // the best it has ever run at, so cooling can be shown
@@ -555,24 +554,10 @@ export function getBusinessIncomeAt(state: GameState, id: string, attention: num
   return getBusinessSteadyIncomeAt(state, id, attention) * (biz.condition ?? 1) * (biz.takings ?? 1);
 }
 
-/** Typical recent takings: the last 7 days with the best and worst day trimmed off, so a single
- *  bumper day or washout can't whipsaw the weekly figure. Fewer than 7 days falls back to a plain average. */
-export function getBusinessAvgTakings(state: GameState, id: string): number {
-  const biz = state.businesses[id];
-  if (!biz) return 1;
-  const hist = biz.takingsHist ?? [];
-  if (hist.length === 0) return biz.takings ?? 1;
-  if (hist.length < 4) return hist.reduce((total, day) => total + day, 0) / hist.length;
-  const sorted = [...hist].sort((a, b) => a - b);
-  const trimmed = sorted.slice(1, -1);
-  return trimmed.reduce((total, day) => total + day, 0) / trimmed.length;
-}
-
-/** Income at a chosen attention level over a typical recent day (7-day average takings). */
-export function getBusinessIncomeAvgAt(state: GameState, id: string, attention: number): number {
-  const biz = state.businesses[id];
-  if (!biz || biz.level === 0) return 0;
-  return getBusinessSteadyIncomeAt(state, id, attention) * (biz.condition ?? 1) * getBusinessAvgTakings(state, id);
+/** Typical income at a chosen attention level — the same steady rate the ROI figures quote,
+ *  so the money and the percentage beside it can never disagree. Today's luck is shown separately. */
+export function getBusinessTypicalIncomeAt(state: GameState, id: string, attention: number): number {
+  return getBusinessSteadyIncomeAt(state, id, attention);
 }
 
 /** The size actually trading today: a build-out earns nothing until it opens. */
