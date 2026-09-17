@@ -24,7 +24,17 @@ export default function CareerPanel() {
   return (
     <div className="space-y-6">
       {/* Current position */}
-      <div className="surface-card rounded-xl p-4">
+      <div className="surface-card rounded-xl overflow-hidden">
+        <div className="relative aspect-[16/10] w-full">
+          <img
+            src={getImage(workplaceImage(job.employer, state.jobIndex))}
+            alt={`The room you work in as ${job.title} at ${job.employer}`}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
+        </div>
+        <div className="p-4 -mt-10 relative">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
           Current position · Level {state.jobIndex + 1} of {JOBS.length}
         </p>
