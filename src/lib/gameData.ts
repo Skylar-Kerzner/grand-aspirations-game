@@ -16,7 +16,8 @@ export const BUSINESS_ATTENTION_CURVE = 0.45;     // concave: the first hour jum
 export interface MajorDef {
   id: string;
   name: string;
-  track: string; // career track this major opens up
+  track: string; // career track this study opens up
+  level: number; // 1 short course, 2 diploma, 3 full degree
   cost: number;
   days: number; // full-time study days (40 hrs/week) before it completes
   description: string;
@@ -29,15 +30,53 @@ export interface MajorDef {
 export const MAJOR_GATE_TIER = 4;
 
 export const MAJORS: MajorDef[] = [
-  { id: "trade", name: "Trade Certificate", track: "operations", cost: 3500, days: 60, description: "A licensed skill, fast payback. Leads to careers in Operations & Industry." },
-  { id: "hospitality", name: "Hospitality Management", track: "hospitality", cost: 14000, days: 120, description: "Leads to careers in Hospitality & Retail." },
-  { id: "business", name: "Business Administration", track: "corporate", cost: 58000, days: 240, description: "Leads to careers in Corporate Leadership." },
-  { id: "cs", name: "Computer Science", track: "tech", cost: 58000, days: 240, description: "Leads to careers in Technology." },
-  { id: "finance", name: "Finance", track: "finance", cost: 190000, days: 300, description: "Leads to careers in Finance & Investing." },
+  // Operations & Industry
+  { id: "ops-1", name: "Trade Short Course", track: "operations", level: 1, cost: 1200, days: 20, description: "A few weeks of practical training. Opens junior roles in Operations & Industry." },
+  { id: "trade", name: "Trade Certificate", track: "operations", level: 2, cost: 6000, days: 75, description: "A licensed skill. Opens senior roles in Operations & Industry." },
+  { id: "ops-3", name: "Industrial Engineering Degree", track: "operations", level: 3, cost: 42000, days: 220, description: "Opens the top of Operations & Industry." },
+  // Hospitality & Retail
+  { id: "hosp-1", name: "Service & Barista Course", track: "hospitality", level: 1, cost: 900, days: 18, description: "The basics of the floor. Opens junior roles in Hospitality & Retail." },
+  { id: "hospitality", name: "Hospitality Diploma", track: "hospitality", level: 2, cost: 9000, days: 90, description: "Opens senior roles in Hospitality & Retail." },
+  { id: "hosp-3", name: "Hotel Management Degree", track: "hospitality", level: 3, cost: 48000, days: 240, description: "Opens the top of Hospitality & Retail." },
+  // Corporate Leadership
+  { id: "corp-1", name: "Business Fundamentals Course", track: "corporate", level: 1, cost: 2500, days: 30, description: "Accounts, contracts, people. Opens junior corporate roles." },
+  { id: "business", name: "Business Administration Diploma", track: "corporate", level: 2, cost: 22000, days: 140, description: "Opens senior corporate roles." },
+  { id: "corp-3", name: "MBA", track: "corporate", level: 3, cost: 120000, days: 280, description: "Opens the executive table in Corporate Leadership." },
+  // Technology
+  { id: "tech-1", name: "Coding Bootcamp", track: "tech", level: 1, cost: 4000, days: 35, description: "Enough to ship real work. Opens junior technology roles." },
+  { id: "cs", name: "Software Engineering Diploma", track: "tech", level: 2, cost: 26000, days: 150, description: "Opens senior technology roles." },
+  { id: "tech-3", name: "Computer Science Degree", track: "tech", level: 3, cost: 110000, days: 290, description: "Opens the top of Technology, research and architecture." },
+  // Finance & Investing
+  { id: "fin-1", name: "Financial Markets Course", track: "finance", level: 1, cost: 5000, days: 40, description: "Markets, instruments, risk. Opens junior finance roles." },
+  { id: "finance", name: "Finance Diploma", track: "finance", level: 2, cost: 45000, days: 180, description: "Opens senior finance roles — analysts and traders." },
+  { id: "fin-3", name: "Quantitative Finance Degree", track: "finance", level: 3, cost: 220000, days: 320, description: "Opens the top of Finance & Investing — quant, portfolio and fund roles." },
 ];
 
+/** The highest-level qualification for a track (its full degree). */
 export function getTrackMajor(trackId: string): MajorDef | undefined {
-  return MAJORS.find((m) => m.track === trackId);
+  return getTrackPrograms(trackId)[2];
+}
+
+export function getTrackPrograms(trackId: string): MajorDef[] {
+  return MAJORS.filter((m) => m.track === trackId).sort((a, b) => a.level - b.level);
+}
+
+/** The qualification level a career level demands in its industry. */
+export function requiredCredentialLevel(tier: number): number {
+  if (tier < MAJOR_GATE_TIER) return 0;   // levels 0-3: anyone can walk in
+  if (tier < 7) return 1;                 // levels 4-6: a short course at least
+  if (tier < 10) return 2;                // levels 7-9: a diploma
+  return 3;                               // levels 10+: the full degree
+}
+
+/** Years served in an industry that stand in for one level of qualification. */
+export const CREDENTIAL_YEARS_PER_LEVEL = 3;
+/** Experience alone can never substitute for the full degree at the very top. */
+export const CREDENTIAL_EXPERIENCE_CAP = 2;
+
+export function credentialLevelFrom(majors: string[], trackId: string): number {
+  return MAJORS.filter((m) => m.track === trackId && majors.includes(m.id))
+    .reduce((best, m) => Math.max(best, m.level), 0);
 }
 
 // ---------- Careers ----------
