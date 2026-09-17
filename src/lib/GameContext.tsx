@@ -1938,7 +1938,12 @@ export interface DerivedState {
   recentBusiness: number;
   recentInvestments: number;
   recentCosts: number;
+  recentLifestyleCosts: number;
+  recentInterestPaid: number;
+  recentPrincipalPaid: number;
+  recentInterestAccrued: number;
   recentNet: number;
+
   investmentTotal: number;
   loanTotal: number;
   studentDebt: number;
