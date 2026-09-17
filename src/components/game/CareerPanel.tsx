@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudyFunding, getStudyPrereqNote } from "@/lib/GameContext";
+import { useGame, annualSalaryAt, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudyFunding, getStudyPrereqNote } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, CAREER_TRACKS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, PROMOTION_MIN_DAYS, getTrackPrograms, workplaceImage, FEDERAL_CAPS } from "@/lib/gameData";
+import { CAREER_TRACKS, JOBS, WEEK_HOURS, WORKDAYS_PER_YEAR, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, PROMOTION_MIN_DAYS, getTrackPrograms, workplaceImage, FEDERAL_CAPS } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 export default function CareerPanel() {
@@ -50,17 +50,17 @@ export default function CareerPanel() {
             : " Staying here builds industry experience that raises the pay of offers in this industry."}
         </p>
         <div className="flex justify-between text-sm mb-1">
-          <span className="text-muted-foreground">Gross pay at 40h</span>
-          <span className="font-mono-nums">{formatMoney(job.dailyPay)}/day</span>
+          <span className="text-muted-foreground">Annual salary at 40h/week</span>
+          <span className="font-mono-nums">{formatMoney(annualSalaryAt(job.dailyPay))}</span>
         </div>
         {derived.workHours !== WEEK_HOURS && (
           <div className="flex justify-between text-sm mb-1">
-            <span className="text-muted-foreground">Gross pay at your {derived.workHours}h</span>
-            <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
+            <span className="text-muted-foreground">At your {derived.workHours}h/week</span>
+            <span className="font-mono-nums">{formatMoney(derived.annualSalary)}/year</span>
           </div>
         )}
         <p className="text-[11px] text-muted-foreground mb-2">
-          Offers below are quoted at 40h — compare them with the 40h line above.
+          {formatMoney(derived.grossWorkdayPay)} gross each workday · paid Monday–Friday. Offers use the same 40h basis.
         </p>
         {job.perfFee && (
           <p className="text-[11px] text-primary mb-2">
@@ -109,7 +109,9 @@ export default function CareerPanel() {
                   const level = offer.level ?? state.jobIndex + 1;
                   const step = level - state.jobIndex;
                   const stepWord = step >= 2 ? "Double step up" : step === 1 ? "A step up" : step === 0 ? "A sideways move" : `A step down · ${-step} ${-step === 1 ? "rank" : "ranks"}`;
-                  const delta40 = offer.dailyPay - job.dailyPay;
+                  const offerAnnual40 = annualSalaryAt(offer.dailyPay);
+                  const offerAnnualAtHours = annualSalaryAt(offer.dailyPay, derived.workHours);
+                  const delta40 = offerAnnual40 - annualSalaryAt(job.dailyPay);
                   return (
                     <button
                       key={`${offer.employer}-${index}`}
@@ -129,18 +131,21 @@ export default function CareerPanel() {
                       <span className="flex justify-between gap-3 text-sm font-semibold">
                         <span>{offer.title}</span>
                         <span className="font-mono-nums text-primary shrink-0 text-right">
-                          {formatMoney(offer.dailyPay)}/day at 40h
+                          {formatMoney(offerAnnual40)}/year at 40h
                           {derived.workHours !== WEEK_HOURS && (
                             <span className="block text-[11px] font-normal text-muted-foreground">
-                              {formatMoney(offer.dailyPay * (derived.workHours / WEEK_HOURS))}/day at your {derived.workHours}h
+                              {formatMoney(offerAnnualAtHours)}/year at your {derived.workHours}h
                             </span>
                           )}
+                          <span className="block text-[10px] font-normal text-muted-foreground">
+                            {formatMoney(offerAnnualAtHours / WORKDAYS_PER_YEAR)} per workday at your hours
+                          </span>
                         </span>
                       </span>
                       <span className="text-[11px] text-muted-foreground">{offer.employer} · {getCareerTrack(offer.employer).name}</span>
                       <span className="flex justify-between gap-3 text-[11px] mt-1">
                         <span className={delta40 >= 0 ? "font-mono-nums text-primary" : "font-mono-nums text-destructive"}>
-                          {delta40 >= 0 ? "+" : "−"}{formatMoney(Math.abs(delta40))}/day at 40h vs your job
+                          {delta40 >= 0 ? "+" : "−"}{formatMoney(Math.abs(delta40))}/year at 40h vs your job
                         </span>
                         <span className={`shrink-0 ${step < 0 ? "text-destructive" : "text-primary"}`}>
                           Level {level + 1} of {JOBS.length} · {stepWord}

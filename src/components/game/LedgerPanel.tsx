@@ -1,7 +1,7 @@
 import { useGame } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatDays } from "@/lib/formatters";
 import { JOBS, BUSINESSES, INVESTMENTS, DAYS_PER_YEAR } from "@/lib/gameData";
-import { getBusinessEffectiveROI, getBusinessNetworkBonus } from "@/lib/GameContext";
+import { annualSalaryAt, getBusinessEffectiveROI, getBusinessNetworkBonus } from "@/lib/GameContext";
 
 export default function LedgerPanel() {
   const { state, derived } = useGame();
@@ -67,10 +67,10 @@ export default function LedgerPanel() {
               <span className="text-muted-foreground min-w-0">
                 Level {Math.min(i, JOBS.length - 1) + 1} · {h.title}
                 <span className="block text-[10px]">
-                  {h.employer} · from day {h.startDay} · {formatMoney(h.dailyPay)}/day
+                  {h.employer} · from day {h.startDay} · {formatMoney(annualSalaryAt(h.dailyPay))}/year at 40h/week
                 </span>
                 <span className="block text-[10px]">
-                  {Math.round(s.jobDays[id] || 0)} days worked · {s.shifts[id] || 0} extra shifts
+                  {Math.round(s.jobDays[id] || 0)} workdays paid · {s.shifts[id] || 0} extra hours
                   {isCurrent ? " · current" : ""}
                 </span>
               </span>
