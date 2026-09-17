@@ -120,11 +120,18 @@ export default function CareerPanel() {
                       <span className="block p-3">
                       <span className="flex justify-between gap-3 text-sm font-semibold">
                         <span>{offer.title}</span>
-                        <span className="font-mono-nums text-primary shrink-0">{formatMoney(offer.dailyPay)}/day at {WEEK_HOURS}h</span>
+                        <span className="font-mono-nums text-primary shrink-0 text-right">
+                          {formatMoney(offer.dailyPay)}/day at 40h
+                          <span className="block text-[11px] font-normal text-muted-foreground">
+                            {formatMoney(offer.dailyPay * (derived.workHours / WEEK_HOURS))}/day at {derived.workHours}h
+                          </span>
+                        </span>
                       </span>
                       <span className="text-[11px] text-muted-foreground">{offer.employer}</span>
                       <span className="flex justify-between gap-3 text-[11px] mt-1">
-                        <span className="text-primary">{getCareerTrack(offer.employer).name}</span>
+                        <span className={delta40 >= 0 ? "font-mono-nums text-primary" : "font-mono-nums text-destructive"}>
+                          {delta40 >= 0 ? "+" : "−"}{formatMoney(Math.abs(delta40))}/day at 40h vs your job
+                        </span>
                         <span className={`shrink-0 ${step < 0 ? "text-destructive" : "text-primary"}`}>
                           Level {level + 1} of {JOBS.length} · {stepWord}
                         </span>
