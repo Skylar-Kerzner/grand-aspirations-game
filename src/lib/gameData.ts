@@ -119,6 +119,10 @@ const EMPLOYER_TRACKS: Record<string, string> = {
   "Ashford Mutual": "finance", "Kestrel Capital": "finance", "Vale Point Partners": "finance",
   "Ridgeline Asset Management": "finance", "Blackwater Fund": "finance", "Hollis & Co.": "finance",
   "Your own fund": "finance",
+  "Beacon Retail Group": "hospitality", "Larkspur Hotels": "hospitality", "Maison Grove": "hospitality",
+  "Ironvale Industrial": "operations",
+  "Helix Systems": "tech", "Orbit Cloud": "tech",
+  "Hartwell Group": "corporate", "Devon & Rowe": "corporate",
 };
 
 export function getCareerTrack(employer: string): CareerTrack {
