@@ -554,6 +554,12 @@ export function getBusinessIncomeAt(state: GameState, id: string, attention: num
   return getBusinessSteadyIncomeAt(state, id, attention) * (biz.condition ?? 1) * (biz.takings ?? 1);
 }
 
+/** Typical income at a chosen attention level — the same steady rate the ROI figures quote,
+ *  so the money and the percentage beside it can never disagree. Today's luck is shown separately. */
+export function getBusinessTypicalIncomeAt(state: GameState, id: string, attention: number): number {
+  return getBusinessSteadyIncomeAt(state, id, attention);
+}
+
 /** The size actually trading today: a build-out earns nothing until it opens. */
 export function getBusinessEarningLevel(state: GameState, id: string): number {
   const biz = state.businesses[id];
