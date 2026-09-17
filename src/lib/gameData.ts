@@ -110,13 +110,84 @@ export interface CareerVariant { title: string; employer: string }
  * over a lifetime: hospitality and trades pay well early and flatten, finance
  * and tech start modest and climb far higher.
  */
-export interface CareerTrack { id: string; name: string; curve: number; outlook: string }
+export interface CareerTrack {
+  id: string;
+  name: string;
+  curve: number;
+  outlook: string;
+  /** How the middle of the ladder feels: a short phrase for the comparison screen. */
+  middle: string;
+  /** Plain-language advantages beyond pay. */
+  perks: string[];
+  /** Venture industries this working life also gives you a feel for. */
+  ventureTracks?: string[];
+  /** Extra return on everything you have invested while you work in this field. */
+  investBonus?: number;
+  /** Study runs this much faster, and programs cost this much less. */
+  studyBonus?: number;
+  /** Share off your daily lifestyle costs — comped, sponsored or subsidised. */
+  livingDiscount?: number;
+  /** Extra hours in your week from the way this life is organised. */
+  hoursBonus?: number;
+}
+
 export const CAREER_TRACKS: Record<string, CareerTrack> = {
-  hospitality: { id: "hospitality", name: "Hospitality & Retail", curve: -0.6, outlook: "Pays well right away, but the ceiling is low." },
-  operations: { id: "operations", name: "Operations & Industry", curve: -0.25, outlook: "Steady pay that rises slowly and reliably." },
-  corporate: { id: "corporate", name: "Corporate Leadership", curve: 0.2, outlook: "Modest early, strong once you reach the top table." },
-  tech: { id: "tech", name: "Technology", curve: 0.5, outlook: "A slow start that compounds into very high pay." },
-  finance: { id: "finance", name: "Finance & Investing", curve: 0.85, outlook: "Lowest pay early, by far the highest ceiling." },
+  hospitality: {
+    id: "hospitality", name: "Hospitality & Retail", curve: -0.6,
+    outlook: "Pays well right away, but the ceiling is low.",
+    middle: "Rises quickly at first, then flattens out by the middle.",
+    perks: ["Runs coffee shops, restaurants, hotels and fashion labels better", "Meals and rooms comped: 10% off your lifestyle"],
+    ventureTracks: ["hospitality"], livingDiscount: 0.1,
+  },
+  operations: {
+    id: "operations", name: "Operations & Industry", curve: -0.25,
+    outlook: "Steady pay that rises slowly and reliably.",
+    middle: "Even, predictable steps the whole way up.",
+    perks: ["Runs theme parks and large sites better", "Cheapest schooling of the hands-on paths"],
+    ventureTracks: ["operations"],
+  },
+  corporate: {
+    id: "corporate", name: "Corporate Leadership", curve: 0.2,
+    outlook: "Modest early, strong once you reach the top table.",
+    middle: "Slow through the middle, then jumps at director level.",
+    perks: ["Runs city developments better", "Boardroom contacts: +4% on everything invested"],
+    ventureTracks: ["corporate"], investBonus: 0.04,
+  },
+  tech: {
+    id: "tech", name: "Technology", curve: 0.5,
+    outlook: "A slow start that compounds into very high pay.",
+    middle: "Climbs fast through the middle once you can build.",
+    perks: ["Runs tech ventures and media networks better", "Remote and flexible: +3h of your week"],
+    ventureTracks: ["tech"], hoursBonus: 3,
+  },
+  finance: {
+    id: "finance", name: "Finance & Investing", curve: 0.85,
+    outlook: "Lowest pay early, by far the highest ceiling.",
+    middle: "Grinding middle years, then compensation runs away.",
+    perks: ["+10% on everything you have invested", "The only path to running your own fund"],
+    ventureTracks: ["corporate"], investBonus: 0.1,
+  },
+  arts: {
+    id: "arts", name: "Arts & Entertainment", curve: 1.1,
+    outlook: "Almost nothing for years, then fame pays enormously.",
+    middle: "A brutal middle — many years at little pay.",
+    perks: ["Runs fashion labels, theme parks and media better", "Sponsorships and invitations: 20% off your lifestyle"],
+    ventureTracks: ["hospitality", "tech", "operations"], livingDiscount: 0.2,
+  },
+  education: {
+    id: "education", name: "Education & Public Service", curve: -0.7,
+    outlook: "Low pay throughout, but nothing ever goes backwards.",
+    middle: "Gentle, certain steps and long holidays.",
+    perks: ["Study runs 30% faster and costs 25% less", "Term breaks: +5h of your week"],
+    studyBonus: 0.3, hoursBonus: 5,
+  },
+  medicine: {
+    id: "medicine", name: "Health & Medicine", curve: 0.6,
+    outlook: "The longest, costliest schooling, then very high steady pay.",
+    middle: "Nothing much until you qualify, then a steep, safe climb.",
+    perks: ["Your own health is handled: +2h of your week", "Pay barely moves with the economy"],
+    hoursBonus: 2,
+  },
 };
 
 const EMPLOYER_TRACKS: Record<string, string> = {
@@ -135,6 +206,15 @@ const EMPLOYER_TRACKS: Record<string, string> = {
   "Ironvale Industrial": "operations",
   "Helix Systems": "tech", "Orbit Cloud": "tech",
   "Hartwell Group": "corporate", "Devon & Rowe": "corporate",
+  // Arts & Entertainment
+  "Lyric Playhouse": "arts", "Silver Reel Studios": "arts", "Marquee Talent": "arts",
+  "Vantage Pictures": "arts", "Nightfall Records": "arts",
+  // Education & Public Service
+  "Hillcrest Public School": "education", "Wren Academy": "education", "City Education Board": "education",
+  "Alderman College": "education", "State Department of Learning": "education",
+  // Health & Medicine
+  "Riverside Clinic": "medicine", "St. Alder Hospital": "medicine", "Meadowbrook Health",
+  "Kingsley Medical Group": "medicine", "National Health Institute": "medicine",
 };
 
 export function getCareerTrack(employer: string): CareerTrack {
