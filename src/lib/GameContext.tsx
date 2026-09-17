@@ -872,18 +872,28 @@ function advance(state: GameState, days: number, now: number): GameState {
   for (const [id, inv] of Object.entries(s.investments)) {
     const def = INVESTMENTS.find((i) => i.id === id);
     if (!def || inv.value <= 0) { investments[id] = inv; continue; }
-    const mu = def.annualReturn * mult;
+    let holding = inv;
+    if (def.unknownReturn) {
+      // A hidden pace, drawn when you bought in and quietly redrawn when the
+      // market turns — so a good run is real, but never something you can count on.
+      if (holding.drift === undefined) {
+        holding = { ...holding, drift: rollDrift(def), regimeUntil: nextRegime(def, day) };
+      } else if ((holding.regimeUntil ?? 0) <= day) {
+        holding = { ...holding, drift: rollDrift(def, holding.drift), regimeUntil: nextRegime(def, day) };
+      }
+    }
+    const mu = investmentDrift(def, holding) * mult;
     const sigma = def.annualVolatility * volDamp;
     const t = days / DAYS_PER_YEAR;
     const z = gaussian();
     // No variance drag: the stated return is what a typical year actually gives,
     // with good years above it and bad years below.
     const factor = Math.exp(Math.log(1 + mu) * t + sigma * Math.sqrt(t) * z);
-    const newValue = Math.max(0, inv.value * factor);
-    const gain = newValue - inv.value;
+    const newValue = Math.max(0, holding.value * factor);
+    const gain = newValue - holding.value;
     stats.investmentGains += gain;
     stats.investEarnedById[id] = (stats.investEarnedById[id] || 0) + gain;
-    investments[id] = { ...inv, value: newValue };
+    investments[id] = { ...holding, value: newValue };
   }
 
   // Loan servicing — interest accrues on the remaining balance only
