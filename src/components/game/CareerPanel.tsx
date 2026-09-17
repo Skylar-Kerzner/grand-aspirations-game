@@ -8,7 +8,7 @@ import { getImage } from "@/lib/gameImages";
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
   const [showPaths, setShowPaths] = useState(false);
-  const loanHeadroom = getStudentLoanHeadroom(state);
+  
   const job = derived.job;
   
   const homeTrack = getCareerTrack(job.employer).id;
