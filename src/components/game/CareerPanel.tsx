@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudentLoanHeadroom } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, CAREER_TRACKS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, getTrackPrograms, workplaceImage } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, PROMOTION_MIN_DAYS, getTrackPrograms, workplaceImage } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 export default function CareerPanel() {
@@ -21,6 +21,7 @@ export default function CareerPanel() {
     ? Math.floor(state.day) - state.jobHistory[state.jobHistory.length - 1].startDay
     : 0;
   const settled = daysInJob >= JOB_HOP_SETTLED_DAYS;
+  const seasoned = daysInJob >= PROMOTION_MIN_DAYS;
 
   return (
     <div className="space-y-6">
@@ -49,13 +50,15 @@ export default function CareerPanel() {
             : " Staying here builds industry experience that raises the pay of offers in this industry."}
         </p>
         <div className="flex justify-between text-sm mb-1">
-          <span className="text-muted-foreground">Gross pay at {derived.workHours}h</span>
-          <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
-        </div>
-        <div className="flex justify-between text-sm mb-1">
           <span className="text-muted-foreground">Gross pay at 40h</span>
           <span className="font-mono-nums">{formatMoney(job.dailyPay)}/day</span>
         </div>
+        {derived.workHours !== WEEK_HOURS && (
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-muted-foreground">Gross pay at your {derived.workHours}h</span>
+            <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
+          </div>
+        )}
         <p className="text-[11px] text-muted-foreground mb-2">
           Offers below are quoted at 40h — compare them with the 40h line above.
         </p>
@@ -76,6 +79,11 @@ export default function CareerPanel() {
               Staying in {getCareerTrack(job.employer).name} usually means the next rank up, sometimes a sideways
               move, occasionally two rungs at once. Any other industry starts you at the rank your schooling and
               years there support — which can be well below where you stand now.
+            </p>
+            <p className="text-[11px] text-muted-foreground mb-2">
+              {seasoned
+                ? "You have served long enough here for employers to consider you for a higher rank."
+                : `Nobody is promoted every morning: until you have ${PROMOTION_MIN_DAYS} days in this post (${Math.max(0, PROMOTION_MIN_DAYS - daysInJob)} to go), offers come at the rank you already hold. Schooling in an industry also caps how high it will hire you.`}
             </p>
             <p className="text-[11px] text-muted-foreground mb-2">
               {settled
@@ -122,9 +130,11 @@ export default function CareerPanel() {
                         <span>{offer.title}</span>
                         <span className="font-mono-nums text-primary shrink-0 text-right">
                           {formatMoney(offer.dailyPay)}/day at 40h
-                          <span className="block text-[11px] font-normal text-muted-foreground">
-                            {formatMoney(offer.dailyPay * (derived.workHours / WEEK_HOURS))}/day at {derived.workHours}h
-                          </span>
+                          {derived.workHours !== WEEK_HOURS && (
+                            <span className="block text-[11px] font-normal text-muted-foreground">
+                              {formatMoney(offer.dailyPay * (derived.workHours / WEEK_HOURS))}/day at your {derived.workHours}h
+                            </span>
+                          )}
                         </span>
                       </span>
                       <span className="text-[11px] text-muted-foreground">{offer.employer} · {getCareerTrack(offer.employer).name}</span>

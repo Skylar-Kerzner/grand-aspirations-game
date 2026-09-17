@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame, getTimeBudget, getLifestyleHours, getAssetLook } from "@/lib/GameContext";
-import { formatMoney } from "@/lib/formatters";
+import { useGame, getTimeBudget, getLifestyleHours, getAssetLook, isAssetLookChosen } from "@/lib/GameContext";
+import { formatMoney, periodLabel } from "@/lib/formatters";
 import { ASSETS, BASE_TIME_BUDGET, assetLooks } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
@@ -21,10 +21,7 @@ export default function AssetGallery() {
   const selectedTier = selected ? Math.max(1, state.assets[selected] || 1) : 0;
   const budget = getTimeBudget(state);
   const lifestyleHours = getLifestyleHours(state);
-  const periodLabel = derived.recentCashFlowDays >= 7
-    ? "7d net"
-    : derived.recentCashFlowDays === 1 ? "Today net" : derived.recentCashFlowDays > 1
-      ? `${derived.recentCashFlowDays}d net` : "Net history";
+  const period = periodLabel(derived.recentCashFlowDays);
 
   return (
     <>
@@ -110,11 +107,10 @@ export default function AssetGallery() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{periodLabel}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Net · {period}</p>
                   <p className={`font-mono-nums text-sm ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
                     {derived.recentNet >= 0 ? "+" : ""}{formatMoney(derived.recentNet)}
                   </p>
-                  <p className="font-mono-nums text-[9px] text-muted-foreground">Pace {formatMoney(derived.netPerDay)}/day</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Week</p>
@@ -172,18 +168,26 @@ export default function AssetGallery() {
                     const costDelta = tier.dailyCost - selectedDef.tiers[selectedTier - 1].dailyCost;
                     const looks = assetLooks(tier);
                     const chosenLook = getAssetLook(state, selectedDef.id, i);
-                    const open = choosing === i;
+                    const settled = isAssetLookChosen(state, selectedDef.id, i);
+                    const open = choosing === i && !settled;
                     return (
                       <div key={tier.name} className="space-y-2">
                         <motion.button
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => setChoosing(open ? null : i)}
+                          onClick={() => {
+                            if (settled) {
+                              dispatch({ type: "SET_LIFESTYLE", id: selectedDef.id, tier: i + 1 });
+                              setChoosing(null);
+                            } else {
+                              setChoosing(open ? null : i);
+                            }
+                          }}
                           disabled={isCurrent}
                           className={`w-full flex items-center gap-3 rounded-lg p-3 text-left transition-game ${isCurrent ? "bg-primary/15 ring-1 ring-primary/40" : "surface-button"}`}
                         >
                           <span className="flex-1 min-w-0">
                             <span className={`block text-sm font-medium ${isCurrent ? "text-primary" : "text-foreground"}`}>
-                              {isCurrent ? chosenLook?.name : tier.name}
+                              {isCurrent || settled ? chosenLook?.name : tier.name}
                             </span>
                             <span className={`block text-[11px] font-medium ${tier.hoursBonus >= 0 ? "text-primary" : "text-destructive"}`}>
                               {hoursLabel(tier.hoursBonus)}
@@ -205,7 +209,8 @@ export default function AssetGallery() {
                         {open && !isCurrent && (
                           <div className="rounded-lg border border-border p-3">
                             <p className="text-[11px] text-muted-foreground mb-2">
-                              Same price, same hours — pick the one you want to live with. You only see it once you move in.
+                              Same price, same hours — pick the one you want to live with. You only see it once you
+                              move in, and this step keeps that look for the rest of the game.
                             </p>
                             <div className="grid grid-cols-3 gap-2">
                               {looks.map((look, li) => (

@@ -1,12 +1,9 @@
 import { useGame } from "@/lib/GameContext";
-import { formatMoney, formatRate, formatDays } from "@/lib/formatters";
+import { formatMoney, formatDays, periodLabel } from "@/lib/formatters";
 
 export default function Dashboard() {
   const { state, derived, dispatch } = useGame();
-  const periodLabel = derived.recentCashFlowDays >= 7
-    ? "Last 7 days"
-    : derived.recentCashFlowDays === 1 ? "Today" : derived.recentCashFlowDays > 1
-      ? `Last ${derived.recentCashFlowDays} days` : "No history yet";
+  const period = periodLabel(derived.recentCashFlowDays);
   return (
     <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-border px-4 py-5">
       <div className="text-center mb-3">
@@ -39,23 +36,22 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-3 items-end max-w-md mx-auto gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{periodLabel}</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Earned · {period}</p>
           <p className="font-mono-nums text-sm text-primary">
-            {formatMoney(derived.recentSalary + derived.recentBusiness + derived.recentInvestments)}
+            {formatMoney(derived.recentSalary + derived.recentBusiness)}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Costs</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Costs · {period}</p>
           <p className="font-mono-nums text-sm text-destructive">
             -{formatMoney(derived.recentCosts)}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Net</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Net · {period}</p>
           <p className={`font-mono-nums text-base ${derived.recentNet >= 0 ? "text-primary" : "text-destructive"}`}>
             {derived.recentNet >= 0 ? "+" : ""}{formatMoney(derived.recentNet)}
           </p>
-          <p className="text-[10px] text-muted-foreground font-mono-nums">Pace {formatRate(derived.netPerDay)}</p>
         </div>
       </div>
     </div>
