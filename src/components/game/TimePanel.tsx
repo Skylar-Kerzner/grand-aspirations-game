@@ -115,8 +115,8 @@ export default function TimePanel() {
             const condition = state.businesses[def.id]?.condition ?? 1;
             const fullROI = getBusinessROIAt(state, def.id, 1);
             const currentROI = getBusinessEffectiveROI(state, def.id);
-            const currentPerDay = businessIncomeOf(state, def.id);
-            const fullPerDay = getBusinessIncomeAt(state, def.id, 1);
+            const currentPerWeek = businessIncomeOf(state, def.id) * 7;
+            const fullPerWeek = getBusinessIncomeAt(state, def.id, 1) * 7;
             return (
               <div key={def.id} className="surface-card rounded-xl p-4">
                 <div className="flex justify-between items-baseline mb-1">
@@ -134,12 +134,12 @@ export default function TimePanel() {
                   <span className="text-muted-foreground">Now, at {hours}h a week</span>
                   <span className="text-right font-mono-nums">
                     <span className={currentROI >= 0.15 ? "text-primary" : ""}>{(currentROI * 100).toFixed(0)}%</span>
-                    {" · "}{formatMoney(currentPerDay)}/day
+                    {" · "}{formatMoney(currentPerWeek)}/week
                   </span>
                   <span className="text-muted-foreground">At {BUSINESS_ATTENTION_FULL_HOURS}h a week</span>
                   <span className="text-right font-mono-nums">
                     <span className={fullROI >= 0.15 ? "text-primary" : ""}>{(fullROI * 100).toFixed(0)}%</span>
-                    {" · "}{formatMoney(fullPerDay)}/day
+                    {" · "}{formatMoney(fullPerWeek)}/week
                   </span>
                 </div>
                 <input
