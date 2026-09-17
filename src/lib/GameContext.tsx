@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useMemo } from
 import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS, noDegreeXpMultiplier,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
+  trackSwitchPenalty, jobHopMultiplier,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
@@ -838,51 +839,51 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const tier = state.jobIndex + 1;
       const homeTrack = getCareerTrack(state.currentJob.employer).id;
       const tenure = getTrackTenure(state);
-      // Past the gate tier you need either that path's major, or — on your own
-      // industry — enough years served in it. Sideways moves only into related
-      // industries, and only if that move makes sense at this level.
-      const gated = (CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }]).filter((v) => {
-        const track = getCareerTrack(v.employer).id;
-        const hasMajor = state.majors.includes(getTrackMajor(track)?.id || "");
-        const sameTrack = track === homeTrack;
-        if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, track)) return false;
-        if (tier < MAJOR_GATE_TIER) return true;
-        if (hasMajor) return true;
-        // No degree: climb on experience — held positions or years served in your own industry.
-        return sameTrack && (tenure >= TRACK_EXPERIENCE_GATE || getTrackExperienceDays(state) >= TRACK_EXPERIENCE_YEARS_GATE * DAYS_PER_YEAR);
-      });
-      if (gated.length === 0) return state;
-      const variants = gated;
-      // Shuffle, then take distinct titles and distinct employers so no offer repeats either.
+      // Every path stays open — what changes is the pay you are offered.
+      const variants = CAREER_VARIANTS[tier] || [{ title: next.title, employer: next.employer }];
+      if (variants.length === 0) return state;
       const pool = [...variants].sort(() => Math.random() - 0.5);
+      // Spread the choice across industries: take at most one offer per track first,
+      // starting with your own industry and any industry you hold a degree in.
+      const majorTracks = state.majors
+        .map((m) => MAJORS.find((d) => d.id === m)?.track)
+        .filter((t): t is string => !!t);
+      const rank = (v: { employer: string }) => {
+        const t = getCareerTrack(v.employer).id;
+        if (t === homeTrack) return 0;
+        if (majorTracks.includes(t)) return 1;
+        return 2;
+      };
+      const ordered = [...pool].sort((a, b) => rank(a) - rank(b));
       const picked: typeof variants = [];
+      const usedTracks = new Set<string>();
+      for (const v of ordered) {
+        if (picked.length >= 3) break;
+        const t = getCareerTrack(v.employer).id;
+        if (usedTracks.has(t)) continue;
+        if (picked.some((p) => p.title === v.title || p.employer === v.employer)) continue;
+        usedTracks.add(t);
+        picked.push(v);
+      }
       for (const v of pool) {
         if (picked.length >= 3) break;
         if (picked.some((p) => p.title === v.title || p.employer === v.employer)) continue;
         picked.push(v);
       }
-      // Make sure the choice spans more than one career track where possible.
-      if (picked.length === 3 && new Set(picked.map((v) => getCareerTrack(v.employer).id)).size === 1) {
-        const other = pool.find((v) => getCareerTrack(v.employer).id !== getCareerTrack(picked[0].employer).id);
-        if (other) picked[2] = other;
-      }
-      // A completed major guarantees its own industry is on the table.
-      const majorTracks = state.majors
-        .map((m) => MAJORS.find((d) => d.id === m)?.track)
-        .filter((t): t is string => !!t);
-      if (majorTracks.length > 0 && !picked.some((v) => majorTracks.includes(getCareerTrack(v.employer).id))) {
-        const replacement = pool.find((v) => majorTracks.includes(getCareerTrack(v.employer).id));
-        if (replacement) picked[0] = replacement;
-      }
+      // Restless records are paid less wherever they land.
+      const lastStart = state.jobHistory.length > 0 ? state.jobHistory[state.jobHistory.length - 1].startDay : 0;
+      const hop = jobHopMultiplier(Math.floor(state.day) - lastStart);
       const careerOffers = picked.map((variant) => {
         const factor = CAREER_SALARY_RANGE.min + Math.random() * (CAREER_SALARY_RANGE.max - CAREER_SALARY_RANGE.min);
         const track = trackPayMultiplier(variant.employer, state.jobIndex + 1);
-        const sameTrack = getCareerTrack(variant.employer).id === homeTrack;
+        const offerTrack = getCareerTrack(variant.employer).id;
+        const sameTrack = offerTrack === homeTrack;
+        const hasMajor = state.majors.includes(getTrackMajor(offerTrack)?.id || "");
         // Staying put compounds: loyalty, positions held and years served in the industry.
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
-          : 1 - TRACK_SWITCH_PENALTY;
-        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty) };
+          : 1 - trackSwitchPenalty(homeTrack, offerTrack, hasMajor);
+        return { ...variant, dailyPay: Math.round(next.dailyPay * factor * track * loyalty * hop) };
       }).sort(() => Math.random() - 0.5);
       return { ...state, careerOffers, xp: Math.max(0, state.xp - getJob(state).xpToPromote) };
     }

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, getTrackMajor, TRACK_EXPERIENCE_GATE, TRACK_EXPERIENCE_YEARS_GATE, isAdjacentTrack } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, getTrackMajor, JOB_HOP_SETTLED_DAYS } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
@@ -16,15 +16,13 @@ export default function CareerPanel() {
   const tenure = getTrackTenure(state);
   const years = getTrackExperienceDays(state) / DAYS_PER_YEAR;
   const experienceBonus = getTrackExperienceBonus(state);
-  // Tracks whose offers are open to the player at the next level
-  const openTracks = Object.values(CAREER_TRACKS).filter((t) => {
-    const hasMajor = state.majors.includes(getTrackMajor(t.id)?.id || "");
-    const sameTrack = t.id === homeTrack;
-    if (!sameTrack && !hasMajor && !isAdjacentTrack(homeTrack, t.id)) return false;
-    if (!gatedTier) return true;
-    return hasMajor || (sameTrack && (tenure >= TRACK_EXPERIENCE_GATE || years >= TRACK_EXPERIENCE_YEARS_GATE));
-  });
-  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && openTracks.length > 0 && state.careerOffers.length === 0;
+  // Every industry stays open — switching simply pays less
+  const openTracks = Object.values(CAREER_TRACKS);
+  const daysInJob = state.jobHistory.length > 0
+    ? Math.floor(state.day) - state.jobHistory[state.jobHistory.length - 1].startDay
+    : 0;
+  const settled = daysInJob >= JOB_HOP_SETTLED_DAYS;
+  const canSeekOffers = !!next && state.xp >= derived.xpNeeded && state.careerOffers.length === 0;
 
   return (
     <div className="space-y-6">
@@ -75,19 +73,15 @@ export default function CareerPanel() {
                 keep climbing at full pace.
               </p>
             )}
-            {gatedTier && openTracks.length === 0 && (
-              <p className="text-[11px] text-muted-foreground mb-2">
-                To climb further, either stay in {getCareerTrack(job.employer).name} until you have{" "}
-                {TRACK_EXPERIENCE_GATE} positions or {TRACK_EXPERIENCE_YEARS_GATE} years behind you, or study a major
-                below to open another path.
-              </p>
-            )}
-            {openTracks.length > 0 && (
-              <p className="text-[11px] text-muted-foreground mb-2">
-                Open to you now: {openTracks.map((t) => t.name).join(", ")}. Moving to another industry costs you
-                a step in pay, so it only pays off when the new path climbs higher.
-              </p>
-            )}
+            <p className="text-[11px] text-muted-foreground mb-2">
+              Every industry is open to you: {openTracks.map((t) => t.name).join(", ")}. Leaving your own costs you
+              pay — more so into a distant field, less if you hold its degree.
+            </p>
+            <p className="text-[11px] text-muted-foreground mb-2">
+              {settled
+                ? "You have been here long enough that employers take you seriously — offers come in at full pay."
+                : `Changing jobs too often reads as restless: offers are discounted until you have a year in a post (${Math.max(0, JOB_HOP_SETTLED_DAYS - daysInJob)} more days).`}
+            </p>
             {state.careerOffers.length === 0 ? (
               <motion.button
                 whileTap={{ scale: 0.97 }}

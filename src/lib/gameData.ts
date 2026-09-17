@@ -108,6 +108,27 @@ export const TRACK_EXPERIENCE_YEARS_GATE = 3;
 
 /** Moving sideways into another industry costs you: you arrive as an outsider. */
 export const TRACK_SWITCH_PENALTY = 0.22;
+/** Jumping into an unrelated industry costs more still. */
+export const TRACK_FAR_SWITCH_PENALTY = 0.38;
+/** A degree in the industry you are moving into softens the landing. */
+export const TRACK_SWITCH_DEGREE_RELIEF = 0.14;
+
+/** Leaving a job before this many days served is treated as job hopping. */
+export const JOB_HOP_SETTLED_DAYS = 365;
+/** The most pay a restless record can cost you on a new offer. */
+export const JOB_HOP_PENALTY = 0.2;
+
+/** How much pay a move into another industry costs, before the hopping penalty. */
+export function trackSwitchPenalty(from: string, to: string, hasMajor: boolean): number {
+  const base = isAdjacentTrack(from, to) ? TRACK_SWITCH_PENALTY : TRACK_FAR_SWITCH_PENALTY;
+  return Math.max(0, base - (hasMajor ? TRACK_SWITCH_DEGREE_RELIEF : 0));
+}
+
+/** Offers are worth less while your record looks restless. */
+export function jobHopMultiplier(daysInCurrentJob: number): number {
+  const settled = Math.min(1, Math.max(0, daysInCurrentJob) / JOB_HOP_SETTLED_DAYS);
+  return 1 - JOB_HOP_PENALTY * (1 - settled);
+}
 
 /**
  * Which industries a sideways move makes sense into. Anything not listed here is
