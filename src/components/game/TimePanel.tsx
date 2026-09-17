@@ -1,5 +1,5 @@
-import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessSteadyIncomeAt, businessIncomeOf } from "@/lib/GameContext";
-import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital, getCareerTrack } from "@/lib/gameData";
+import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessSteadyIncomeAt, businessIncomeOf, trackPerk } from "@/lib/GameContext";
+import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital } from "@/lib/gameData";
 import { formatMoney } from "@/lib/formatters";
 
 export default function TimePanel() {
@@ -8,7 +8,7 @@ export default function TimePanel() {
   const bizHours = getTotalBusinessHours(state);
   const budget = getTimeBudget(state);
   const lifestyleHours = getLifestyleHours(state);
-  const careerHours = getCareerTrack(state.currentJob.employer).hoursBonus || 0;
+  const careerHours = trackPerk(state, "hoursBonus");
   const workHours = getWorkHours(state);
   const freeHours = Math.max(0, budget - workHours - state.studyHours - bizHours);
 

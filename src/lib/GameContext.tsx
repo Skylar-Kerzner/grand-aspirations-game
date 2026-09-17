@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useMemo } from
 import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
-  trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS,
+  trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS, trackPerkScale, type InvestmentDef,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   credentialLevelFrom, requiredCredentialLevel, CREDENTIAL_YEARS_PER_LEVEL, CREDENTIAL_EXPERIENCE_CAP,
   CREDENTIAL_LEVEL_CEILING, LEVELS_PER_YEAR_IN_TRACK, TRACK_TRANSFER_SHARE, TRACK_TRANSFER_ADJACENT_BONUS,
@@ -28,7 +28,7 @@ export interface BusinessState {
   choices?: Record<string, string>;    // location / market / product chosen when opening
 }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
-export interface InvestmentState { value: number; basis: number; lockedUntil?: number }
+export interface InvestmentState { value: number; basis: number; lockedUntil?: number; drift?: number; regimeUntil?: number }
 /** Money borrowed to study. Nothing is due while enrolled or during the grace period. */
 export interface StudentLoanState { balance: number; borrowed: number; repaid: number; dueFrom: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number; level?: number; note?: string }
@@ -197,7 +197,7 @@ export function getBusinessAttentionOf(state: GameState, id: string): number {
 /** Weekly hours you can direct: a base week, what your lifestyle buys back, and what your field allows. */
 export function getTimeBudget(state: GameState): number {
   const lifestyle = ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
-  const career = getCareerTrack(state.currentJob.employer).hoursBonus || 0;
+  const career = trackPerk(state, "hoursBonus");
   return Math.max(10, BASE_TIME_BUDGET + lifestyle + career);
 }
 
@@ -217,13 +217,48 @@ export function getInvestmentTotal(state: GameState): number {
   return Object.values(state.investments).reduce((s, i) => s + i.value, 0);
 }
 
+/**
+ * What a career path gives you beyond pay. Every perk is weakest at the bottom
+ * of the ladder and full strength at the top, so climbing one path pays off in
+ * ways that are not just salary.
+ */
+export function trackPerk(
+  state: GameState,
+  key: "investBonus" | "studyBonus" | "livingDiscount" | "hoursBonus" | "ventureLuck" | "ventureCostDiscount",
+): number {
+  const track = getCareerTrack(state.currentJob.employer);
+  const raw = (track[key] as number | undefined) || 0;
+  if (!raw) return 0;
+  const scaled = raw * trackPerkScale(state.jobIndex, JOBS.length - 1);
+  return key === "hoursBonus" ? Math.round(scaled) : scaled;
+}
+
 function investMultiplier(state: GameState): number {
   let m = 1;
   if (state.consultants.includes("finance")) m *= 1.1;
   if (state.consultants.includes("quant")) m *= 1.2;
   // Working in a field that lives off markets helps your own money too.
-  m *= 1 + (getCareerTrack(state.currentJob.employer).investBonus || 0);
+  m *= 1 + trackPerk(state, "investBonus");
   return m;
+}
+
+/** The pace this particular holding is running at — published, or quietly its own. */
+export function investmentDrift(def: InvestmentDef, inv?: InvestmentState): number {
+  if (!def.unknownReturn) return def.annualReturn;
+  return inv?.drift ?? def.annualReturn;
+}
+
+/** Draw a fresh hidden pace, pulled back toward the class average from wherever it was. */
+function rollDrift(def: InvestmentDef, previous?: number): number {
+  const spread = def.driftSpread ?? 0.2;
+  const anchor = previous === undefined ? def.annualReturn : def.annualReturn + 0.35 * (previous - def.annualReturn);
+  const drawn = anchor + gaussian() * spread;
+  return Math.max(-0.35, Math.min(1.2, drawn));
+}
+
+function nextRegime(def: InvestmentDef, day: number): number {
+  const base = def.regimeDays ?? 730;
+  return day + Math.round(base * (0.6 + Math.random() * 0.8));
 }
 
 export function getInvestmentPerDay(state: GameState): number {
@@ -231,7 +266,7 @@ export function getInvestmentPerDay(state: GameState): number {
   let total = 0;
   for (const [id, inv] of Object.entries(state.investments)) {
     const def = INVESTMENTS.find((i) => i.id === id);
-    if (def) total += (inv.value * def.annualReturn * mult) / DAYS_PER_YEAR;
+    if (def) total += (inv.value * investmentDrift(def, inv) * mult) / DAYS_PER_YEAR;
   }
   return total;
 }
@@ -454,7 +489,7 @@ export function getLivingCosts(state: GameState): number {
   let total = 0;
   for (const def of ASSETS) total += getLifestyleTier(state, def.id)?.dailyCost || 0;
   // Some lives come partly comped: meals, rooms, clothes, invitations.
-  total *= 1 - (getCareerTrack(state.currentJob.employer).livingDiscount || 0);
+  total *= 1 - trackPerk(state, "livingDiscount");
   if (state.day < state.livingUntil) total *= state.livingMult;
   return total;
 }
@@ -566,7 +601,9 @@ export function upgradeCostFor(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   if (!def) return Infinity;
   const level = state.businesses[id]?.level || 0;
-  const raw = calcBusinessCost(def.baseCost, def.costMultiplier, level);
+  let raw = calcBusinessCost(def.baseCost, def.costMultiplier, level);
+  // Some working lives make building things cheaper.
+  raw *= 1 - trackPerk(state, "ventureCostDiscount");
   return state.consultants.includes("banker") ? raw * 0.8 : raw;
 }
 
@@ -732,7 +769,7 @@ function advance(state: GameState, days: number, now: number): GameState {
   let majors = s.majors;
   if (studying) {
     // Teaching lives run alongside study: the same hours go further.
-    const rate = (s.studyHours / 40) * (1 + (getCareerTrack(s.currentJob.employer).studyBonus || 0));
+    const rate = (s.studyHours / 40) * (1 + trackPerk(s, "studyBonus"));
     const left = studying.daysLeft - days * rate;
     if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
@@ -837,18 +874,28 @@ function advance(state: GameState, days: number, now: number): GameState {
   for (const [id, inv] of Object.entries(s.investments)) {
     const def = INVESTMENTS.find((i) => i.id === id);
     if (!def || inv.value <= 0) { investments[id] = inv; continue; }
-    const mu = def.annualReturn * mult;
+    let holding = inv;
+    if (def.unknownReturn) {
+      // A hidden pace, drawn when you bought in and quietly redrawn when the
+      // market turns — so a good run is real, but never something you can count on.
+      if (holding.drift === undefined) {
+        holding = { ...holding, drift: rollDrift(def), regimeUntil: nextRegime(def, s.day + days) };
+      } else if ((holding.regimeUntil ?? 0) <= s.day) {
+        holding = { ...holding, drift: rollDrift(def, holding.drift), regimeUntil: nextRegime(def, s.day + days) };
+      }
+    }
+    const mu = investmentDrift(def, holding) * mult;
     const sigma = def.annualVolatility * volDamp;
     const t = days / DAYS_PER_YEAR;
     const z = gaussian();
     // No variance drag: the stated return is what a typical year actually gives,
     // with good years above it and bad years below.
     const factor = Math.exp(Math.log(1 + mu) * t + sigma * Math.sqrt(t) * z);
-    const newValue = Math.max(0, inv.value * factor);
-    const gain = newValue - inv.value;
+    const newValue = Math.max(0, holding.value * factor);
+    const gain = newValue - holding.value;
     stats.investmentGains += gain;
     stats.investEarnedById[id] = (stats.investEarnedById[id] || 0) + gain;
-    investments[id] = { ...inv, value: newValue };
+    investments[id] = { ...holding, value: newValue };
   }
 
   // Loan servicing — interest accrues on the remaining balance only
@@ -1158,7 +1205,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             level: 1,
             condition: 1,
             choices: action.choices,
-            fortune: rollBusinessFortune(),
+            fortune: rollBusinessFortune() * (1 + trackPerk(state, "ventureLuck")),
           }
         : (() => {
             // Only a tier step puts part of the venture's fortune back on the table,
@@ -1182,7 +1229,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                   0.15,
                   (tierUp
                     ? (cur.fortune ?? 1) * (1 - rerollWeight) +
-                      rollBusinessFortune() * rerollWeight
+                      rollBusinessFortune() * (1 + trackPerk(state, "ventureLuck")) * rerollWeight
                     : (cur.fortune ?? 1)) *
                     // every level nudges success a little, up or down
                     (0.9 + Math.random() * 0.2),
@@ -1216,11 +1263,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // The minimum applies to every fresh commitment, not only the first one.
       if (action.amount < def.minInvestment) return state;
       const lockedUntil = def.lockupDays ? state.day + def.lockupDays : undefined;
+      // Getting in costs a spread on assets that trade, so buying and selling
+      // repeatedly to fish for a good run loses money.
+      const credited = action.amount * (1 - (def.tradeSpread || 0));
+      const fresh = cur.value <= 0 || cur.drift === undefined;
+      const drift = def.unknownReturn ? (fresh ? rollDrift(def, cur.drift) : cur.drift) : undefined;
+      const regimeUntil = def.unknownReturn ? (fresh ? nextRegime(def, state.day) : cur.regimeUntil) : undefined;
       return {
         ...state, cash: state.cash - action.amount,
         investments: {
           ...state.investments,
-          [action.id]: { value: cur.value + action.amount, basis: cur.basis + action.amount, lockedUntil },
+          [action.id]: { value: cur.value + credited, basis: cur.basis + action.amount, lockedUntil, drift, regimeUntil },
         },
         stats: { ...state.stats, investDeposited: state.stats.investDeposited + action.amount },
       };
@@ -1230,17 +1283,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const cur = state.investments[action.id];
       if (!cur) return state;
       if ((cur.lockedUntil || 0) > state.day) return state;
+      const def = INVESTMENTS.find((i) => i.id === action.id);
       const amt = Math.min(action.amount, cur.value);
       if (amt <= 0) return state;
+      const proceeds = amt * (1 - (def?.tradeSpread || 0));
       // basis comes out in the same proportion, so the gain figure stays honest
       const share = amt / cur.value;
+      const left = cur.value - amt;
       return {
-        ...state, cash: state.cash + amt,
+        ...state, cash: state.cash + proceeds,
         investments: {
           ...state.investments,
-          [action.id]: { value: cur.value - amt, basis: cur.basis * (1 - share) },
+          [action.id]: {
+            value: left,
+            basis: cur.basis * (1 - share),
+            // Sell out entirely and the next holding starts from a fresh, unknown pace.
+            drift: left > 0 ? cur.drift : undefined,
+            regimeUntil: left > 0 ? cur.regimeUntil : undefined,
+          },
         },
-        stats: { ...state.stats, investWithdrawn: state.stats.investWithdrawn + amt },
+        stats: { ...state.stats, investWithdrawn: state.stats.investWithdrawn + proceeds },
       };
     }
 
