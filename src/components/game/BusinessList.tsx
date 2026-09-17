@@ -194,26 +194,31 @@ export default function BusinessList() {
                   const conceptHere = ownedHere
                     ? getBusinessConcept(selectedDef.id, selectedBiz.choices?.concept || "")
                     : undefined;
+                  const previewIdx = ownedHere ? tierIdx : getBusinessTierIndex(selectedBiz.level + 1);
                   const tierImage = ownedHere
-                    ? getImage(ventureImageAtTier(selectedDef.id, tierIdx, selectedBiz.choices)) ||
-                      getImage(conceptHere?.image || "")
-                    : "";
+                    ? getImage(ventureImageAtTier(selectedDef.id, tierIdx, selectedBiz.choices))
+                    : getImage(ventureImageAtTier(selectedDef.id, previewIdx, choices));
                   const tierName = conceptHere?.tierNames[tierIdx] || selectedDef.tierNames[tierIdx];
                   return (
-                    <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
-                      {selectedBiz.level > 0 && tierImage ? (
+                    <div className="aspect-[16/10] rounded-xl overflow-hidden relative mb-4">
+                      {tierImage ? (
                         <motion.img
-                          key={tierIdx}
+                          key={`${tierIdx}-${tierImage}`}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.5 }}
                           src={tierImage}
                           alt={tierName}
-                          className="w-full h-full object-cover"
+                          className={`w-full h-full object-cover ${ownedHere ? "" : "opacity-50 saturate-50"}`}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          Not yet purchased
+                        <div className="w-full h-full bg-secondary" />
+                      )}
+                      {!ownedHere && (
+                        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-background/90 to-transparent p-4">
+                          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                            Not open yet — how it could look
+                          </p>
                         </div>
                       )}
                     </div>
