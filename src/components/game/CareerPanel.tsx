@@ -89,20 +89,52 @@ export default function CareerPanel() {
         )}
 
         <>
-            <p className="text-[11px] text-muted-foreground mb-2 mt-3">
+            <div className="rounded-lg surface-button p-3 mt-3 mb-2 space-y-3">
+              <div>
+                <div className="flex justify-between items-baseline text-[11px] mb-1">
+                  <span className="font-medium">Higher-rank offers</span>
+                  <span className={`font-mono-nums ${seasoned ? "text-primary" : ""}`}>
+                    {seasoned ? "Eligible now" : `${PROMOTION_MIN_DAYS - daysInJob} days to go`}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-primary/40 via-primary to-primary"
+                    animate={{ width: `${Math.min(100, Math.round((daysInJob / PROMOTION_MIN_DAYS) * 100))}%` }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {seasoned
+                    ? "You have served long enough here for employers to consider you for a higher rank."
+                    : `Until you have ${PROMOTION_MIN_DAYS} days in this post, offers come at the rank you already hold. Schooling in an industry also caps how high it will hire you.`}
+                </p>
+              </div>
+              <div>
+                <div className="flex justify-between items-baseline text-[11px] mb-1">
+                  <span className="font-medium">Offers at full pay</span>
+                  <span className={`font-mono-nums ${settled ? "text-primary" : ""}`}>
+                    {settled ? "A year served" : `${JOB_HOP_SETTLED_DAYS - daysInJob} days to go`}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-primary/40 via-primary to-primary"
+                    animate={{ width: `${Math.min(100, Math.round((daysInJob / JOB_HOP_SETTLED_DAYS) * 100))}%` }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {settled
+                    ? "You have been here long enough that employers take you seriously — offers come in at full pay."
+                    : `Changing jobs too often reads as restless: offers are discounted until you have a year in a post.`}
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground mb-2">
               Staying in {getCareerTrack(job.employer).name} usually means the next rank up, sometimes a sideways
               move, occasionally two rungs at once. Any other industry starts you at the rank your schooling and
               years there support — which can be well below where you stand now.
-            </p>
-            <p className="text-[11px] text-muted-foreground mb-2">
-              {seasoned
-                ? "You have served long enough here for employers to consider you for a higher rank."
-                : `Nobody is promoted every morning: until you have ${PROMOTION_MIN_DAYS} days in this post (${Math.max(0, PROMOTION_MIN_DAYS - daysInJob)} to go), offers come at the rank you already hold. Schooling in an industry also caps how high it will hire you.`}
-            </p>
-            <p className="text-[11px] text-muted-foreground mb-2">
-              {settled
-                ? "You have been here long enough that employers take you seriously — offers come in at full pay."
-                : `Changing jobs too often reads as restless: offers are discounted until you have a year in a post (${Math.max(0, JOB_HOP_SETTLED_DAYS - daysInJob)} more days).`}
             </p>
             {state.careerOffers.length === 0 ? (
               <motion.button
