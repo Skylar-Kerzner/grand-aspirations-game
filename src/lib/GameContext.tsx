@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo } from "react";
 import {
-  BUSINESSES, ASSETS, assetLook, lookSwitchCost, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
+  BUSINESSES, ASSETS, assetLook, lookSwitchCost, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, clampRoleDailyPay, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
   trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS, trackPerkScale, type InvestmentDef,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
@@ -168,7 +168,8 @@ export function getJob(state: GameState) {
   const base = JOBS[Math.min(state.jobIndex, JOBS.length - 1)];
   const cur = state.currentJob || base;
   // Older saves and offers can carry a missing pay figure — never let it poison the maths.
-  const dailyPay = Number.isFinite(cur.dailyPay) ? cur.dailyPay : base.dailyPay;
+  const rawPay = Number.isFinite(cur.dailyPay) ? cur.dailyPay : base.dailyPay;
+  const dailyPay = clampRoleDailyPay(cur.title || base.title, rawPay);
   return { ...base, ...cur, dailyPay };
 }
 
@@ -799,7 +800,10 @@ function createInitialState(): GameState {
         majors: parsed.majors || LEGACY_MAJOR_MAP.slice(0, legacyEdu),
         studying: legacyStudying as GameState["studying"],
         currentJob: parsed.currentJob || { title: savedJob.title, employer: savedJob.employer, dailyPay: savedJob.dailyPay },
-        careerOffers: parsed.careerOffers || [],
+        careerOffers: (parsed.careerOffers || []).map((offer) => ({
+          ...offer,
+          dailyPay: clampRoleDailyPay(offer.title, offer.dailyPay),
+        })),
         jobHistory: parsed.jobHistory && parsed.jobHistory.length
           ? parsed.jobHistory
           : [{
@@ -1395,7 +1399,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
           : 1 - trackSwitchPenalty(homeTrack, variant.track, hasMajor);
-        const pay = Math.round(base * factor * track * loyalty * hop * training);
+        const pay = clampRoleDailyPay(variant.title, Math.round(base * factor * track * loyalty * hop * training));
         return {
           title: variant.title,
           employer: variant.employer,

@@ -116,6 +116,35 @@ export interface JobDef {
 export interface CareerVariant { title: string; employer: string }
 
 /**
+ * Clinical jobs do not follow a smooth executive ladder: residency pays less
+ * than advanced nursing, while qualified physicians jump sharply afterward.
+ * These broad U.S. salary bands also stop loyalty and interview bonuses from
+ * turning ordinary frontline roles into executive compensation.
+ */
+export const ROLE_ANNUAL_SALARY_BANDS: Record<string, { min: number; max: number }> = {
+  "Hospital Porter": { min: 30000, max: 45000 },
+  "Care Assistant": { min: 32000, max: 50000 },
+  "Phlebotomist": { min: 38000, max: 58000 },
+  "Paramedic": { min: 48000, max: 75000 },
+  "Registered Nurse": { min: 70000, max: 115000 },
+  "Nurse Practitioner": { min: 105000, max: 155000 },
+  "Resident Physician": { min: 65000, max: 90000 },
+  "Attending Physician": { min: 210000, max: 380000 },
+  "Specialist Surgeon": { min: 350000, max: 650000 },
+  "Head of Surgery": { min: 400000, max: 750000 },
+  "Chief of Medicine": { min: 300000, max: 600000 },
+  "Hospital Chief Executive": { min: 350000, max: 900000 },
+  "Director of Medical Research": { min: 220000, max: 500000 },
+  "Surgeon General": { min: 190000, max: 300000 },
+};
+
+export function clampRoleDailyPay(title: string, dailyPay: number): number {
+  const band = ROLE_ANNUAL_SALARY_BANDS[title];
+  if (!band) return dailyPay;
+  return Math.min(band.max, Math.max(band.min, dailyPay * DAYS_PER_YEAR)) / DAYS_PER_YEAR;
+}
+
+/**
  * Career tracks. Employers belong to a track, and each track pays differently
  * over a lifetime: hospitality and trades pay well early and flatten, finance
  * and tech start modest and climb far higher.
