@@ -655,13 +655,14 @@ function advance(state: GameState, days: number, now: number): GameState {
   stats.jobEarned[job.id] = (stats.jobEarned[job.id] || 0) + netSalary;
   stats.jobDays[job.id] = (stats.jobDays[job.id] || 0) + days;
 
-  // Living and training
+  // Living and interview prep (a steady retainer while it is switched on)
   const living = getLivingCosts(s) * days;
-  const training = Math.max(0, s.trainingBudget) * days;
+  const prepRate = s.trainingBudget > 0 ? getInterviewPrepRate(s) : 0;
+  const training = prepRate * days;
   cash -= living + training;
-  // Training only pays off if it is sustained — momentum builds and fades over about a month.
+  // Readiness only counts if it is sustained — it heats up and cools over about a month.
   const trainingKeep = Math.exp(-days / TRAINING_MOMENTUM_DAYS);
-  const trainingMomentum = s.trainingMomentum * trainingKeep + Math.max(0, s.trainingBudget) * (1 - trainingKeep);
+  const trainingMomentum = s.trainingMomentum * trainingKeep + prepRate * (1 - trainingKeep);
   stats.livingSpent += living;
   stats.trainingSpent += training;
 
