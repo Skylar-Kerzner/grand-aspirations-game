@@ -71,7 +71,7 @@ export default function CareerPanel() {
                 disabled={!canSeekOffers}
                 className="w-full h-10 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-game disabled:opacity-40"
               >
-                Seek offers for the next career level
+                Seek a new job
               </motion.button>
             ) : (
               <div className="space-y-2 mt-3">
@@ -104,12 +104,9 @@ export default function CareerPanel() {
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => dispatch({ type: "GENERATE_JOB_OFFERS" })}
-                  disabled={state.xp < derived.xpNeeded}
-                  className="w-full h-9 rounded-lg surface-button text-xs transition-game disabled:opacity-40"
+                  className="w-full h-9 rounded-lg surface-button text-xs transition-game"
                 >
-                  {state.xp >= derived.xpNeeded
-                    ? "Search again"
-                    : `Search again at ${Math.ceil(derived.xpNeeded - state.xp)} more experience`}
+                  Search again
                 </motion.button>
               </div>
             )}
