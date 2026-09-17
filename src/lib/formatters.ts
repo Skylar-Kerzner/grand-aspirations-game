@@ -19,12 +19,20 @@ export function formatMoney(amount: number): string {
   return "$" + amount.toFixed(2);
 }
 
-/** Per-day rate — one real second is one in-game day. */
+/** Today's amount — one real second is one in-game day. */
 export function formatRate(amount: number): string {
+  if (!Number.isFinite(amount)) return "$0 today";
+  const sign = amount >= 0 ? "+" : "";
+  return sign + formatMoney(amount) + " today";
+}
+
+/** A steady per-day rate. */
+export function formatPerDay(amount: number): string {
   if (!Number.isFinite(amount)) return "$0/day";
   const sign = amount >= 0 ? "+" : "";
   return sign + formatMoney(amount) + "/day";
 }
+
 
 export function formatCompact(amount: number): string {
   if (!Number.isFinite(amount)) return "$0";
