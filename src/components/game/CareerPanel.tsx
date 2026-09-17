@@ -217,7 +217,10 @@ export default function CareerPanel() {
                 : "Cooling off"}
             {" · "}{Math.round(derived.interviewReadiness * 100)}% ready
           </span>
-          <span className="font-mono-nums text-primary">+{Math.round(derived.offerTrainingBonus * 100)}% on offers</span>
+          <span className={`font-mono-nums ${derived.offerTrainingBonus >= 0 ? "text-primary" : "text-destructive"}`}>
+            {derived.offerTrainingBonus >= 0 ? "+" : ""}{(derived.offerTrainingBonus * 100).toFixed(1)}% on offers
+          </span>
+
         </div>
 
         <motion.button
