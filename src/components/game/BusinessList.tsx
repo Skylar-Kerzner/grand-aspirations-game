@@ -31,6 +31,7 @@ import {
   getBusinessCapital,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
+import { Lock } from "lucide-react";
 
 function conditionLabel(c: number) {
   if (c >= 1.15) return { text: "Booming", tone: "text-primary" };
@@ -82,8 +83,13 @@ export default function BusinessList() {
           const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
           const tierName = concept?.tierNames[tierIdx] || def.tierNames[tierIdx];
           const tierImage = owned
-            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices)) || getImage(concept?.image || "")
-            : "";
+            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices))
+            : getImage(
+                ventureImageAtTier(def.id, 0, {
+                  concept: BUSINESS_CONCEPTS[def.id]?.[0]?.id || "",
+                  location: BUSINESS_LOCATIONS[def.id]?.[0]?.id || "",
+                }),
+              );
           const displayName = owned ? ventureNameAtTier(def.id, tierIdx, biz.choices) : def.name;
           const income = businessIncomeOf(state, def.id);
           const networkBonus = getBusinessNetworkBonus(state, def.id);
@@ -193,26 +199,31 @@ export default function BusinessList() {
                   const conceptHere = ownedHere
                     ? getBusinessConcept(selectedDef.id, selectedBiz.choices?.concept || "")
                     : undefined;
+                  const previewIdx = ownedHere ? tierIdx : getBusinessTierIndex(selectedBiz.level + 1);
                   const tierImage = ownedHere
-                    ? getImage(ventureImageAtTier(selectedDef.id, tierIdx, selectedBiz.choices)) ||
-                      getImage(conceptHere?.image || "")
-                    : "";
+                    ? getImage(ventureImageAtTier(selectedDef.id, tierIdx, selectedBiz.choices))
+                    : getImage(ventureImageAtTier(selectedDef.id, previewIdx, choices));
                   const tierName = conceptHere?.tierNames[tierIdx] || selectedDef.tierNames[tierIdx];
                   return (
-                    <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
-                      {selectedBiz.level > 0 && tierImage ? (
+                    <div className="aspect-[16/10] rounded-xl overflow-hidden relative mb-4">
+                      {tierImage ? (
                         <motion.img
-                          key={tierIdx}
+                          key={`${tierIdx}-${tierImage}`}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.5 }}
                           src={tierImage}
                           alt={tierName}
-                          className="w-full h-full object-cover"
+                          className={`w-full h-full object-cover ${ownedHere ? "" : "opacity-50 saturate-50"}`}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          Not yet purchased
+                        <div className="w-full h-full bg-secondary" />
+                      )}
+                      {!ownedHere && (
+                        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-background/90 to-transparent p-4">
+                          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                            Not open yet — how it could look
+                          </p>
                         </div>
                       )}
                     </div>
@@ -322,13 +333,15 @@ export default function BusinessList() {
                           i < selectedDef.tierNames.length - 1 ? "border-b border-border" : ""
                         }`}
                       >
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-                          {reached && tierImg ? (
+                        {reached && tierImg ? (
+                          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
                             <img src={tierImg} alt={name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full" />
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center flex-shrink-0">
+                            <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm ${reached ? "text-foreground" : "text-muted-foreground"}`}>
                             {reached ? name : "?"}
@@ -362,7 +375,12 @@ export default function BusinessList() {
                       <div className="grid grid-cols-3 gap-2">
                         {(BUSINESS_CONCEPTS[selectedDef.id] || []).map((option) => {
                           const active = choices.concept === option.id;
-                          const img = getImage(option.image);
+                          const img = getImage(
+                            ventureImageAtTier(selectedDef.id, getBusinessTierIndex(selectedBiz.level + 1), {
+                              concept: option.id,
+                              location: choices.location,
+                            }),
+                          );
                           return (
                             <button
                               key={option.id}
@@ -371,9 +389,18 @@ export default function BusinessList() {
                                 active ? "border-primary" : "border-border"
                               }`}
                             >
-                              <div className="aspect-[4/3] bg-secondary">
-                                {img && <img src={img} alt={option.name} loading="lazy" className="w-full h-full object-cover" />}
-                              </div>
+                              {img && (
+                                <div className="aspect-[4/3] overflow-hidden">
+                                  <img
+                                    src={img}
+                                    alt={option.name}
+                                    loading="lazy"
+                                    className={`w-full h-full object-cover transition-game ${
+                                      active ? "" : "opacity-60 saturate-50"
+                                    }`}
+                                  />
+                                </div>
+                              )}
                               <div className="p-1.5">
                                 <p className={`text-[11px] leading-tight ${active ? "text-primary" : ""}`}>{option.name}</p>
                                 <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">{option.description}</p>
