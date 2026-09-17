@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useGame, isInvestmentUnlocked } from "@/lib/GameContext";
+import { useGame, isInvestmentUnlocked, getLockDaysLeft, getInvestorNetWorth } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { INVESTMENTS } from "@/lib/gameData";
+import { INVESTMENTS, INVESTOR_ACCESS } from "@/lib/gameData";
 
 const STEPS = [1, 10, 100, 1000, 10000];
 
@@ -17,7 +17,8 @@ export default function InvestmentPanel() {
         const unlocked = isInvestmentUnlocked(state, def.id);
         const isExpanded = expandedId === def.id && unlocked;
         const gain = inv.value - inv.basis;
-        const prev = INVESTMENTS.find((i) => i.id === def.unlockPrev);
+        const access = INVESTOR_ACCESS[def.access];
+        const lockLeft = getLockDaysLeft(state, def.id);
         // amounts start at the minimum for this fund, so nothing offered is unusable
         const amounts = STEPS.map((s) => s * def.minInvestment).filter((a) => a <= 1e15).slice(0, 4);
 
@@ -32,8 +33,15 @@ export default function InvestmentPanel() {
                 <p className="text-[11px] text-muted-foreground">
                   {unlocked
                     ? def.description
-                    : `Put ${formatCompact(def.unlockAmount || 0)} into ${prev?.name} to unlock`}
+                    : `${access.note} You are at ${formatCompact(Math.max(0, getInvestorNetWorth(state)))}.`}
                 </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {access.label}
+                  {def.lockupDays ? ` · money stays in for ${def.lockupDays} days` : " · take it out any time"}
+                </p>
+                {lockLeft > 0 && (
+                  <p className="text-[10px] text-primary">Locked for {lockLeft} more days</p>
+                )}
               </div>
               <div className="text-right shrink-0">
                 {inv.value > 0 ? (
@@ -85,22 +93,31 @@ export default function InvestmentPanel() {
                 </div>
 
                 {inv.value > 0 && (
-                  <div className="mt-2 flex gap-2">
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "WITHDRAW", id: def.id, amount: inv.value * 0.5 })}
-                      className="h-8 px-3 rounded-lg surface-button text-xs transition-game"
-                    >
-                      Withdraw half
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => dispatch({ type: "WITHDRAW", id: def.id, amount: inv.value })}
-                      className="h-8 px-3 rounded-lg surface-button text-xs transition-game"
-                    >
-                      Withdraw all
-                    </motion.button>
-                  </div>
+                  <>
+                    <div className="mt-2 flex gap-2">
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        disabled={lockLeft > 0}
+                        onClick={() => dispatch({ type: "WITHDRAW", id: def.id, amount: inv.value * 0.5 })}
+                        className="h-8 px-3 rounded-lg surface-button text-xs transition-game disabled:opacity-30"
+                      >
+                        Withdraw half
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        disabled={lockLeft > 0}
+                        onClick={() => dispatch({ type: "WITHDRAW", id: def.id, amount: inv.value })}
+                        className="h-8 px-3 rounded-lg surface-button text-xs transition-game disabled:opacity-30"
+                      >
+                        Withdraw all
+                      </motion.button>
+                    </div>
+                    {lockLeft > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        This money is committed for {lockLeft} more days. Adding more restarts the clock.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}

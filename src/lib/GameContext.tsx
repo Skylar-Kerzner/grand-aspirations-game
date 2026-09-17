@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useMemo } from
 import {
   BUSINESSES, ASSETS, INVESTMENTS, LOANS, CONSULTANTS, JOBS, MAJORS, MAJOR_GATE_TIER, getTrackMajor, EVENTS, CAREER_VARIANTS, CAREER_SALARY_RANGE, trackPayMultiplier, getCareerTrack, CAREER_TRACKS, INDUSTRY_MAJOR_BONUS, INDUSTRY_YEAR_STEP, INDUSTRY_YEAR_CAP, INDUSTRY_RISK_RELIEF, TRACK_CONTINUITY_BONUS, noDegreeXpMultiplier,
   TRACK_TENURE_STEP, TRACK_TENURE_CAP, TRACK_SWITCH_PENALTY, TRACK_EXPERIENCE_GATE, isAdjacentTrack,
-  trackSwitchPenalty, jobHopMultiplier,
+  trackSwitchPenalty, jobHopMultiplier, INVESTOR_ACCESS,
   TRACK_EXPERIENCE_STEP, TRACK_EXPERIENCE_CAP, TRACK_EXPERIENCE_YEARS_GATE,
   getBusinessCost as calcBusinessCost, getBusinessIncome, getBusinessCapital, amortizedPayment,
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
@@ -22,7 +22,7 @@ export interface BusinessState {
   choices?: Record<string, string>;    // location / market / product chosen when opening
 }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
-export interface InvestmentState { value: number; basis: number }
+export interface InvestmentState { value: number; basis: number; lockedUntil?: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number }
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
@@ -438,12 +438,23 @@ export function isBusinessUnlocked(_state: GameState, _id: string): boolean {
   return true;
 }
 
+/** Net worth as the funds measure it, without needing the full derived state. */
+export function getInvestorNetWorth(state: GameState): number {
+  const loanTotal = Object.values(state.loans).reduce((s, l) => s + (l.remaining || 0), 0);
+  return state.cash + getInvestmentTotal(state) + getBusinessValue(state) - loanTotal - state.ccDebt;
+}
+
+/** Whether this fund will take your money at all, on wealth grounds. */
 export function isInvestmentUnlocked(state: GameState, id: string): boolean {
   const def = INVESTMENTS.find((i) => i.id === id);
-  if (!def?.unlockPrev) return true;
-  const prev = state.investments[def.unlockPrev];
-  const everDeposited = (prev?.basis || 0) + (state.stats.investEarnedById[def.unlockPrev] || 0);
-  return Math.max(prev?.value || 0, everDeposited) >= (def.unlockAmount || 0);
+  if (!def) return false;
+  return getInvestorNetWorth(state) >= INVESTOR_ACCESS[def.access].netWorth;
+}
+
+/** Days before money in this fund can be taken out again. 0 when free to withdraw. */
+export function getLockDaysLeft(state: GameState, id: string): number {
+  const until = state.investments[id]?.lockedUntil || 0;
+  return Math.max(0, Math.ceil(until - state.day));
 }
 
 export function upgradeCostFor(state: GameState, id: string): number {
@@ -979,12 +990,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!def || action.amount <= 0 || state.cash < action.amount) return state;
       if (!isInvestmentUnlocked(state, action.id)) return state;
       const cur = state.investments[action.id] || { value: 0, basis: 0 };
-      if (cur.value === 0 && action.amount < def.minInvestment) return state;
+      // The minimum applies to every fresh commitment, not only the first one.
+      if (action.amount < def.minInvestment) return state;
+      const lockedUntil = def.lockupDays ? state.day + def.lockupDays : undefined;
       return {
         ...state, cash: state.cash - action.amount,
         investments: {
           ...state.investments,
-          [action.id]: { value: cur.value + action.amount, basis: cur.basis + action.amount },
+          [action.id]: { value: cur.value + action.amount, basis: cur.basis + action.amount, lockedUntil },
         },
         stats: { ...state.stats, investDeposited: state.stats.investDeposited + action.amount },
       };
@@ -993,6 +1006,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "WITHDRAW": {
       const cur = state.investments[action.id];
       if (!cur) return state;
+      if ((cur.lockedUntil || 0) > state.day) return state;
       const amt = Math.min(action.amount, cur.value);
       if (amt <= 0) return state;
       // basis comes out in the same proportion, so the gain figure stays honest
