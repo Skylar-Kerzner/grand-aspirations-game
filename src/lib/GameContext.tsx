@@ -229,7 +229,12 @@ export function getLifestyleTier(state: GameState, id: string) {
 export function getAssetLook(state: GameState, id: string, tierIdx: number) {
   const def = ASSETS.find((asset) => asset.id === id);
   if (!def || !def.tiers[tierIdx]) return undefined;
-  return assetLook(def.tiers[tierIdx], state.assetLooks?.[id]?.[tierIdx] ?? 0);
+  return assetLook(def.tiers[tierIdx], Math.max(0, state.assetLooks?.[id]?.[tierIdx] ?? 0));
+}
+
+/** Whether the look at this step has already been settled — it is chosen once per game. */
+export function isAssetLookChosen(state: GameState, id: string, tierIdx: number): boolean {
+  return (state.assetLooks?.[id]?.[tierIdx] ?? -1) >= 0;
 }
 
 /** The look of the tier a category is currently set to. */
@@ -1124,8 +1129,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "SET_LIFESTYLE": {
       const def = ASSETS.find((asset) => asset.id === action.id);
       if (!def || action.tier < 1 || action.tier > def.tiers.length) return state;
-      const looksHere = [...(state.assetLooks[action.id] || def.tiers.map(() => 0))];
-      if (action.look !== undefined) looksHere[action.tier - 1] = action.look;
+      const looksHere = [...(state.assetLooks[action.id] || def.tiers.map(() => -1))];
+      // A look is settled once and for all: moving back to a step you have
+      // lived at returns you to the same place, not a fresh pick.
+      if (action.look !== undefined && (looksHere[action.tier - 1] ?? -1) < 0) {
+        looksHere[action.tier - 1] = action.look;
+      }
       const next = {
         ...state,
         assets: { ...state.assets, [action.id]: action.tier },
