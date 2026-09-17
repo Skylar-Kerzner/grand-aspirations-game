@@ -622,8 +622,9 @@ export const BUSINESS_SHOCK_TEXTS = [
   "a licensing dispute halted trade",
   "a competitor opened across the street",
 ];
-// A business is worth this multiple of its annual profit (about 1.2x what you paid in)
-export const BUSINESS_VALUATION_MULTIPLE = 4;
+/** The baseline return on capital every sector is built around. A venture running
+ *  at exactly this success sells for 100% of the money invested in it. */
+export const BUSINESS_BASELINE_ROI = 0.3;
 
 /** Cost of the NEXT level (levels are 0-indexed: level 0 means you own nothing yet). */
 export function getBusinessCost(baseCost: number, costMultiplier: number, level: number): number {
