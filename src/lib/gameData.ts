@@ -379,7 +379,7 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Office Administrator", employer: "Hartwell Group" },
     { title: "Desktop Support Analyst", employer: "Helix Systems" },
     { title: "Bank Teller", employer: "Ashford Mutual" },
-    { title: "Commercial Voice Actor", employer: "Marquee Talent" },
+    { title: "Production Assistant", employer: "Silver Reel Studios" },
     { title: "Substitute Teacher", employer: "Wren Academy" },
     { title: "Phlebotomist", employer: "Riverside Clinic" },
   ],
@@ -474,47 +474,56 @@ export const CAREER_VARIANTS: CareerVariant[][] = [
     { title: "Hospital Chief Executive", employer: "St. Alder Hospital" },
   ],
   [
-    { title: "Chief Merchant", employer: "Maison Grove" },
+    { title: "Chief Commercial Officer", employer: "Maison Grove" },
     { title: "Chief Operating Officer", employer: "Brightline Manufacturing" },
     { title: "Managing Partner", employer: "Arclight Group" },
-    { title: "Chief Executive", employer: "Aster Group" },
+    { title: "President", employer: "Aster Group" },
     { title: "Head of Private Equity", employer: "Halstead Capital" },
     { title: "Studio Headliner", employer: "Silver Reel Studios" },
     { title: "State Education Commissioner", employer: "State Department of Learning" },
     { title: "Director of Medical Research", employer: "National Health Institute" },
   ],
   [
-    { title: "Hospitality Group Owner", employer: "Larkspur Hotels" },
-    { title: "Industrial Group Chairman", employer: "Ironvale Industrial" },
-    { title: "Chairman", employer: "Sterling Partners" },
+    { title: "Chief Executive Officer", employer: "Larkspur Hotels" },
+    { title: "Chairman & Chief Executive", employer: "Ironvale Industrial" },
+    { title: "Chairman of the Board", employer: "Sterling Partners" },
     { title: "Founding Chief Executive", employer: "Orbit Cloud" },
-    { title: "Hedge Fund Manager", employer: "Kestrel Capital" },
-    { title: "Studio Owner", employer: "Vantage Pictures" },
+    { title: "Chief Investment Officer", employer: "Kestrel Capital" },
+    { title: "Studio Chief Executive", employer: "Vantage Pictures" },
     { title: "National Education Secretary", employer: "State Department of Learning" },
     { title: "Surgeon General", employer: "National Health Institute" },
     { title: "Founder", employer: "Your own fund" },
   ],
 ];
 
+// Daily pay is what a standard 40-hour week works out to per day. The ladder
+// runs from roughly $35k a year at the bottom to C-suite money at the top,
+// compressed at the bottom and steepening near the very top, as real pay does.
 export const JOBS: JobDef[] = [
-  { id: "dish", title: "Dishwasher", employer: "Corner Diner", education: 0, dailyPay: 152, xpToPromote: 40, scene: "desk-t1" },
-  { id: "barista", title: "Barista", employer: "Roast House", education: 0, dailyPay: 188, xpToPromote: 70, scene: "desk-t1" },
-  { id: "shift", title: "Shift Supervisor", employer: "Roast House", education: 0, dailyPay: 245, xpToPromote: 120, scene: "desk-t1" },
-  { id: "tech", title: "Service Technician", employer: "Meridian Facilities", education: 1, dailyPay: 340, xpToPromote: 180, scene: "desk-t2" },
-  { id: "admin", title: "Operations Coordinator", employer: "Meridian Facilities", education: 1, dailyPay: 445, xpToPromote: 260, scene: "desk-t2" },
-  { id: "analyst", title: "Junior Analyst", employer: "Halstead Capital", education: 2, dailyPay: 610, xpToPromote: 360, scene: "desk-t2" },
-  { id: "account", title: "Account Manager", employer: "Halstead Capital", education: 2, dailyPay: 820, xpToPromote: 500, scene: "desk-t3" },
-  { id: "eng", title: "Software Engineer", employer: "Northbeam Labs", education: 3, dailyPay: 1150, xpToPromote: 700, scene: "desk-t3" },
-  { id: "lead", title: "Engineering Lead", employer: "Northbeam Labs", education: 3, dailyPay: 1580, xpToPromote: 950, scene: "desk-t3" },
-  { id: "dir", title: "Director of Strategy", employer: "Northbeam Labs", education: 3, dailyPay: 2150, xpToPromote: 1300, scene: "desk-t4" },
-  { id: "vp", title: "Vice President", employer: "Arclight Group", education: 4, dailyPay: 3100, xpToPromote: 1800, scene: "desk-t4" },
-  { id: "partner", title: "Managing Partner", employer: "Arclight Group", education: 4, dailyPay: 4600, xpToPromote: 2600, scene: "desk-t4" },
-  { id: "pm", title: "Portfolio Manager", employer: "Halstead Capital", education: 5, dailyPay: 7200, xpToPromote: 3800, scene: "desk-t5" },
+  { id: "dish", title: "Dishwasher", employer: "Corner Diner", education: 0, dailyPay: 95, xpToPromote: 40, scene: "desk-t1" },
+  { id: "barista", title: "Barista", employer: "Roast House", education: 0, dailyPay: 120, xpToPromote: 70, scene: "desk-t1" },
+  { id: "shift", title: "Shift Supervisor", employer: "Roast House", education: 0, dailyPay: 150, xpToPromote: 120, scene: "desk-t1" },
+  { id: "tech", title: "Service Technician", employer: "Meridian Facilities", education: 1, dailyPay: 195, xpToPromote: 180, scene: "desk-t2" },
+  { id: "admin", title: "Operations Coordinator", employer: "Meridian Facilities", education: 1, dailyPay: 255, xpToPromote: 260, scene: "desk-t2" },
+  { id: "analyst", title: "Junior Analyst", employer: "Halstead Capital", education: 2, dailyPay: 340, xpToPromote: 360, scene: "desk-t2" },
+  { id: "account", title: "Account Manager", employer: "Halstead Capital", education: 2, dailyPay: 460, xpToPromote: 500, scene: "desk-t3" },
+  { id: "eng", title: "Software Engineer", employer: "Northbeam Labs", education: 3, dailyPay: 640, xpToPromote: 700, scene: "desk-t3" },
+  { id: "lead", title: "Engineering Lead", employer: "Northbeam Labs", education: 3, dailyPay: 890, xpToPromote: 950, scene: "desk-t3" },
+  { id: "dir", title: "Director of Strategy", employer: "Northbeam Labs", education: 3, dailyPay: 1280, xpToPromote: 1300, scene: "desk-t4" },
+  { id: "vp", title: "Vice President", employer: "Arclight Group", education: 4, dailyPay: 1900, xpToPromote: 1800, scene: "desk-t4" },
+  { id: "partner", title: "Managing Partner", employer: "Arclight Group", education: 4, dailyPay: 2950, xpToPromote: 2600, scene: "desk-t4" },
+  { id: "pm", title: "Chief Executive Officer", employer: "Halstead Capital", education: 5, dailyPay: 5000, xpToPromote: 3800, scene: "desk-t5" },
   {
     id: "hedge", title: "Hedge Fund Manager", employer: "Your own fund", education: 5,
-    dailyPay: 11000, xpToPromote: Infinity, scene: "desk-t5", perfFee: true,
+    dailyPay: 9000, xpToPromote: Infinity, scene: "desk-t5", perfFee: true,
   },
 ];
+
+/**
+ * Days you must serve in a post before another employer will move you up a rank.
+ * Below this, the market only offers sideways moves — you cannot climb daily.
+ */
+export const PROMOTION_MIN_DAYS = 240;
 
 // Hedge fund compensation: 2% management fee a year plus 20% of the gains.
 export const MGMT_FEE = 0.02;
