@@ -277,6 +277,8 @@ export interface CareerTrack {
   livingDiscount?: number;
   /** Extra hours in your week from the way this life is organised. */
   hoursBonus?: number;
+  /** Short human label for the hours bonus, e.g. "flexible hours". */
+  hoursBonusLabel?: string;
   /** Share added to the luck of a venture you open or tier up. */
   ventureLuck?: number;
   /** Share off what it costs to open or grow a venture. */
@@ -290,6 +292,11 @@ export interface CareerTrack {
 export function trackPerkScale(level: number, maxLevel: number): number {
   if (maxLevel <= 0) return 1;
   return 0.4 + 0.6 * Math.min(1, Math.max(0, level / maxLevel));
+}
+
+/** Short human label for a track's weekly-hours perk, e.g. "flexible hours". */
+export function getHoursBonusLabel(trackId: string): string {
+  return CAREER_TRACKS[trackId]?.hoursBonusLabel ?? "";
 }
 
 export const CAREER_TRACKS: Record<string, CareerTrack> = {
@@ -319,7 +326,7 @@ export const CAREER_TRACKS: Record<string, CareerTrack> = {
     outlook: "A slow start that compounds into very high pay.",
     middle: "Climbs fast through the middle once you can build.",
     perks: ["Runs tech companies and media networks better", "Remote and flexible: +3h of your week", "You build the systems yourself: 7% off business costs"],
-    ventureTracks: ["tech"], hoursBonus: 3, ventureCostDiscount: 0.07,
+    ventureTracks: ["tech"], hoursBonus: 3, hoursBonusLabel: "flexible hours", ventureCostDiscount: 0.07,
   },
   finance: {
     id: "finance", name: "Finance & Investing", curve: 0.85,
@@ -340,14 +347,14 @@ export const CAREER_TRACKS: Record<string, CareerTrack> = {
     outlook: "Low pay throughout, but nothing ever goes backwards.",
     middle: "Gentle, certain steps and long holidays.",
     perks: ["Study runs 30% faster and costs 25% less", "Term breaks: +5h of your week", "Public rates: 8% off your lifestyle"],
-    studyBonus: 0.3, hoursBonus: 5, livingDiscount: 0.08,
+    studyBonus: 0.3, hoursBonus: 5, hoursBonusLabel: "term breaks", livingDiscount: 0.08,
   },
   medicine: {
     id: "medicine", name: "Health & Medicine", curve: 0.6,
     outlook: "The longest, costliest schooling, then very high steady pay.",
     middle: "Nothing much until you qualify, then a steep, safe climb.",
     perks: ["Your own health is handled: +4h of your week", "Pay barely moves with the economy", "Everything looked after: 8% off your lifestyle"],
-    hoursBonus: 4, livingDiscount: 0.08,
+    hoursBonus: 4, hoursBonusLabel: "staying healthy", livingDiscount: 0.08,
   },
 };
 
