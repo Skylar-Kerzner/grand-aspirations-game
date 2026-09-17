@@ -1315,7 +1315,7 @@ function calculateDerived(state: GameState): DerivedState {
     netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt - studentDebt,
     salaryPerDay, businessPerDay, investmentPerDay, incomePerDay,
     livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
-    investmentTotal, loanTotal, assetValue, businessValue, businessCapital,
+    investmentTotal, loanTotal, studentDebt, studentLoanPayment, assetValue, businessValue, businessCapital,
     shiftPay: job.dailyPay * 0.25 * (1 - taxRate),
     job,
     nextJob: JOBS[state.jobIndex + 1] || null,
