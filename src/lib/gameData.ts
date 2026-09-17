@@ -581,6 +581,27 @@ export const BUSINESSES: BusinessDef[] = [
 
 // Trading conditions drift day to day and revert toward normal at this rate.
 export const BUSINESS_CONDITION_REVERSION = 0.04;
+
+// Weekly trading rhythm, Monday-first, each normalised to average 1. Hospitality
+// and entertainment ventures boom on weekends; trade-facing ventures peak midweek.
+const normaliseWeek = (a: number[]) => {
+  const m = a.reduce((x, y) => x + y, 0) / a.length;
+  return a.map((v) => v / m);
+};
+export const WEEKDAY_RHYTHM = {
+  weekend: normaliseWeek([0.75, 0.8, 0.9, 1.0, 1.15, 1.6, 1.3]),
+  weekday: normaliseWeek([1.05, 1.1, 1.15, 1.1, 1.0, 0.75, 0.6]),
+};
+
+// Each venture rides a slow season: good and bad trade cluster into multi-week runs.
+export const BUSINESS_SEASON_REVERSION = 0.04;
+export const BUSINESS_SEASON_VOL = 0.02;
+export const BUSINESS_SEASON_MIN = 0.75;
+export const BUSINESS_SEASON_MAX = 1.3;
+
+// Rare standout days: a washout (weather, closure) or a bumper day (event, rush).
+export const BUSINESS_WASHOUT_CHANCE = 0.02;
+export const BUSINESS_BUMPER_CHANCE = 0.02;
 // Chance per day, scaled by a business's risk, of a serious setback.
 export const BUSINESS_SHOCK_CHANCE = 0.002;
 export const BUSINESS_SHOCK_TEXTS = [
