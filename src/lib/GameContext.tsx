@@ -500,7 +500,10 @@ export function getBusinessROIAt(state: GameState, id: string, attention: number
   const def = BUSINESSES.find((business) => business.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  const capital = getBusinessCapital(def, biz.level);
+  // Rate the return against the capital actually trading — money tied up in a
+  // build-out earns nothing yet, so quoting it would make the rate sag while
+  // the expansion is being built and then jump on opening day.
+  const capital = getBusinessCapital(def, getBusinessEarningLevel(state, id));
   if (capital <= 0) return 0;
   // The same steady income every other screen quotes, expressed as a yearly
   // return on the money put in, so the two figures can never disagree.
