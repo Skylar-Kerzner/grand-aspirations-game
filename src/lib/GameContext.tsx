@@ -163,7 +163,8 @@ export function getTotalBusinessHours(state: GameState): number {
 }
 
 export function getWorkHours(state: GameState): number {
-  return Math.max(0, getTimeBudget(state) - state.studyHours - getTotalBusinessHours(state));
+  const study = state.studying ? state.studyHours : 0;
+  return Math.max(0, getTimeBudget(state) - study - getTotalBusinessHours(state));
 }
 
 /** How close to full performance this venture runs, from the hours you give it.
@@ -534,6 +535,8 @@ function createInitialState(): GameState {
       };
       // Retired mechanic: old saves may still carry experience points.
       delete (merged as unknown as Record<string, unknown>).xp;
+      // Not enrolled means no school hours, whatever the save says.
+      if (!merged.studying) merged.studyHours = 0;
       const offlineDays = Math.min((Date.now() - merged.lastTick) / 1000, MAX_OFFLINE_DAYS);
       if (offlineDays > 5) return advance(merged, offlineDays, Date.now());
       merged.lastTick = Date.now();
@@ -619,7 +622,8 @@ function advance(state: GameState, days: number, now: number): GameState {
     if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
   }
-  s = { ...s, studying, majors };
+  // No enrollment, no school hours — the time goes back to your week.
+  s = { ...s, studying, majors, studyHours: studying ? s.studyHours : 0 };
 
   // Salary
   const job = getJob(s);
@@ -915,7 +919,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.cash < def.cost) return state;
       return {
         ...state, cash: state.cash - def.cost,
-        studyHours: state.studyHours === 0 ? 20 : state.studyHours,
+        studyHours: 20,
         studying: { majorId: def.id, daysLeft: def.days },
         stats: { ...state.stats, educationSpent: state.stats.educationSpent + def.cost },
       };
