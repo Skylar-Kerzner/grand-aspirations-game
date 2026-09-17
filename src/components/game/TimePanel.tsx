@@ -64,8 +64,10 @@ export default function TimePanel() {
         <p className="text-[11px] text-muted-foreground mb-3">
           Pay scales with the hours you work. Your businesses only reach their full return on the hours you
           personally put in. {BASE_TIME_BUDGET}h base
+          {ageHours > 0 ? ` − ${ageHours}h to age` : ""}
           {lifestyleHours >= 0 ? ` + ${lifestyleHours}h` : ` − ${Math.abs(lifestyleHours)}h`} from your lifestyle
           {careerHours ? ` + ${careerHours}h ${careerHoursLabel} from ${jobTrack.name}` : ""} = {budget}h.
+          {ageHours > 0 ? " Working capacity fades with age — an hour a year from the mid-fifties." : ""}
           {lifestyleHours <= 0 ? " A finer lifestyle buys hours back: staff, services and convenience." : ""}
         </p>
         {state.studying && (

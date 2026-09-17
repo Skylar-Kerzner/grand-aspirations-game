@@ -32,7 +32,9 @@ export default function AssetGallery() {
       <div className="surface-card rounded-xl p-4 mb-3">
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Your week</h3>
         <p className="font-mono-nums text-lg">
-          {BASE_TIME_BUDGET}h base {lifestyleHours >= 0 ? "+" : "−"} {Math.abs(lifestyleHours)}h lifestyle
+          {BASE_TIME_BUDGET}h base
+          {ageHours > 0 && <> − {ageHours}h age</>}
+          {" "}{lifestyleHours >= 0 ? "+" : "−"} {Math.abs(lifestyleHours)}h lifestyle
           {careerHours !== 0 && <> {careerHours >= 0 ? "+" : "−"} {Math.abs(careerHours)}h {careerHoursLabel} ({jobTrack.name})</>} = {budget}h
         </p>
         <p className="text-[11px] text-muted-foreground mt-1">
