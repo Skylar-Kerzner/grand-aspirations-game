@@ -418,10 +418,13 @@ export function getIndustryKnowledge(state: GameState, id: string) {
 /** Annual return on capital at a given attention level (1 = full hours). */
 export function getBusinessROIAt(state: GameState, id: string, attention: number): number {
   const def = BUSINESSES.find((business) => business.id === id);
-  if (!def) return 0;
-  const fortune = state.businesses[id]?.fortune ?? 1;
-  return def.annualROI * fortune * attention
-    * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus);
+  const biz = state.businesses[id];
+  if (!def || !biz || biz.level === 0) return 0;
+  const capital = getBusinessCapital(def, biz.level);
+  if (capital <= 0) return 0;
+  // The same steady income every other screen quotes, expressed as a yearly
+  // return on the money put in, so the two figures can never disagree.
+  return (getBusinessSteadyIncomeAt(state, id, attention) * DAYS_PER_YEAR) / capital;
 }
 
 export function getBusinessEffectiveROI(state: GameState, id: string): number {
@@ -760,6 +763,8 @@ function rollEvent(state: GameState, days: number): GameState {
   const era = Math.max(1, Math.pow(1.0, 1)); // flat amounts stay small; % of net worth carries scale
   let delta = 0;
   if (def.cashFlat) delta += def.cashFlat * era;
+  // Bonuses and penalties measured in days of pay follow your career upward.
+  if (def.cashDaysOfPay) delta += getGrossSalary(s) * def.cashDaysOfPay;
   if (def.cashPctOfNetWorth) delta += netWorthish * def.cashPctOfNetWorth;
   if (delta !== 0) {
     s.cash += delta;
