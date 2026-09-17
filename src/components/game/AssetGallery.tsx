@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame, getTimeBudget, getLifestyleHours, getAssetLook, isAssetLookChosen, trackPerk } from "@/lib/GameContext";
+import { useGame, getTimeBudget, getLifestyleHours, getAgeHours, getAssetLook, isAssetLookChosen, trackPerk } from "@/lib/GameContext";
 import { formatMoney, periodLabel } from "@/lib/formatters";
 import { ASSETS, BASE_TIME_BUDGET, assetLooks, lookSwitchCost, getCareerTrack, getHoursBonusLabel } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
@@ -22,6 +22,7 @@ export default function AssetGallery() {
   const budget = getTimeBudget(state);
   const lifestyleHours = getLifestyleHours(state);
   const careerHours = trackPerk(state, "hoursBonus");
+  const ageHours = getAgeHours(state);
   const jobTrack = getCareerTrack(state.currentJob.employer);
   const careerHoursLabel = getHoursBonusLabel(jobTrack.id);
   const period = periodLabel(derived.recentCashFlowDays);

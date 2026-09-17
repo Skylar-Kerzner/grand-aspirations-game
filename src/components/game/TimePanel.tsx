@@ -1,4 +1,4 @@
-import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessTypicalIncomeAt, trackPerk } from "@/lib/GameContext";
+import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getAgeHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessTypicalIncomeAt, trackPerk } from "@/lib/GameContext";
 import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital, getCareerTrack, getHoursBonusLabel } from "@/lib/gameData";
 import { formatMoney, periodLabel } from "@/lib/formatters";
 
@@ -9,6 +9,7 @@ export default function TimePanel() {
   const budget = getTimeBudget(state);
   const lifestyleHours = getLifestyleHours(state);
   const careerHours = trackPerk(state, "hoursBonus");
+  const ageHours = getAgeHours(state);
   const jobTrack = getCareerTrack(state.currentJob.employer);
   const careerHoursLabel = getHoursBonusLabel(jobTrack.id);
   const workHours = getWorkHours(state);
