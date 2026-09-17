@@ -672,7 +672,8 @@ function advance(state: GameState, days: number, now: number): GameState {
   let studying = s.studying;
   let majors = s.majors;
   if (studying) {
-    const rate = s.studyHours / 40;
+    // Teaching lives run alongside study: the same hours go further.
+    const rate = (s.studyHours / 40) * (1 + (getCareerTrack(s.currentJob.employer).studyBonus || 0));
     const left = studying.daysLeft - days * rate;
     if (rate > 0 && left <= 0) { majors = [...new Set([...majors, studying.majorId])]; studying = null; }
     else studying = { ...studying, daysLeft: left };
