@@ -195,9 +195,11 @@ export default function CareerPanel() {
           </span>
         </div>
         <p className="text-[11px] text-muted-foreground mb-3">
-          A steady retainer for coaching, mock interviews and certifications. Keep it running and you warm up
-          over about a month — every offer you seek pays up to +35% more. Stop and you cool off again.
+          A steady retainer for coaching, mock interviews and certifications. Offers land around the going rate
+          for the role: turn up cold and you are offered about 17.5% under it, fully warmed up and you are
+          offered about 17.5% over. It takes a month to warm up, and you cool off again if you stop.
         </p>
+
 
         <div className="h-3 rounded-full bg-secondary overflow-hidden mb-2">
           <motion.div
@@ -215,7 +217,10 @@ export default function CareerPanel() {
                 : "Cooling off"}
             {" · "}{Math.round(derived.interviewReadiness * 100)}% ready
           </span>
-          <span className="font-mono-nums text-primary">+{Math.round(derived.offerTrainingBonus * 100)}% on offers</span>
+          <span className={`font-mono-nums ${derived.offerTrainingBonus >= 0 ? "text-primary" : "text-destructive"}`}>
+            {derived.offerTrainingBonus >= 0 ? "+" : ""}{(derived.offerTrainingBonus * 100).toFixed(1)}% on offers
+          </span>
+
         </div>
 
         <motion.button

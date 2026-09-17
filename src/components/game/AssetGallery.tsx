@@ -60,7 +60,7 @@ export default function AssetGallery() {
             >
               <div className="aspect-[4/3] bg-secondary relative">
                 {img ? (
-                  <img src={img} alt={currentTier?.name} loading="lazy" className="w-full h-full object-cover" />
+                  <img src={img} alt={look?.name || currentTier?.name} loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
                     Not chosen
@@ -72,7 +72,7 @@ export default function AssetGallery() {
               </div>
               <div className="p-3">
                 <h3 className="font-semibold text-sm">{def.name}</h3>
-                <p className="text-[11px] text-muted-foreground">{currentTier.name}</p>
+                <p className="text-[11px] text-muted-foreground">{look?.name || currentTier.name}</p>
                 <p className={`text-[11px] font-medium mt-1 ${currentTier.hoursBonus >= 0 ? "text-primary" : "text-destructive"}`}>
                   {hoursLabel(currentTier.hoursBonus)}
                 </p>

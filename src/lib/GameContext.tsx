@@ -755,7 +755,9 @@ export function getCreditCardPayment(state: GameState): number {
 
 // Steady interview preparation — a fixed retainer for coaching, mock interviews and
 // certifications. It heats up over about a month and cools off if you stop.
-export const TRAINING_OFFER_CAP = 0.35;
+// Unprepared candidates land below the going rate for the role and well-prepared ones
+// above it: the swing runs from -17.5% to +17.5% around the US median for that job.
+export const TRAINING_OFFER_SWING = 0.175;
 export const TRAINING_MOMENTUM_DAYS = 30; // time constant for readiness to build (and fade)
 export function getInterviewPrepRate(state: GameState): number {
   return Math.max(20, Math.round(getJob(state).dailyPay * 0.15));
@@ -766,8 +768,9 @@ export function getInterviewReadiness(state: GameState): number {
   return Math.max(0, Math.min(1, momentum / Math.max(1, rate)));
 }
 export function getOfferTrainingBonus(state: GameState): number {
-  return TRAINING_OFFER_CAP * getInterviewReadiness(state);
+  return TRAINING_OFFER_SWING * (getInterviewReadiness(state) * 2 - 1);
 }
+
 
 export function getBusinessValue(state: GameState): number {
   let total = 0;
@@ -1513,7 +1516,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Restless records are paid less wherever they land.
       const lastStart = state.jobHistory.length > 0 ? state.jobHistory[state.jobHistory.length - 1].startDay : 0;
       const hop = jobHopMultiplier(Math.floor(state.day) - lastStart);
-      // Courses and coaching sharpen every offer you seek out.
+      // Coaching moves an offer around the going rate for the role: unprepared lands below it,
+      // fully warmed up lands above it.
       const training = 1 + getOfferTrainingBonus(state);
       const careerOffers: CareerOffer[] = chosen.map((variant) => {
         const base = JOBS[Math.min(variant.level, maxLevel)].dailyPay;
@@ -1525,7 +1529,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const loyalty = sameTrack
           ? 1 + TRACK_CONTINUITY_BONUS + Math.min(TRACK_TENURE_CAP, tenure * TRACK_TENURE_STEP) + getTrackExperienceBonus(state)
           : 1 - trackSwitchPenalty(homeTrack, variant.track, hasMajor);
-        const pay = clampRoleDailyPay(variant.title, Math.round(base * factor * track * loyalty * hop * training));
+        // Clamp to the real-world band for the role first, then let preparation swing it
+        // symmetrically around that figure.
+        const pay = clampRoleDailyPay(variant.title, Math.round(base * factor * track * loyalty * hop)) * training;
+
         return {
           title: variant.title,
           employer: variant.employer,
