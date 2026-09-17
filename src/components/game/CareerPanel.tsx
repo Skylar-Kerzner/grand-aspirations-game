@@ -292,15 +292,31 @@ export default function CareerPanel() {
                   {programs.map((def) => {
                     const completed = state.majors.includes(def.id);
                     const inProgress = state.studying?.majorId === def.id;
+                    const prereq = getStudyPrereqNote(state, def);
+                    const funding = getStudyFunding(state, def, def.cost);
+                    const uncovered = Math.max(0, def.cost - funding.federal - funding.private);
                     return (
                       <div key={def.id} className="flex justify-between items-center gap-3">
                         <div className="min-w-0">
                           <p className="text-sm">{def.name}</p>
                           <p className="text-[11px] text-muted-foreground">{def.description}</p>
                           {!completed && (
-                            <p className="text-[11px] text-muted-foreground font-mono-nums">
-                              {formatCompact(def.cost)} · {def.days} full-time days
-                            </p>
+                            <>
+                              <p className="text-[11px] text-muted-foreground font-mono-nums">
+                                {formatCompact(def.cost)} · {def.days} full-time days
+                              </p>
+                              {prereq ? (
+                                <p className="text-[11px] text-muted-foreground mt-0.5">{prereq}</p>
+                              ) : (
+                                <p className="text-[11px] text-muted-foreground mt-0.5 font-mono-nums">
+                                  {funding.federal > 0 && `Government ${formatCompact(funding.federal)}`}
+                                  {funding.federal > 0 && funding.private > 0 && " · "}
+                                  {funding.private > 0 && `Bank ${formatCompact(funding.private)} at 12%`}
+                                  {funding.federal <= 0 && funding.private <= 0 && "No borrowing available"}
+                                  {uncovered > 0.5 && ` · ${formatCompact(uncovered)} short`}
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
                         {completed ? (
@@ -314,7 +330,7 @@ export default function CareerPanel() {
                             <motion.button
                               whileTap={{ scale: 0.97 }}
                               onClick={() => dispatch({ type: "STUDY", majorId: def.id })}
-                              disabled={!!state.studying || state.cash < def.cost}
+                              disabled={!!state.studying || !!prereq || state.cash < def.cost}
                               className="h-9 px-3 rounded-lg surface-button text-xs font-medium transition-game disabled:opacity-40"
                             >
                               Pay now
@@ -322,10 +338,10 @@ export default function CareerPanel() {
                             <motion.button
                               whileTap={{ scale: 0.97 }}
                               onClick={() => dispatch({ type: "STUDY", majorId: def.id, financed: true })}
-                              disabled={!!state.studying || loanHeadroom < def.cost}
+                              disabled={!!state.studying || !!prereq || !funding.covered}
                               className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium transition-game disabled:opacity-40"
                             >
-                              Student loan
+                              Borrow
                             </motion.button>
                           </div>
                         )}
