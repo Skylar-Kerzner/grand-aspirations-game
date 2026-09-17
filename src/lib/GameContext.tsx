@@ -1413,6 +1413,11 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
       business: netBusiness,
       investments: investmentGain,
       costs: living + training + operating + loanPaymentsActual + studentPaymentActual + ccPaymentActual,
+      lifestyle: living + training + operating,
+      debtInterest: interestPaidTotal,
+      debtPrincipal: principalPaidTotal,
+      debtAccrued: interestAccruedTotal,
+
     }),
     stats, lastTick: now,
   };
