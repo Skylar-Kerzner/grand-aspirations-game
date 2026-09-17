@@ -247,10 +247,17 @@ export const ROLE_ANNUAL_SALARY_BANDS: Record<string, { min: number; max: number
   "Surgeon General": { min: 190000, max: 300000 },
 };
 
-export function clampRoleDailyPay(title: string, dailyPay: number): number {
+/**
+ * Keep a role's pay inside its realistic band. `tolerance` widens the band —
+ * used for pay that was already agreed with an interview-prep swing baked in,
+ * so an accepted offer keeps the number the player was shown.
+ */
+export function clampRoleDailyPay(title: string, dailyPay: number, tolerance = 0): number {
   const band = ROLE_ANNUAL_SALARY_BANDS[title];
   if (!band) return dailyPay;
-  return Math.min(band.max, Math.max(band.min, dailyPay * DAYS_PER_YEAR)) / DAYS_PER_YEAR;
+  const lo = band.min * (1 - tolerance);
+  const hi = band.max * (1 + tolerance);
+  return Math.min(hi, Math.max(lo, dailyPay * DAYS_PER_YEAR)) / DAYS_PER_YEAR;
 }
 
 /**
