@@ -1,19 +1,42 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame } from "@/lib/GameContext";
+import { useGame, getTimeBudget, getLifestyleHours } from "@/lib/GameContext";
 import { formatMoney } from "@/lib/formatters";
-import { ASSETS } from "@/lib/gameData";
+import { ASSETS, BASE_TIME_BUDGET } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
+
+function hoursLabel(hours: number): string {
+  if (hours > 0) return `+${hours}h a week`;
+  if (hours < 0) return `${hours}h a week`;
+  return "No change to your week";
+}
 
 export default function AssetGallery() {
   const { state, derived, dispatch } = useGame();
   const [selected, setSelected] = useState<string | null>(null);
 
   const selectedDef = ASSETS.find((a) => a.id === selected);
-  const selectedTier = selected ? (state.assets[selected] || 0) : 0;
+  const selectedTier = selected ? Math.max(1, state.assets[selected] || 1) : 0;
+  const budget = getTimeBudget(state);
+  const lifestyleHours = getLifestyleHours(state);
 
   return (
     <>
+      {/* Your week, at a glance */}
+      <div className="surface-card rounded-xl p-4 mb-3">
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Your week</h3>
+        <p className="font-mono-nums text-lg">
+          {BASE_TIME_BUDGET}h base {lifestyleHours >= 0 ? "+" : "−"} {Math.abs(lifestyleHours)}h lifestyle = {budget}h
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          Every lifestyle choice is a standing daily cost that either costs you hours or buys them back.
+          Those hours are what you spend on your job, school and your ventures.
+        </p>
+        <p className="text-[11px] text-muted-foreground font-mono-nums mt-1">
+          Lifestyle costs {formatMoney(derived.livingCosts)}/day in total
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         {ASSETS.map((def) => {
           const tier = Math.max(1, state.assets[def.id] || 1);
@@ -29,10 +52,10 @@ export default function AssetGallery() {
             >
               <div className="aspect-[4/3] bg-secondary relative">
                 {img ? (
-                  <img src={img} alt={currentTier?.name} className="w-full h-full object-cover" />
+                  <img src={img} alt={currentTier?.name} loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                    Not owned
+                    Not chosen
                   </div>
                 )}
                 <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[10px] font-medium">
@@ -41,11 +64,11 @@ export default function AssetGallery() {
               </div>
               <div className="p-3">
                 <h3 className="font-semibold text-sm">{def.name}</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  {currentTier.name}
+                <p className="text-[11px] text-muted-foreground">{currentTier.name}</p>
+                <p className={`text-[11px] font-medium mt-1 ${currentTier.hoursBonus >= 0 ? "text-primary" : "text-destructive"}`}>
+                  {hoursLabel(currentTier.hoursBonus)}
                 </p>
-                <p className="font-mono-nums text-[11px] text-primary mt-1">{formatMoney(currentTier.dailyCost)}/day</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{currentTier.benefit}</p>
+                <p className="font-mono-nums text-[11px] text-muted-foreground">{formatMoney(currentTier.dailyCost)}/day</p>
               </div>
             </motion.div>
           );
@@ -63,48 +86,74 @@ export default function AssetGallery() {
             className="fixed inset-0 z-50 bg-background/95 backdrop-blur-lg flex flex-col"
             onClick={() => setSelected(null)}
           >
-            <div className="flex-1 flex items-center justify-center p-6" onClick={(e) => e.stopPropagation()}>
+            {/* Counters stay visible while you choose */}
+            <div
+              className="shrink-0 border-b border-border bg-background/80 backdrop-blur-sm px-6 py-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="max-w-lg mx-auto grid grid-cols-4 gap-2 text-center">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Income</p>
+                  <p className="font-mono-nums text-sm text-primary">{formatMoney(derived.incomePerDay)}/day</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Costs</p>
+                  <p className="font-mono-nums text-sm">
+                    {formatMoney(derived.livingCosts + derived.trainingCost + derived.operatingCosts + derived.loanPayments + derived.ccPaymentPerDay + derived.studentLoanPayment)}/day
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Net</p>
+                  <p className={`font-mono-nums text-sm ${derived.netPerDay >= 0 ? "text-primary" : "text-destructive"}`}>
+                    {derived.netPerDay >= 0 ? "+" : ""}{formatMoney(derived.netPerDay)}/day
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Week</p>
+                  <p className="font-mono-nums text-sm">{budget}h</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto flex items-start justify-center p-6" onClick={(e) => e.stopPropagation()}>
               <div className="w-full max-w-lg">
                 {/* Close */}
                 <button onClick={() => setSelected(null)} className="mb-4 text-muted-foreground text-sm hover:text-foreground transition-colors">
                   Close
                 </button>
 
-                {/* Asset Image */}
+                {/* Lifestyle image */}
                 <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
-                   {getImage(selectedDef.tiers[Math.max(1, selectedTier) - 1].image) ? (
+                  {getImage(selectedDef.tiers[selectedTier - 1].image) ? (
                     <motion.img
                       key={selectedTier}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5 }}
-                       src={getImage(selectedDef.tiers[Math.max(1, selectedTier) - 1].image)}
-                       alt={selectedDef.tiers[Math.max(1, selectedTier) - 1].name}
-                       width={1024}
-                       height={640}
+                      src={getImage(selectedDef.tiers[selectedTier - 1].image)}
+                      alt={selectedDef.tiers[selectedTier - 1].name}
+                      width={1024}
+                      height={640}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      Not yet acquired
+                      No picture yet
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
                 <h2 className="text-xl font-bold tracking-tight">{selectedDef.name}</h2>
-                <p className="text-sm text-muted-foreground mb-1">
-                  {selectedDef.tiers[Math.max(1, selectedTier) - 1].name}
-                </p>
-                <p className="text-xs text-primary mb-1">{selectedDef.tiers[Math.max(1, selectedTier) - 1].benefit}</p>
-                <p className="text-[11px] text-muted-foreground mb-4">
-                  Lifestyle costs {formatMoney(derived.livingCosts)}/day total. Finer choices buy hours of your week back.
-                </p>
+                <p className="text-sm text-muted-foreground mb-1">{selectedDef.tiers[selectedTier - 1].name}</p>
+                <p className="text-xs text-primary mb-4">{selectedDef.tiers[selectedTier - 1].benefit}</p>
 
                 {/* Tiers — tap a row to choose it */}
                 <div className="space-y-2">
                   {selectedDef.tiers.map((tier, i) => {
                     const isCurrent = i + 1 === selectedTier;
+                    const hourDelta = tier.hoursBonus - selectedDef.tiers[selectedTier - 1].hoursBonus;
+                    const costDelta = tier.dailyCost - selectedDef.tiers[selectedTier - 1].dailyCost;
                     return (
                       <motion.button
                         key={tier.name}
@@ -115,12 +164,15 @@ export default function AssetGallery() {
                       >
                         <div className="w-16 h-12 rounded-md overflow-hidden bg-secondary shrink-0">
                           {getImage(tier.image) && (
-                            <img src={getImage(tier.image)} alt={tier.name} className="w-full h-full object-cover" />
+                            <img src={getImage(tier.image)} alt={tier.name} loading="lazy" className="w-full h-full object-cover" />
                           )}
                         </div>
                         <span className="flex-1 min-w-0">
                           <span className={`block text-sm font-medium ${isCurrent ? "text-primary" : "text-foreground"}`}>
                             {tier.name}
+                          </span>
+                          <span className={`block text-[11px] font-medium ${tier.hoursBonus >= 0 ? "text-primary" : "text-destructive"}`}>
+                            {hoursLabel(tier.hoursBonus)}
                           </span>
                           <span className="block text-[11px] text-muted-foreground">{tier.benefit}</span>
                         </span>
@@ -129,7 +181,9 @@ export default function AssetGallery() {
                             {formatMoney(tier.dailyCost)}/day
                           </span>
                           <span className="block text-[10px] text-muted-foreground">
-                            {isCurrent ? "Current" : "Tap to choose"}
+                            {isCurrent
+                              ? "Current"
+                              : `${hourDelta >= 0 ? "+" : ""}${hourDelta}h · ${costDelta >= 0 ? "+" : "−"}${formatMoney(Math.abs(costDelta))}/day`}
                           </span>
                         </span>
                       </motion.button>
