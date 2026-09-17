@@ -1261,11 +1261,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // The minimum applies to every fresh commitment, not only the first one.
       if (action.amount < def.minInvestment) return state;
       const lockedUntil = def.lockupDays ? state.day + def.lockupDays : undefined;
+      // Getting in costs a spread on assets that trade, so buying and selling
+      // repeatedly to fish for a good run loses money.
+      const credited = action.amount * (1 - (def.tradeSpread || 0));
+      const fresh = cur.value <= 0 || cur.drift === undefined;
+      const drift = def.unknownReturn ? (fresh ? rollDrift(def, cur.drift) : cur.drift) : undefined;
+      const regimeUntil = def.unknownReturn ? (fresh ? nextRegime(def, state.day) : cur.regimeUntil) : undefined;
       return {
         ...state, cash: state.cash - action.amount,
         investments: {
           ...state.investments,
-          [action.id]: { value: cur.value + action.amount, basis: cur.basis + action.amount, lockedUntil },
+          [action.id]: { value: cur.value + credited, basis: cur.basis + action.amount, lockedUntil, drift, regimeUntil },
         },
         stats: { ...state.stats, investDeposited: state.stats.investDeposited + action.amount },
       };
@@ -1275,17 +1281,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const cur = state.investments[action.id];
       if (!cur) return state;
       if ((cur.lockedUntil || 0) > state.day) return state;
+      const def = INVESTMENTS.find((i) => i.id === action.id);
       const amt = Math.min(action.amount, cur.value);
       if (amt <= 0) return state;
+      const proceeds = amt * (1 - (def?.tradeSpread || 0));
       // basis comes out in the same proportion, so the gain figure stays honest
       const share = amt / cur.value;
+      const left = cur.value - amt;
       return {
-        ...state, cash: state.cash + amt,
+        ...state, cash: state.cash + proceeds,
         investments: {
           ...state.investments,
-          [action.id]: { value: cur.value - amt, basis: cur.basis * (1 - share) },
+          [action.id]: {
+            value: left,
+            basis: cur.basis * (1 - share),
+            // Sell out entirely and the next holding starts from a fresh, unknown pace.
+            drift: left > 0 ? cur.drift : undefined,
+            regimeUntil: left > 0 ? cur.regimeUntil : undefined,
+          },
         },
-        stats: { ...state.stats, investWithdrawn: state.stats.investWithdrawn + amt },
+        stats: { ...state.stats, investWithdrawn: state.stats.investWithdrawn + proceeds },
       };
     }
 
