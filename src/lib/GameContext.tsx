@@ -100,8 +100,13 @@ export interface Stats {
   businessEarnedById: Record<string, number>;
 }
 
+/** Bumped when the expansion ladder changes shape, so old saves can be rescaled. */
+export const BUSINESS_SCALE_VERSION = 2;
+
 export interface GameState {
+  businessScale?: number;
   cash: number;
+
   ccDebt: number;
   day: number;
   jobIndex: number;
