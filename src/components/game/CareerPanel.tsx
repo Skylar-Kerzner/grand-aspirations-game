@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useGame, annualSalaryAt, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudyFunding, getStudyPrereqNote } from "@/lib/GameContext";
+import { useGame, annualSalaryAt, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus, getTrackCredential, getStudyFunding, getStudyPrereqNote, trackPerk } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_TRACKS, JOBS, WEEK_HOURS, WORKDAYS_PER_YEAR, DAYS_PER_YEAR, getCareerTrack, JOB_HOP_SETTLED_DAYS, PROMOTION_MIN_DAYS, getTrackPrograms, workplaceImage, FEDERAL_CAPS } from "@/lib/gameData";
+import { CAREER_TRACKS, JOBS, WEEK_HOURS, WORKDAYS_PER_YEAR, DAYS_PER_YEAR, getCareerTrack, getHoursBonusLabel, JOB_HOP_SETTLED_DAYS, PROMOTION_MIN_DAYS, getTrackPrograms, workplaceImage, FEDERAL_CAPS } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
 export default function CareerPanel() {
@@ -22,6 +22,14 @@ export default function CareerPanel() {
     : 0;
   const settled = daysInJob >= JOB_HOP_SETTLED_DAYS;
   const seasoned = daysInJob >= PROMOTION_MIN_DAYS;
+  // The weekly-hours perk of this track, with what it will be worth at the top of the ladder
+  const hoursPerk = CAREER_TRACKS[homeTrack]?.hoursBonus
+    ? {
+        now: trackPerk(state, "hoursBonus"),
+        max: CAREER_TRACKS[homeTrack].hoursBonus as number,
+        label: getHoursBonusLabel(homeTrack),
+      }
+    : null;
 
   return (
     <div className="space-y-6">
@@ -65,6 +73,12 @@ export default function CareerPanel() {
         {job.perfFee && (
           <p className="text-[11px] text-primary mb-2">
             Plus 2% a year on the portfolio and 20% of its gains.
+          </p>
+        )}
+        {hoursPerk && (
+          <p className="text-[11px] text-primary mb-2">
+            {hoursPerk.label.charAt(0).toUpperCase() + hoursPerk.label.slice(1)}: +{hoursPerk.now}h of your
+            week now — +{hoursPerk.max}h at the top of this ladder.
           </p>
         )}
         {state.payUntil > state.day && (
