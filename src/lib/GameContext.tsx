@@ -291,6 +291,41 @@ export function getTrackCredential(state: GameState, trackId: string) {
   return { studied, years, effective: Math.max(studied, fromExperience) };
 }
 
+/**
+ * The rank an industry would actually hire you into: what your schooling and
+ * years in that field support, plus whatever seniority elsewhere transfers.
+ */
+export function getEarnedLevelIn(state: GameState, trackId: string) {
+  const cred = getTrackCredential(state, trackId);
+  const ceiling = CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)];
+  const home = getCareerTrack(state.currentJob.employer).id;
+
+  // What you have built inside the industry itself.
+  const fromCredentials = cred.studied > 0 ? CREDENTIAL_LEVEL_CEILING[cred.studied - 1] + 1 : 0;
+  const fromYears = Math.floor(cred.years * LEVELS_PER_YEAR_IN_TRACK);
+  const insider = Math.min(ceiling, Math.max(fromCredentials, fromYears));
+
+  // What another industry is willing to credit from your seniority elsewhere.
+  let share = TRACK_TRANSFER_SHARE[trackId] ?? 0.25;
+  if (isAdjacentTrack(home, trackId)) share += TRACK_TRANSFER_ADJACENT_BONUS;
+  const transfer = trackId === home ? 0 : Math.min(ceiling, Math.floor(state.jobIndex * share));
+
+  const level = Math.max(0, Math.min(JOBS.length - 1, ceiling, Math.max(insider, transfer)));
+  return { level, ceiling, cred, transfer, insider };
+}
+
+/** Plain-language reason an industry would start you where it would. */
+export function earnedLevelNote(state: GameState, trackId: string): string {
+  const { cred, insider, transfer, ceiling } = getEarnedLevelIn(state, trackId);
+  const name = CAREER_TRACKS[trackId]?.name || "this industry";
+  if (cred.studied >= 3) return `Your graduate degree in ${name} opens the top of this ladder.`;
+  if (cred.studied === 2) return `Your bachelor's in ${name} places you mid-ladder here.`;
+  if (cred.studied === 1) return `Your short course in ${name} opens the junior half of this ladder.`;
+  if (cred.years >= 1) return `${cred.years.toFixed(1)} years worked in ${name} is what places you here.`;
+  if (transfer > insider && transfer > 0) return `No schooling in ${name}: they credit some of your seniority elsewhere, nothing more.`;
+  return `No schooling or years in ${name}: you would start near the bottom${ceiling < JOBS.length - 1 ? " and stop at level " + (ceiling + 1) + " without studying" : ""}.`;
+}
+
 /** What your career and education bring to running a venture in its industry. */
 export function getIndustryKnowledge(state: GameState, id: string) {
   const def = BUSINESSES.find((business) => business.id === id);
