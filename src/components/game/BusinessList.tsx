@@ -31,6 +31,7 @@ import {
   getBusinessCapital,
 } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
+import { Lock } from "lucide-react";
 
 function conditionLabel(c: number) {
   if (c >= 1.15) return { text: "Booming", tone: "text-primary" };
