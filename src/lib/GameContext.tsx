@@ -441,6 +441,12 @@ export function getEarnedLevelIn(state: GameState, trackId: string) {
 export function earnedLevelNote(state: GameState, trackId: string): string {
   const { cred, insider, transfer, ceiling } = getEarnedLevelIn(state, trackId);
   const name = CAREER_TRACKS[trackId]?.name || "this industry";
+  // Licensed work stops dead without the qualification, whatever else you have done.
+  const blocking = licenceRequirementAt(trackId, ceiling + 1);
+  if (blocking && blocking.level > cred.studied) {
+    const role = roleAtLevel(trackId, ceiling + 1);
+    return `${role?.title ?? "The next post"} in ${name} cannot be held without ${blocking.label} — years served will not stand in for it.`;
+  }
   if (cred.studied >= 3) return `Your graduate degree in ${name} opens the top of this ladder.`;
   if (cred.studied === 2) return `Your bachelor's in ${name} places you mid-ladder here.`;
   if (cred.studied === 1) return `Your short course in ${name} opens the junior half of this ladder.`;
