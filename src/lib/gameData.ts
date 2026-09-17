@@ -437,6 +437,16 @@ export const WARDROBE_BUSINESS_BONUS = [0, 0.04, 0.09, 0.16];
 export const WATCH_INVEST_BONUS = [0, 0.04, 0.09, 0.16];
 
 // ---------- Investments ----------
+/** Who a fund will take money from. */
+export type InvestorAccess = "open" | "accredited" | "qualified" | "institutional";
+
+export const INVESTOR_ACCESS: Record<InvestorAccess, { label: string; netWorth: number; note: string }> = {
+  open: { label: "Open to anyone", netWorth: 0, note: "Anyone can put money in." },
+  accredited: { label: "Accredited investors", netWorth: 1000000, note: "Requires a net worth of $1M." },
+  qualified: { label: "Qualified purchasers", netWorth: 5000000, note: "Requires a net worth of $5M." },
+  institutional: { label: "Institutional only", netWorth: 100000000, note: "Requires a net worth of $100M." },
+};
+
 export interface InvestmentDef {
   id: string;
   name: string;
@@ -445,20 +455,20 @@ export interface InvestmentDef {
   annualReturn: number;
   annualVolatility: number;
   risk: string;
-  unlockPrev?: string; // must have deposited unlockAmount into this one first
-  unlockAmount?: number;
+  access: InvestorAccess;
+  lockupDays?: number; // money put in cannot come out until this many days have passed
 }
 
 export const INVESTMENTS: InvestmentDef[] = [
-  { id: "savings", name: "Savings Account", description: "FDIC-safe. 2.0% a year, never moves.", minInvestment: 250, annualReturn: 0.02, annualVolatility: 0, risk: "None" },
-  { id: "bonds", name: "Treasury Bonds", description: "4.5% a year, barely wobbles.", minInvestment: 5000, annualReturn: 0.045, annualVolatility: 0.02, risk: "Low", unlockPrev: "savings", unlockAmount: 5000 },
-  { id: "index", name: "Index Fund", description: "9% a year on average. It will dip.", minInvestment: 25000, annualReturn: 0.09, annualVolatility: 0.16, risk: "Moderate", unlockPrev: "bonds", unlockAmount: 25000 },
-  { id: "realestate", name: "Real Estate Fund", description: "12% a year, illiquid and slow.", minInvestment: 150000, annualReturn: 0.12, annualVolatility: 0.2, risk: "Moderate-High", unlockPrev: "index", unlockAmount: 150000 },
-  { id: "crypto", name: "Digital Assets", description: "30% a year in the long run. Wild ride.", minInvestment: 250000, annualReturn: 0.3, annualVolatility: 0.7, risk: "Very High", unlockPrev: "realestate", unlockAmount: 300000 },
-  { id: "art", name: "Art & Collectibles", description: "14% a year, moves on its own schedule.", minInvestment: 2000000, annualReturn: 0.14, annualVolatility: 0.25, risk: "Moderate-High", unlockPrev: "crypto", unlockAmount: 2000000 },
-  { id: "pe", name: "Private Equity", description: "22% a year. Locked up, leveraged.", minInvestment: 20000000, annualReturn: 0.22, annualVolatility: 0.3, risk: "High", unlockPrev: "art", unlockAmount: 10000000 },
-  { id: "vc", name: "Venture Capital", description: "35% a year in theory. Mostly zeros and one rocket.", minInvestment: 100000000, annualReturn: 0.35, annualVolatility: 0.6, risk: "Extreme", unlockPrev: "pe", unlockAmount: 80000000 },
-  { id: "sovereign", name: "Sovereign Wealth Portfolio", description: "11% a year on an enormous base. Calm at scale.", minInvestment: 1000000000, annualReturn: 0.11, annualVolatility: 0.09, risk: "Low", unlockPrev: "vc", unlockAmount: 500000000 },
+  { id: "savings", name: "Savings Account", description: "FDIC-safe. 2.0% a year, never moves.", minInvestment: 250, annualReturn: 0.02, annualVolatility: 0, risk: "None", access: "open" },
+  { id: "bonds", name: "Treasury Bonds", description: "4.5% a year, barely wobbles.", minInvestment: 5000, annualReturn: 0.045, annualVolatility: 0.02, risk: "Low", access: "open" },
+  { id: "index", name: "Index Fund", description: "9% a year on average. It will dip.", minInvestment: 2500, annualReturn: 0.09, annualVolatility: 0.16, risk: "Moderate", access: "open" },
+  { id: "crypto", name: "Digital Assets", description: "30% a year in the long run. Wild ride.", minInvestment: 1000, annualReturn: 0.3, annualVolatility: 0.7, risk: "Very High", access: "open" },
+  { id: "realestate", name: "Real Estate Fund", description: "12% a year. Your money sits for half a year.", minInvestment: 150000, annualReturn: 0.12, annualVolatility: 0.2, risk: "Moderate-High", access: "accredited", lockupDays: 180 },
+  { id: "art", name: "Art & Collectibles", description: "14% a year, and it sells when it sells.", minInvestment: 2000000, annualReturn: 0.14, annualVolatility: 0.25, risk: "Moderate-High", access: "accredited", lockupDays: 365 },
+  { id: "pe", name: "Private Equity", description: "22% a year. Locked up, leveraged.", minInvestment: 20000000, annualReturn: 0.22, annualVolatility: 0.3, risk: "High", access: "qualified", lockupDays: 1095 },
+  { id: "vc", name: "Venture Capital", description: "35% a year in theory. Mostly zeros and one rocket.", minInvestment: 100000000, annualReturn: 0.35, annualVolatility: 0.6, risk: "Extreme", access: "qualified", lockupDays: 1460 },
+  { id: "sovereign", name: "Sovereign Wealth Portfolio", description: "11% a year on an enormous base. Calm at scale.", minInvestment: 1000000000, annualReturn: 0.11, annualVolatility: 0.09, risk: "Low", access: "institutional", lockupDays: 730 },
 ];
 
 // ---------- Loans ----------
