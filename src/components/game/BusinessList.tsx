@@ -82,14 +82,7 @@ export default function BusinessList() {
           const owned = biz.level > 0 && !!biz.choices;
           const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
           const tierName = concept?.tierNames[tierIdx] || def.tierNames[tierIdx];
-          const tierImage = owned
-            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices))
-            : getImage(
-                ventureImageAtTier(def.id, 0, {
-                  concept: BUSINESS_CONCEPTS[def.id]?.[0]?.id || "",
-                  location: BUSINESS_LOCATIONS[def.id]?.[0]?.id || "",
-                }),
-              );
+          const tierImage = owned ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices)) : "";
           const displayName = owned ? ventureNameAtTier(def.id, tierIdx, biz.choices) : def.name;
           const income = businessIncomeOf(state, def.id);
           const networkBonus = getBusinessNetworkBonus(state, def.id);
@@ -199,13 +192,12 @@ export default function BusinessList() {
                   const conceptHere = ownedHere
                     ? getBusinessConcept(selectedDef.id, selectedBiz.choices?.concept || "")
                     : undefined;
-                  const previewIdx = ownedHere ? tierIdx : getBusinessTierIndex(selectedBiz.level + 1);
                   const tierImage = ownedHere
                     ? getImage(ventureImageAtTier(selectedDef.id, tierIdx, selectedBiz.choices))
-                    : getImage(ventureImageAtTier(selectedDef.id, previewIdx, choices));
+                    : "";
                   const tierName = conceptHere?.tierNames[tierIdx] || selectedDef.tierNames[tierIdx];
                   return (
-                    <div className="aspect-[16/10] rounded-xl overflow-hidden relative mb-4">
+                    <div className="aspect-[16/10] rounded-xl overflow-hidden relative mb-4 bg-secondary">
                       {tierImage ? (
                         <motion.img
                           key={`${tierIdx}-${tierImage}`}
@@ -214,15 +206,12 @@ export default function BusinessList() {
                           transition={{ duration: 0.5 }}
                           src={tierImage}
                           alt={tierName}
-                          className={`w-full h-full object-cover ${ownedHere ? "" : "opacity-50 saturate-50"}`}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-secondary" />
-                      )}
-                      {!ownedHere && (
-                        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-background/90 to-transparent p-4">
+                        <div className="w-full h-full flex items-center justify-center px-6 text-center">
                           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                            Not open yet — how it could look
+                            Not open yet — you'll see it the day the doors open
                           </p>
                         </div>
                       )}
@@ -368,39 +357,21 @@ export default function BusinessList() {
                     <p className="text-[11px] text-muted-foreground">
                       {selectedBiz.level > 0
                         ? "Stepping up a tier is a chance to rebrand — pick a new concept or city before you expand."
-                        : "Give the venture an identity. You find out how it went once the doors open."}
+                        : "Give the business an identity. You find out how it went once the doors open."}
                     </p>
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-2">Concept</p>
                       <div className="grid grid-cols-3 gap-2">
                         {(BUSINESS_CONCEPTS[selectedDef.id] || []).map((option) => {
                           const active = choices.concept === option.id;
-                          const img = getImage(
-                            ventureImageAtTier(selectedDef.id, getBusinessTierIndex(selectedBiz.level + 1), {
-                              concept: option.id,
-                              location: choices.location,
-                            }),
-                          );
                           return (
                             <button
                               key={option.id}
                               onClick={() => setChoices((c) => ({ ...c, concept: option.id }))}
                               className={`text-left rounded-lg overflow-hidden border transition-game ${
-                                active ? "border-primary" : "border-border"
+                                active ? "border-primary bg-primary/10" : "border-border"
                               }`}
                             >
-                              {img && (
-                                <div className="aspect-[4/3] overflow-hidden">
-                                  <img
-                                    src={img}
-                                    alt={option.name}
-                                    loading="lazy"
-                                    className={`w-full h-full object-cover transition-game ${
-                                      active ? "" : "opacity-60 saturate-50"
-                                    }`}
-                                  />
-                                </div>
-                              )}
                               <div className="p-1.5">
                                 <p className={`text-[11px] leading-tight ${active ? "text-primary" : ""}`}>{option.name}</p>
                                 <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">{option.description}</p>
@@ -495,7 +466,7 @@ export default function BusinessList() {
                       {selectedBiz.level > 0 &&
                         getBusinessTierIndex(selectedBiz.level + 1) !== getBusinessTierIndex(selectedBiz.level) && (
                         <p className="text-center text-[11px] text-muted-foreground mb-2">
-                          Moving up a tier puts part of its luck back on the table — a great venture can come
+                          Moving up a tier puts part of its luck back on the table — a great business can come
                           back to earth, and a poor one can turn around.
                         </p>
                       )}

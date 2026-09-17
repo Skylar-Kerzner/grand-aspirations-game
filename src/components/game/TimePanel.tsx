@@ -23,7 +23,7 @@ export default function TimePanel() {
             <span className="font-mono-nums">{formatMoney(derived.salaryPerDay)}/day</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Ventures</span>
+            <span className="text-muted-foreground">Businesses</span>
             <span className="font-mono-nums">{formatMoney(derived.businessPerDay)}/day</span>
           </div>
           <div className="flex justify-between">
@@ -56,10 +56,10 @@ export default function TimePanel() {
           <span className="font-mono-nums text-sm">{freeHours}h free</span>
         </div>
         <p className="text-[11px] text-muted-foreground mb-1">
-          {workHours}h at your job{state.studying ? ` · ${state.studyHours}h school` : ""} · {bizHours}h in your ventures
+          {workHours}h at your job{state.studying ? ` · ${state.studyHours}h school` : ""} · {bizHours}h in your businesses
         </p>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Pay scales with the hours you work. Your ventures only reach their full return on the hours you
+          Pay scales with the hours you work. Your businesses only reach their full return on the hours you
           personally put in. {BASE_TIME_BUDGET}h base
           {lifestyleHours >= 0 ? ` + ${lifestyleHours}h` : ` − ${Math.abs(lifestyleHours)}h`} from your lifestyle
           {careerHours ? ` + ${careerHours}h from your line of work` : ""} = {budget}h.
@@ -89,17 +89,17 @@ export default function TimePanel() {
           <div className="h-full bg-primary" style={{ width: `${(workHours / budget) * 100}%` }} />
         </div>
         <p className="text-[10px] text-muted-foreground mt-1">
-          {workHours}h at your job — everything you don't give to school or your ventures
+          {workHours}h at your job — everything you don't give to school or your businesses
         </p>
       </div>
 
-      {/* Ventures */}
+      {/* Businesses */}
       <div>
-        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Time in your ventures</h3>
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-3 px-1">Time in your businesses</h3>
         <p className="text-[11px] text-muted-foreground mb-3 px-1">
-          A venture you never visit limps along at a quarter of its potential — the first hour jumps it to half.
-          {BUSINESS_ATTENTION_FULL_HOURS}h a week is the most any one venture can take, and it takes that to full
-          swing. A little time in each of several ventures often beats everything in one.
+          A business you never visit limps along at a quarter of its potential — the first hour jumps it to half.
+          {BUSINESS_ATTENTION_FULL_HOURS}h a week is the most any one business can take, and it takes that to full
+          swing. A little time in each of several businesses often beats everything in one.
         </p>
         <div className="space-y-3">
           {owned.map((def) => {
@@ -160,7 +160,7 @@ export default function TimePanel() {
           })}
           {owned.length === 0 && (
             <p className="text-[11px] text-muted-foreground px-1">
-              You don't run any ventures yet. Once you open one, its hours live here.
+              You don't run any businesses yet. Once you open one, its hours live here.
             </p>
           )}
         </div>

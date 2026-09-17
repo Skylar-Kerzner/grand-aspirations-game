@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { useGame } from "@/lib/GameContext";
+import { useGame, getAssetLook } from "@/lib/GameContext";
 import { ASSETS, BUSINESSES, getBusinessTierIndex, ventureImageAtTier, workplaceImage } from "@/lib/gameData";
 import { getImage } from "@/lib/gameImages";
 
@@ -25,13 +25,13 @@ export default function BackgroundScene() {
     const definition = ASSETS.find((asset) => asset.id === id);
     const ownedTier = state.assets[id] || 0;
     if (!definition || ownedTier < 1) return "";
-    const tier = definition.tiers[Math.min(ownedTier, definition.tiers.length) - 1];
-    return tier ? getImage(tier.image) : "";
+    const look = getAssetLook(state, id, Math.min(ownedTier, definition.tiers.length) - 1);
+    return look ? getImage(look.image) : "";
   };
 
   // Every company the player owns.
-  const ventureTiles: Tile[] = BUSINESSES.filter((b) => (state.businesses[b.id]?.level || 0) > 0).map((b) => ({
-    key: `venture-${b.id}`,
+  const businessTiles: Tile[] = BUSINESSES.filter((b) => (state.businesses[b.id]?.level || 0) > 0).map((b) => ({
+    key: `business-${b.id}`,
     span: 1,
     src: getImage(
       ventureImageAtTier(b.id, getBusinessTierIndex(state.businesses[b.id].level), state.businesses[b.id].choices),
@@ -40,11 +40,13 @@ export default function BackgroundScene() {
 
   const workImg = getImage(workplaceImage(derived.job.employer, state.jobIndex));
 
+  // Work and the businesses lead, so the top of the screen is whatever this life
+  // has actually built. The lifestyle pictures fill in beneath them.
   const tiles: Tile[] = [
     { key: "work", src: workImg, span: 1.05 },
+    ...businessTiles,
     { key: "house", src: assetImage("house"), span: 1.1 },
     { key: "car", src: assetImage("car"), span: 0.95 },
-    ...ventureTiles,
     { key: "food", src: assetImage("food"), span: 0.9 },
     { key: "wardrobe", src: assetImage("wardrobe"), span: 1 },
     { key: "watch", src: assetImage("watch"), span: 0.85 },

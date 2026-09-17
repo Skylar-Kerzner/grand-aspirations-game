@@ -225,7 +225,7 @@ export default function FinancePanel() {
       <div className="surface-card rounded-xl p-4">
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Start over</h3>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Wipes everything — cash, career, ventures, investments and debts — and begins a new life from day one.
+          Wipes everything — cash, career, businesses, investments and debts — and begins a new life from day one.
         </p>
         <motion.button
           whileTap={{ scale: 0.97 }}
@@ -245,7 +245,7 @@ export default function FinancePanel() {
           >
             <h3 className="text-lg font-semibold tracking-tight mb-1">Reset the game?</h3>
             <p className="text-[12px] text-muted-foreground mb-5">
-              Your {formatMoney(derived.netWorth)} net worth, your position as {derived.job.title} and every venture
+              Your {formatMoney(derived.netWorth)} net worth, your position as {derived.job.title} and every business
               you own will be gone. This cannot be undone.
             </p>
             <div className="flex gap-3">
