@@ -733,6 +733,7 @@ function rollEvent(state: GameState, days: number): GameState {
     && (!e.gateJobIndex || state.jobIndex >= e.gateJobIndex)
     && (!e.gatePerfFee || !!getJob(state).perfFee)
     && (!e.gateMajor || state.majors.length > 0)
+    && (!e.gateAsset || (state.assets[e.gateAsset] ?? 0) > 0)
   );
   const totalWeight = pool.reduce((s, e) => s + e.weight, 0);
   let r = Math.random() * totalWeight;
