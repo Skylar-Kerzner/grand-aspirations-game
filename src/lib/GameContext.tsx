@@ -186,7 +186,7 @@ export function getJob(state: GameState) {
   const cur = state.currentJob || base;
   // Older saves and offers can carry a missing pay figure — never let it poison the maths.
   const rawPay = Number.isFinite(cur.dailyPay) ? cur.dailyPay : base.dailyPay;
-  const dailyPay = clampRoleDailyPay(cur.title || base.title, rawPay);
+  const dailyPay = clampRoleDailyPay(cur.title || base.title, rawPay, TRAINING_OFFER_SWING);
   return { ...base, ...cur, dailyPay };
 }
 
@@ -866,12 +866,12 @@ function createInitialState(): GameState {
         currentJob: parsed.currentJob || { title: savedJob.title, employer: savedJob.employer, dailyPay: savedJob.dailyPay },
         careerOffers: (parsed.careerOffers || []).map((offer) => ({
           ...offer,
-          dailyPay: clampRoleDailyPay(offer.title, offer.dailyPay),
+          dailyPay: clampRoleDailyPay(offer.title, offer.dailyPay, TRAINING_OFFER_SWING),
         })),
         jobHistory: parsed.jobHistory && parsed.jobHistory.length
           ? parsed.jobHistory.map((job) => ({
               ...job,
-              dailyPay: clampRoleDailyPay(job.title, job.dailyPay),
+              dailyPay: clampRoleDailyPay(job.title, job.dailyPay, TRAINING_OFFER_SWING),
             }))
           : [{
               title: (parsed.currentJob || savedJob).title,
