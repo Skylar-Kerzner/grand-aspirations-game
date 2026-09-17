@@ -1697,7 +1697,7 @@ function calculateDerived(state: GameState): DerivedState {
 
   let loanTotal = 0;
   for (const l of Object.values(state.loans)) loanTotal += l.remaining;
-  const studentDebt = state.studentLoan?.balance || 0;
+  const studentDebt = getStudentDebt(state);
   const studentLoanPayment = getStudentLoanPayment(state);
 
   const assetValue = 0; // lifestyle choices are recurring services, not owned assets
