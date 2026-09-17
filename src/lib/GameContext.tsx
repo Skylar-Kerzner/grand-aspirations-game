@@ -442,6 +442,27 @@ export function getLoanPayments(state: GameState): number {
   return total;
 }
 
+/** What your student debt costs you a day. Nothing while enrolled or in the grace period. */
+export function getStudentLoanPayment(state: GameState): number {
+  const loan = state.studentLoan;
+  if (!loan || loan.balance <= 0) return 0;
+  if (state.studying || state.day < loan.dueFrom) return 0;
+  return Math.min(loan.balance, amortizedPayment(loan.balance, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS));
+}
+
+/** How much more you could borrow to study, given how far you have got. */
+export function getStudentLoanHeadroom(state: GameState): number {
+  const highest = Math.max(
+    1,
+    ...state.majors.map((id) => MAJORS.find((m) => m.id === id)?.level || 1),
+  );
+  // Enrolling in a higher program raises what lenders will put up.
+  const studyingLevel = state.studying
+    ? MAJORS.find((m) => m.id === state.studying?.majorId)?.level || 1
+    : 1;
+  return Math.max(0, studentLoanCap(Math.max(highest, studyingLevel)) - (state.studentLoan?.balance || 0));
+}
+
 export function getCreditCardPayment(state: GameState): number {
   if (state.ccDebt <= 0) return 0;
   const balanceAfterInterest = state.ccDebt * (1 + CC_APR / DAYS_PER_YEAR);
