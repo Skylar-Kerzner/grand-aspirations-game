@@ -1205,7 +1205,7 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     bizGross += gain;
     stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
     let updated: BusinessState = {
-      ...biz, condition, takings: lastTakings, season,
+      ...biz, condition, takings: lastTakings, takingsHist, season,
       fortune,
       fortunePeak: Math.max(biz.fortunePeak ?? biz.fortune ?? 1, fortune),
     };
