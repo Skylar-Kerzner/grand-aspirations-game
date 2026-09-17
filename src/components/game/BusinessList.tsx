@@ -530,9 +530,9 @@ export default function BusinessList() {
                             </p>
                           )}
                           {!maxed && selectedBiz.level > 0 && (
-                            <p className={`text-center text-[11px] mb-2 ${nextRate < lastRate * 0.9 ? "text-destructive" : "text-muted-foreground"}`}>
-                              This expansion earns {(nextRate * 100).toFixed(0)}% a year on the money put in — the last
-                              one earns {(lastRate * 100).toFixed(0)}%. Size costs you return.
+                            <p className="text-center text-[11px] text-muted-foreground mb-2">
+                              Each expansion earns a little less on its money than the one before — size costs
+                              you return, even though the extra profit is real.
                             </p>
                           )}
                         </>
