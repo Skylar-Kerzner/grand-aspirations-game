@@ -1033,12 +1033,43 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const def = MAJORS.find((m) => m.id === action.majorId);
       if (!def || state.studying) return state;
       if (state.majors.includes(def.id)) return state;
-      if (state.cash < def.cost) return state;
+      // Teaching lives get their fees subsidised.
+      const discount = getCareerTrack(state.currentJob.employer).studyBonus ? 0.25 : 0;
+      const cost = Math.round(def.cost * (1 - discount));
+      const loan = state.studentLoan || { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 };
+      if (action.financed) {
+        const headroom = getStudentLoanHeadroom({ ...state, studying: { majorId: def.id, daysLeft: def.days } });
+        if (cost > headroom) return state;
+        return {
+          ...state,
+          studyHours: 20,
+          studying: { majorId: def.id, daysLeft: def.days },
+          studentLoan: {
+            ...loan,
+            balance: loan.balance + cost,
+            borrowed: loan.borrowed + cost,
+            dueFrom: state.day + def.days + STUDENT_LOAN_GRACE_DAYS,
+          },
+          stats: { ...state.stats, educationSpent: state.stats.educationSpent + cost },
+        };
+      }
+      if (state.cash < cost) return state;
       return {
-        ...state, cash: state.cash - def.cost,
+        ...state, cash: state.cash - cost,
         studyHours: 20,
         studying: { majorId: def.id, daysLeft: def.days },
-        stats: { ...state.stats, educationSpent: state.stats.educationSpent + def.cost },
+        stats: { ...state.stats, educationSpent: state.stats.educationSpent + cost },
+      };
+    }
+
+    case "REPAY_STUDENT_LOAN": {
+      const loan = state.studentLoan;
+      if (!loan || loan.balance <= 0) return state;
+      const pay = Math.min(state.cash, action.amount ?? loan.balance, loan.balance);
+      if (pay <= 0) return state;
+      return {
+        ...state, cash: state.cash - pay,
+        studentLoan: { ...loan, balance: loan.balance - pay, repaid: loan.repaid + pay },
       };
     }
 
