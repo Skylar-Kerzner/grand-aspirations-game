@@ -799,6 +799,22 @@ function advance(state: GameState, days: number, now: number): GameState {
     }
   }
 
+  // Student debt — interest always accrues, payments only start after the grace period
+  let studentLoan = s.studentLoan || { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 };
+  if (studentLoan.balance > 0) {
+    const grown = studentLoan.balance * Math.pow(1 + STUDENT_LOAN_RATE / DAYS_PER_YEAR, days);
+    stats.loanInterestPaid += grown - studentLoan.balance;
+    let balance = grown;
+    if (!s.studying && s.day >= studentLoan.dueFrom) {
+      const due = Math.min(getStudentLoanPayment({ ...s, studentLoan: { ...studentLoan, balance } }) * days, balance);
+      cash -= due;
+      balance -= due;
+      studentLoan = { ...studentLoan, balance: Math.max(0, balance), repaid: studentLoan.repaid + due };
+    } else {
+      studentLoan = { ...studentLoan, balance };
+    }
+  }
+
   // Credit card: anything you cannot cover becomes revolving debt
   let ccDebt = s.ccDebt;
   if (ccDebt > 0) {
