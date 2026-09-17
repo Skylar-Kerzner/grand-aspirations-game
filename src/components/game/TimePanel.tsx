@@ -169,9 +169,15 @@ export default function TimePanel() {
           <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Training budget</h3>
           <span className="font-mono-nums text-sm">{formatMoney(state.trainingBudget)}/day</span>
         </div>
+        <p className="text-[11px] text-muted-foreground mb-1">
+          Courses, certifications, coaching and conferences for your career. They build up over weeks of
+          sustained spending — every offer you seek out pays +{Math.round(derived.offerTrainingBonus * 100)}%
+          (up to +35%). Ease off and the edge fades.
+        </p>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Courses, certifications, coaching and conferences for your career. Every offer you seek out pays{" "}
-          +{Math.round(derived.offerTrainingBonus * 100)}% (up to +35%).
+          {derived.offerTrainingBonus >= 0.349
+            ? "You are at the full boost."
+            : `Effective spend ${formatMoney(state.trainingMomentum)}/day — it takes about $140/day held for a month to reach the cap.`}
         </p>
         <input
           type="range"
