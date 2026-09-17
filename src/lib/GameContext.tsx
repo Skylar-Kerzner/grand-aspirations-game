@@ -575,25 +575,88 @@ export function getLoanPayments(state: GameState): number {
   return total;
 }
 
-/** What your student debt costs you a day. Nothing while enrolled or in the grace period. */
-export function getStudentLoanPayment(state: GameState): number {
-  const loan = state.studentLoan;
-  if (!loan || loan.balance <= 0) return 0;
-  if (state.studying || state.day < loan.dueFrom) return 0;
-  return Math.min(loan.balance, amortizedPayment(loan.balance, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS));
+export const EMPTY_STUDENT_LOAN: StudentLoanState = {
+  balance: 0, borrowed: 0, repaid: 0, dueFrom: 0, rate: FEDERAL_RATE_UNDERGRAD,
+  undergradBorrowed: 0, gradBorrowed: 0,
+  privateBalance: 0, privateBorrowed: 0, privateRepaid: 0, privateDueFrom: 0,
+};
+
+export function getStudentLoan(state: GameState): StudentLoanState {
+  return { ...EMPTY_STUDENT_LOAN, ...(state.studentLoan || {}) };
 }
 
-/** How much more you could borrow to study, given how far you have got. */
-export function getStudentLoanHeadroom(state: GameState): number {
-  const highest = Math.max(
-    1,
-    ...state.majors.map((id) => MAJORS.find((m) => m.id === id)?.level || 1),
-  );
-  // Enrolling in a higher program raises what lenders will put up.
-  const studyingLevel = state.studying
-    ? MAJORS.find((m) => m.id === state.studying?.majorId)?.level || 1
-    : 1;
-  return Math.max(0, studentLoanCap(Math.max(highest, studyingLevel)) - (state.studentLoan?.balance || 0));
+/** What your federal student debt costs you a day. Quiet while enrolled or in grace. */
+export function getFederalLoanPayment(state: GameState): number {
+  const loan = getStudentLoan(state);
+  if (loan.balance <= 0) return 0;
+  if (state.studying || state.day < loan.dueFrom) return 0;
+  return Math.min(loan.balance, amortizedPayment(loan.balance, loan.rate ?? FEDERAL_RATE_UNDERGRAD, STUDENT_LOAN_TERM_DAYS));
+}
+
+/** Bank debt: interest runs from day one, payments begin the day you finish. */
+export function getPrivateLoanPayment(state: GameState): number {
+  const loan = getStudentLoan(state);
+  const balance = loan.privateBalance || 0;
+  if (balance <= 0) return 0;
+  if (state.studying || state.day < (loan.privateDueFrom || 0)) return 0;
+  return Math.min(balance, amortizedPayment(balance, PRIVATE_RATE, PRIVATE_TERM_DAYS));
+}
+
+export function getStudentLoanPayment(state: GameState): number {
+  return getFederalLoanPayment(state) + getPrivateLoanPayment(state);
+}
+
+export function getStudentDebt(state: GameState): number {
+  const loan = getStudentLoan(state);
+  return loan.balance + (loan.privateBalance || 0);
+}
+
+/** Government money still available for a given program, under the 2026 caps. */
+export function getFederalRoomFor(state: GameState, def: MajorDef): number {
+  const loan = getStudentLoan(state);
+  const undergrad = loan.undergradBorrowed || 0;
+  const grad = loan.gradBorrowed || 0;
+  const bucket = federalBucketFor(def.kind);
+  // Professional caps are combined with any earlier graduate borrowing.
+  const used = bucket === "undergrad" ? undergrad : grad;
+  const bucketRoom = federalCapFor(def.kind) - used;
+  const lifetimeRoom = FEDERAL_CAPS.lifetime - (undergrad + grad);
+  return Math.max(0, Math.min(bucketRoom, lifetimeRoom));
+}
+
+/** Everything you owe right now, used when a bank sizes a private loan. */
+function getTotalDebt(state: GameState): number {
+  let loanTotal = 0;
+  for (const l of Object.values(state.loans)) loanTotal += l.remaining;
+  return loanTotal + state.ccDebt + getStudentDebt(state);
+}
+
+/** What a private lender will put up: they look at your pay and your assets, not your degree. */
+export function getPrivateLoanRoom(state: GameState): number {
+  const annualPay = getGrossSalary(state) * DAYS_PER_YEAR;
+  const assets = state.cash + getInvestmentTotal(state) + getBusinessValue(state);
+  const capacity = annualPay * PRIVATE_INCOME_MULTIPLE + assets * PRIVATE_NET_WORTH_SHARE;
+  return Math.max(0, capacity - getTotalDebt(state));
+}
+
+/** How a program's fees would be funded: government first, a bank for the rest. */
+export function getStudyFunding(state: GameState, def: MajorDef, cost: number) {
+  const federal = Math.min(cost, getFederalRoomFor(state, def));
+  const shortfall = Math.max(0, cost - federal);
+  const privateRoom = getPrivateLoanRoom(state);
+  return { federal, private: Math.min(shortfall, privateRoom), shortfall, privateRoom, covered: shortfall <= privateRoom + 0.5 };
+}
+
+/** You need the degree below before the one above. */
+export function getStudyPrereqNote(state: GameState, def: MajorDef): string | null {
+  if (def.level < 3) return null;
+  const hasBachelors = state.majors.some((id) => {
+    const m = MAJORS.find((x) => x.id === id);
+    return !!m && m.level === 2 && (m.track === def.track || isAdjacentTrack(m.track, def.track));
+  });
+  if (hasBachelors) return null;
+  const own = MAJORS.find((m) => m.track === def.track && m.level === 2);
+  return `Needs a bachelor's first — ${own?.name || "a related degree"} or one from a related industry.`;
 }
 
 export function getCreditCardPayment(state: GameState): number {
