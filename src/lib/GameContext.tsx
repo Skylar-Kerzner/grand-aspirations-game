@@ -22,6 +22,7 @@ export interface BusinessState {
   level: number;
   condition: number;                   // the slow trading trend — this is what moves the value
   takings?: number;                    // how today's takings compared with a normal day
+  season?: number;                     // slow multi-week wave in trade (good and bad runs cluster)
   fortune?: number;                    // lasting quality of this particular venture
   choices?: Record<string, string>;    // location / market / product chosen when opening
 }
