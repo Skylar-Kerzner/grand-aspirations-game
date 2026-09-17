@@ -2022,6 +2022,8 @@ function calculateDerived(state: GameState): DerivedState {
     salaryPerDay, businessPerDay, investmentPerDay, incomePerDay,
     livingCosts, trainingCost, operatingCosts, loanPayments, ccInterestPerDay, ccPaymentPerDay, netPerDay,
     recentCashFlowDays: recent.length, recentSalary, recentBusiness, recentInvestments, recentCosts, recentNet,
+    recentLifestyleCosts, recentInterestPaid, recentPrincipalPaid, recentInterestAccrued,
+
     investmentTotal, loanTotal, studentDebt, studentLoanPayment, assetValue, businessValue, businessCapital,
     shiftPay: getGrossHourlyPay(state) * (1 - taxRate),
     job,
