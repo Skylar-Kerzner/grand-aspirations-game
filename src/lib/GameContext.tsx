@@ -1114,11 +1114,53 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
         }
       }
       condition = Math.min(1.8, Math.max(0.15, condition));
+      // How well the business is doing is not a permanent verdict: competition
+      // pulls a winner back toward normal faster than a struggler recovers.
+      const pull = fortune > BUSINESS_FORTUNE_ANCHOR ? BUSINESS_FORTUNE_DECAY_UP : BUSINESS_FORTUNE_DECAY_DOWN;
+      fortune = BUSINESS_FORTUNE_ANCHOR + (fortune - BUSINESS_FORTUNE_ANCHOR) * (1 - pull)
+        + (Math.random() - 0.5) * BUSINESS_FORTUNE_NOISE * fortune;
+      fortune = Math.min(6, Math.max(0.1, fortune));
     }
     bizGross += gain;
     stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
-    businesses[id] = { ...biz, condition, takings: lastTakings, season };
+    let updated: BusinessState = {
+      ...biz, condition, takings: lastTakings, season,
+      fortune,
+      fortunePeak: Math.max(biz.fortunePeak ?? biz.fortune ?? 1, fortune),
+    };
+    const endDay = s.day + days;
+    // A build-out finishes and the new capacity starts trading.
+    if (updated.buildUntil && endDay >= updated.buildUntil) {
+      if (shockEvents.length < 4) {
+        shockEvents.push({
+          day: Math.floor(updated.buildUntil),
+          title: `${def.name} reopens`,
+          text: `The building work at your ${def.name.toLowerCase()} is finished and the new space is trading.`,
+          effect: "The money put in is now earning.",
+          tone: "good",
+        });
+      }
+      updated = { ...updated, buildUntil: undefined, buildFromLevel: undefined };
+    }
+    // A buyer turns up for a business that was put on the market.
+    if (updated.listedUntil && endDay >= updated.listedUntil) {
+      const proceeds = getBusinessSalePrice(s, id);
+      cash += proceeds;
+      stats.businessSold += proceeds;
+      if (shockEvents.length < 4) {
+        shockEvents.push({
+          day: Math.floor(updated.listedUntil),
+          title: `${def.name} sold`,
+          text: `A buyer completed on your ${def.name.toLowerCase()}.`,
+          effect: `+${Math.round(proceeds).toLocaleString()} after fees and the buyer's discount.`,
+          tone: "good",
+        });
+      }
+      updated = { level: 0, condition: 1 };
+    }
+    businesses[id] = updated;
   }
+
   const bizTax = bizGross * taxRate;
   const netBusiness = bizGross - bizTax;
   cash += netBusiness;
