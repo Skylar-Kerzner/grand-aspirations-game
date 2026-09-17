@@ -3,7 +3,10 @@ import { formatMoney, formatRate, formatDays } from "@/lib/formatters";
 
 export default function Dashboard() {
   const { state, derived, dispatch } = useGame();
-  const periodLabel = derived.recentCashFlowDays >= 7 ? "Last 7 days" : `Last ${derived.recentCashFlowDays || 0} days`;
+  const periodLabel = derived.recentCashFlowDays >= 7
+    ? "Last 7 days"
+    : derived.recentCashFlowDays === 1 ? "Today" : derived.recentCashFlowDays > 1
+      ? `Last ${derived.recentCashFlowDays} days` : "No history yet";
   return (
     <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-border px-4 py-5">
       <div className="text-center mb-3">

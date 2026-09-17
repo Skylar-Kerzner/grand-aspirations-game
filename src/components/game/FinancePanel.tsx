@@ -8,7 +8,10 @@ export default function FinancePanel() {
   const { state, derived, dispatch } = useGame();
   const [confirmReset, setConfirmReset] = useState(false);
   const totalLevels = Object.values(state.businesses).reduce((s, b) => s + b.level, 0);
-  const periodLabel = derived.recentCashFlowDays >= 7 ? "Last 7 days" : `Last ${derived.recentCashFlowDays || 0} days`;
+  const periodLabel = derived.recentCashFlowDays >= 7
+    ? "Last 7 days"
+    : derived.recentCashFlowDays === 1 ? "Today" : derived.recentCashFlowDays > 1
+      ? `Last ${derived.recentCashFlowDays} days` : "No history yet";
 
   return (
     <div className="space-y-6">
