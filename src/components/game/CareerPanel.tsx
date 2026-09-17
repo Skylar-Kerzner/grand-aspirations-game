@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useGame, getTrackTenure, getTrackExperienceDays, getTrackExperienceBonus } from "@/lib/GameContext";
 import { formatMoney, formatCompact } from "@/lib/formatters";
-import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, getTrackMajor, TRACK_EXPERIENCE_GATE, TRACK_EXPERIENCE_YEARS_GATE, isAdjacentTrack } from "@/lib/gameData";
+import { CAREER_SALARY_RANGE, CAREER_TRACKS, MAJORS, MAJOR_GATE_TIER, JOBS, WEEK_HOURS, DAYS_PER_YEAR, getCareerTrack, getTrackMajor, JOB_HOP_SETTLED_DAYS } from "@/lib/gameData";
 
 export default function CareerPanel() {
   const { state, derived, dispatch } = useGame();
