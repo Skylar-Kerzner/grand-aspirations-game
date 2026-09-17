@@ -71,7 +71,16 @@ export interface DailyCashFlow {
   business: number;
   investments: number;
   costs: number;
+  /** Living, interview prep and business operating costs. */
+  lifestyle?: number;
+  /** Interest actually paid in cash. */
+  debtInterest?: number;
+  /** Debt principal cleared in cash — money out, but net worth is unchanged. */
+  debtPrincipal?: number;
+  /** Interest that rolled onto balances instead of being paid — net worth falls, cash does not. */
+  debtAccrued?: number;
 }
+
 
 export interface Stats {
   salaryEarned: number;
