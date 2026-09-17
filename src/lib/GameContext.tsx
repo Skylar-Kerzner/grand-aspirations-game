@@ -263,16 +263,24 @@ export function getTrackYears(state: GameState, trackId: string): number {
   return days / DAYS_PER_YEAR;
 }
 
+/** How far you have studied an industry, counting years served as partial credit. */
+export function getTrackCredential(state: GameState, trackId: string) {
+  const studied = credentialLevelFrom(state.majors, trackId);
+  const years = getTrackYears(state, trackId);
+  const fromExperience = Math.min(CREDENTIAL_EXPERIENCE_CAP, Math.floor(years / CREDENTIAL_YEARS_PER_LEVEL));
+  return { studied, years, effective: Math.max(studied, fromExperience) };
+}
+
 /** What your career and education bring to running a venture in its industry. */
 export function getIndustryKnowledge(state: GameState, id: string) {
   const def = BUSINESSES.find((business) => business.id === id);
   if (!def) return { returnBonus: 0, riskRelief: 0, hasMajor: false, years: 0, track: undefined };
   const track = CAREER_TRACKS[def.track];
-  const major = getTrackMajor(def.track);
-  const hasMajor = !!major && state.majors.includes(major.id);
+  const studied = credentialLevelFrom(state.majors, def.track);
+  const hasMajor = studied >= 2;
   const years = getTrackYears(state, def.track);
   const yearBonus = Math.min(INDUSTRY_YEAR_CAP, years * INDUSTRY_YEAR_STEP);
-  const returnBonus = (hasMajor ? INDUSTRY_MAJOR_BONUS : 0) + yearBonus;
+  const returnBonus = INDUSTRY_MAJOR_BONUS * (studied / 3) + yearBonus;
   const maxBonus = INDUSTRY_MAJOR_BONUS + INDUSTRY_YEAR_CAP;
   return {
     returnBonus,
