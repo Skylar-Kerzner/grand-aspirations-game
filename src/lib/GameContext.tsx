@@ -800,9 +800,15 @@ function createInitialState(): GameState {
             })];
           }),
         ),
+        // Older saves carried a single balance — treat it as federal debt.
         studentLoan: parsed.studentLoan && typeof parsed.studentLoan === "object"
-          ? parsed.studentLoan
-          : { balance: 0, borrowed: 0, repaid: 0, dueFrom: 0 },
+          ? {
+              ...EMPTY_STUDENT_LOAN,
+              ...parsed.studentLoan,
+              undergradBorrowed: parsed.studentLoan.undergradBorrowed
+                ?? (parsed.studentLoan.gradBorrowed !== undefined ? 0 : parsed.studentLoan.borrowed || 0),
+            }
+          : { ...EMPTY_STUDENT_LOAN },
         businesses: Object.fromEntries(
           Object.entries(parsed.businesses || {}).map(([id, biz]) => [
             id,
