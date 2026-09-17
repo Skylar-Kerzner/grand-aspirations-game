@@ -2003,6 +2003,15 @@ function calculateDerived(state: GameState): DerivedState {
   const recentBusiness = recent.reduce((sum, item) => sum + item.business, 0);
   const recentInvestments = recent.reduce((sum, item) => sum + item.investments, 0);
   const recentCosts = recent.reduce((sum, item) => sum + item.costs, 0);
+  // Older saves only stored the total, so treat it as lifestyle spending.
+  const recentInterestPaid = recent.reduce((sum, item) => sum + (item.debtInterest ?? 0), 0);
+  const recentPrincipalPaid = recent.reduce((sum, item) => sum + (item.debtPrincipal ?? 0), 0);
+  const recentInterestAccrued = recent.reduce((sum, item) => sum + (item.debtAccrued ?? 0), 0);
+  const recentLifestyleCosts = recent.reduce(
+    (sum, item) => sum + (item.lifestyle ?? Math.max(0, item.costs - (item.debtInterest ?? 0) - (item.debtPrincipal ?? 0))),
+    0,
+  );
+
   // What you earn by working: passive investment movement is reported separately.
   const recentNet = recentSalary + recentBusiness - recentCosts;
 
