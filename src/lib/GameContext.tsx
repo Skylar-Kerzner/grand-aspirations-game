@@ -416,7 +416,10 @@ export function getTrackCredential(state: GameState, trackId: string) {
  */
 export function getEarnedLevelIn(state: GameState, trackId: string) {
   const cred = getTrackCredential(state, trackId);
-  const ceiling = CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)];
+  const ceiling = Math.min(
+    CREDENTIAL_LEVEL_CEILING[Math.min(3, cred.effective)],
+    licensedCeiling(trackId, cred.studied),
+  );
   const home = getCareerTrack(state.currentJob.employer).id;
 
   // What you have built inside the industry itself.
