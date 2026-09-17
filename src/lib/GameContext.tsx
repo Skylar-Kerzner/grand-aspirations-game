@@ -69,6 +69,7 @@ export interface GameState {
   studyHours: number;     // of the 40 weekly hours, how many go to school
   businessHours: Record<string, number>; // hours a week personally spent in each venture
   trainingBudget: number; // dollars per day spent on courses and coaching
+  trainingMomentum: number; // rolling average of recent training spend — builds over ~30 days
   lastShiftDay: number;
   businesses: Record<string, BusinessState>;
   assets: Record<string, number>;
@@ -416,8 +417,9 @@ export function getCreditCardPayment(state: GameState): number {
 // Courses and coaching raise the pay of every job offer you seek out,
 // on a diminishing curve up to +35%.
 export const TRAINING_OFFER_CAP = 0.35;
+export const TRAINING_MOMENTUM_DAYS = 30; // time constant for training to build (and fade)
 export function getOfferTrainingBonus(state: GameState): number {
-  return Math.min(TRAINING_OFFER_CAP, 0.15 * Math.sqrt(Math.max(0, state.trainingBudget) / TRAINING_REFERENCE));
+  return Math.min(TRAINING_OFFER_CAP, 0.15 * Math.sqrt(Math.max(0, state.trainingMomentum) / TRAINING_REFERENCE));
 }
 
 export function getBusinessValue(state: GameState): number {
@@ -477,7 +479,7 @@ function createFresh(): GameState {
     careerOffers: [],
     jobHistory: [{ title: firstJob.title, employer: firstJob.employer, dailyPay: firstJob.dailyPay, startDay: 0 }],
     majors: [], studying: null,
-    studyHours: 0, businessHours: {}, trainingBudget: 0,
+    studyHours: 0, businessHours: {}, trainingBudget: 0, trainingMomentum: 0,
     lastShiftDay: -1,
     businesses: {}, assets: { house: 1, food: 1, wardrobe: 1, car: 1, watch: 1 }, investments: {}, loans: {},
     loansRepaid: [], consultants: [],
@@ -531,7 +533,8 @@ function createInitialState(): GameState {
         ),
         businessHours: parsed.businessHours && typeof parsed.businessHours === "object" ? parsed.businessHours : {},
         stats: { ...emptyStats(), ...(parsed.stats || {}) },
-
+        // Older saves never tracked momentum — assume they sustained their current budget.
+        trainingMomentum: typeof parsed.trainingMomentum === "number" ? parsed.trainingMomentum : (parsed.trainingBudget || 0),
       };
       // Retired mechanic: old saves may still carry experience points.
       delete (merged as unknown as Record<string, unknown>).xp;
@@ -640,6 +643,9 @@ function advance(state: GameState, days: number, now: number): GameState {
   const living = getLivingCosts(s) * days;
   const training = Math.max(0, s.trainingBudget) * days;
   cash -= living + training;
+  // Training only pays off if it is sustained — momentum builds and fades over about a month.
+  const trainingKeep = Math.exp(-days / TRAINING_MOMENTUM_DAYS);
+  const trainingMomentum = s.trainingMomentum * trainingKeep + Math.max(0, s.trainingBudget) * (1 - trainingKeep);
   stats.livingSpent += living;
   stats.trainingSpent += training;
 
@@ -761,6 +767,7 @@ function advance(state: GameState, days: number, now: number): GameState {
     assets, events,
     day: s.day + days,
     businesses, investments, loans, loansRepaid,
+    trainingMomentum,
     stats, lastTick: now,
   };
   next = rollEvent(next, days);
