@@ -83,7 +83,9 @@ export default function CareerPanel() {
               </motion.button>
             ) : (
               <div className="space-y-2 mt-3">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Your offers</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Your offers · Level {state.jobIndex + 2} of {JOBS.length}
+                </p>
                 <p className="text-[11px] text-muted-foreground">
                   Offers arrive in no particular order. The best-paid job today is not always the best career.
                 </p>
