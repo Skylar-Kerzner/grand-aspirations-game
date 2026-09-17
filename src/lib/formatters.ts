@@ -40,12 +40,14 @@ export function formatCompact(amount: number): string {
   return "$" + amount.toFixed(0);
 }
 
+/** You start out at eighteen; every 365 days is another birthday. */
+export const START_AGE = 18;
+
 export function formatDays(days: number): string {
   const d = Math.max(0, Math.floor(days));
   const years = Math.floor(d / 365);
   const rem = d % 365;
-  if (years > 0) return `Year ${years + 1}, Day ${rem + 1}`;
-  return `Day ${d + 1}`;
+  return `Age ${START_AGE + years}, Day ${rem + 1}`;
 }
 
 /** Plain label for the stretch of days a money figure covers. */
