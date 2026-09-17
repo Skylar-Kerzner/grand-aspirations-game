@@ -1161,11 +1161,40 @@ export function getBusinessTierIndex(level: number): number {
 export const BASE_TIME_BUDGET = 52;
 
 // ---------- Student loans ----------
-export const STUDENT_LOAN_RATE = 0.06;          // annual interest
+// Modelled on US federal borrowing as it stands after 1 July 2026: Grad PLUS is
+// gone, so anything the government will not lend has to come from a private
+// lender who actually looks at your finances.
 export const STUDENT_LOAN_TERM_DAYS = 3650;     // repaid over ten years
-export const STUDENT_LOAN_GRACE_DAYS = 180;     // nothing due until six months after you finish
-/** The most you can owe in student debt, by the highest level of study you have reached. */
-export const STUDENT_LOAN_CAPS = [30000, 120000, 400000];
-export function studentLoanCap(highestLevel: number): number {
-  return STUDENT_LOAN_CAPS[Math.max(0, Math.min(2, highestLevel - 1))] ?? STUDENT_LOAN_CAPS[0];
+export const STUDENT_LOAN_GRACE_DAYS = 180;     // federal loans: nothing due until six months after you finish
+
+export const FEDERAL_RATE_UNDERGRAD = 0.065;
+export const FEDERAL_RATE_GRAD = 0.081;
+export const PRIVATE_RATE = 0.12;
+export const PRIVATE_TERM_DAYS = 3650;
+
+/** Lifetime federal borrowing room by program type, plus the overall ceiling. */
+export const FEDERAL_CAPS = {
+  undergrad: 57500,     // covers short courses and bachelor's degrees
+  graduate: 100000,     // master's, MBA, most doctorates
+  professional: 200000, // medicine, dentistry, law, veterinary and the rest of the eleven-field list
+  lifetime: 257500,
+};
+
+export function federalCapFor(kind: ProgramKind): number {
+  if (kind === "professional") return FEDERAL_CAPS.professional;
+  if (kind === "graduate") return FEDERAL_CAPS.graduate;
+  return FEDERAL_CAPS.undergrad;
 }
+
+export function federalRateFor(kind: ProgramKind): number {
+  return kind === "short" || kind === "undergrad" ? FEDERAL_RATE_UNDERGRAD : FEDERAL_RATE_GRAD;
+}
+
+/** Undergraduate study and graduate study draw on separate pots. */
+export function federalBucketFor(kind: ProgramKind): "undergrad" | "graduate" {
+  return kind === "short" || kind === "undergrad" ? "undergrad" : "graduate";
+}
+
+/** Private lenders size a loan against what you earn and what you are worth. */
+export const PRIVATE_INCOME_MULTIPLE = 4;
+export const PRIVATE_NET_WORTH_SHARE = 0.25;
