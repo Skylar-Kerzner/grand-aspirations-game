@@ -102,6 +102,7 @@ export default function CareerPanel() {
                   const level = offer.level ?? state.jobIndex + 1;
                   const step = level - state.jobIndex;
                   const stepWord = step >= 2 ? "Double step up" : step === 1 ? "A step up" : step === 0 ? "A sideways move" : `A step down · ${-step} ${-step === 1 ? "rank" : "ranks"}`;
+                  const delta40 = offer.dailyPay - job.dailyPay;
                   return (
                     <button
                       key={`${offer.employer}-${index}`}
