@@ -1135,7 +1135,6 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     let condition = biz.condition ?? 1;
     let gain = 0;
     let lastTakings = biz.takings ?? 1;
-    const takingsHist = [...(biz.takingsHist ?? [])];
     let fortune = biz.fortune ?? 1;
 
     const relief = 1 - getIndustryKnowledge(s, id).riskRelief;
@@ -1159,8 +1158,6 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
       const rawDay = rhythm[weekday] * season * luck;
       lastTakings = Math.max(BUSINESS_DAILY_FLOOR, 1 + (rawDay - 1) * BUSINESS_DAILY_SWING);
       gain += steady * condition * lastTakings;
-      takingsHist.push(lastTakings);
-      if (takingsHist.length > 7) takingsHist.shift();
       // the season drifts slowly and reverts toward normal over about a month
       season = 1 + (season - 1) * (1 - BUSINESS_SEASON_REVERSION) + (Math.random() + Math.random() - 1) * BUSINESS_SEASON_VOL;
       season = Math.min(BUSINESS_SEASON_MAX, Math.max(BUSINESS_SEASON_MIN, season));
@@ -1192,7 +1189,7 @@ function advanceChunk(state: GameState, days: number, now: number): GameState {
     bizGross += gain;
     stats.businessEarnedById[id] = (stats.businessEarnedById[id] || 0) + gain * (1 - taxRate);
     let updated: BusinessState = {
-      ...biz, condition, takings: lastTakings, takingsHist, season,
+      ...biz, condition, takings: lastTakings, season,
       fortune,
       fortunePeak: Math.max(biz.fortunePeak ?? biz.fortune ?? 1, fortune),
     };

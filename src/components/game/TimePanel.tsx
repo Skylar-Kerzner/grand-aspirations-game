@@ -1,4 +1,4 @@
-import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessIncomeAvgAt, trackPerk } from "@/lib/GameContext";
+import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessTypicalIncomeAt, trackPerk } from "@/lib/GameContext";
 import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital, getCareerTrack, getHoursBonusLabel } from "@/lib/gameData";
 import { formatMoney, periodLabel } from "@/lib/formatters";
 
@@ -115,8 +115,8 @@ export default function TimePanel() {
             const condition = state.businesses[def.id]?.condition ?? 1;
             const fullROI = getBusinessROIAt(state, def.id, 1);
             const currentROI = getBusinessEffectiveROI(state, def.id);
-            const currentPerWeek = getBusinessIncomeAvgAt(state, def.id, attention) * 7;
-            const fullPerWeek = getBusinessIncomeAvgAt(state, def.id, 1) * 7;
+            const currentPerWeek = getBusinessTypicalIncomeAt(state, def.id, attention) * 7;
+            const fullPerWeek = getBusinessTypicalIncomeAt(state, def.id, 1) * 7;
             return (
               <div key={def.id} className="surface-card rounded-xl p-4">
                 <div className="flex justify-between items-baseline mb-1">
