@@ -33,8 +33,15 @@ export default function InvestmentPanel() {
                 <p className="text-[11px] text-muted-foreground">
                   {unlocked
                     ? def.description
-                    : `Put ${formatCompact(def.unlockAmount || 0)} into ${prev?.name} to unlock`}
+                    : `${access.note} You are at ${formatCompact(Math.max(0, getInvestorNetWorth(state)))}.`}
                 </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {access.label}
+                  {def.lockupDays ? ` · money stays in for ${def.lockupDays} days` : " · take it out any time"}
+                </p>
+                {lockLeft > 0 && (
+                  <p className="text-[10px] text-primary">Locked for {lockLeft} more days</p>
+                )}
               </div>
               <div className="text-right shrink-0">
                 {inv.value > 0 ? (
