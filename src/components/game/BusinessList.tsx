@@ -83,8 +83,13 @@ export default function BusinessList() {
           const concept = owned ? getBusinessConcept(def.id, biz.choices?.concept || "") : undefined;
           const tierName = concept?.tierNames[tierIdx] || def.tierNames[tierIdx];
           const tierImage = owned
-            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices)) || getImage(concept?.image || "")
-            : "";
+            ? getImage(ventureImageAtTier(def.id, tierIdx, biz.choices))
+            : getImage(
+                ventureImageAtTier(def.id, 0, {
+                  concept: BUSINESS_CONCEPTS[def.id]?.[0]?.id || "",
+                  location: BUSINESS_LOCATIONS[def.id]?.[0]?.id || "",
+                }),
+              );
           const displayName = owned ? ventureNameAtTier(def.id, tierIdx, biz.choices) : def.name;
           const income = businessIncomeOf(state, def.id);
           const networkBonus = getBusinessNetworkBonus(state, def.id);
