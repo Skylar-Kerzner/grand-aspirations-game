@@ -52,8 +52,13 @@ export default function CareerPanel() {
           <span className="text-muted-foreground">Gross pay at {derived.workHours}h</span>
           <span className="font-mono-nums">{formatMoney(job.dailyPay * (derived.workHours / WEEK_HOURS))}/day</span>
         </div>
+        <div className="flex justify-between text-sm mb-1">
+          <span className="text-muted-foreground">Gross pay at 40h</span>
+          <span className="font-mono-nums">{formatMoney(job.dailyPay)}/day</span>
+        </div>
         <p className="text-[11px] text-muted-foreground mb-2">
-          Market range at {WEEK_HOURS}h: {formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max)}/day
+          Offers below are quoted at 40h — compare them with the 40h line above.
+          Market range at 40h: {formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.min)}–{formatMoney(JOBS[state.jobIndex].dailyPay * CAREER_SALARY_RANGE.max)}/day
         </p>
         {job.perfFee && (
           <p className="text-[11px] text-primary mb-2">
