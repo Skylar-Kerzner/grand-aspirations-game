@@ -1341,9 +1341,10 @@ export function businessFortuneLabel(f: number): string {
 
 // ---------- helpers ----------
 export function getBusinessTierIndex(level: number): number {
-  if (level >= 40) return 3;
-  if (level >= 20) return 2;
-  if (level >= 8) return 1;
+  if (level >= BUSINESS_TIER_THRESHOLDS[3]) return 3;
+  if (level >= BUSINESS_TIER_THRESHOLDS[2]) return 2;
+  if (level >= BUSINESS_TIER_THRESHOLDS[1]) return 1;
+
   return 0;
 }
 
