@@ -128,6 +128,16 @@ export function isAdjacentTrack(from: string, to: string): boolean {
 /** Levels served in one industry that count in place of a degree on that path. */
 export const TRACK_EXPERIENCE_GATE = 3;
 
+/**
+ * Climbing past MAJOR_GATE_TIER without your industry's major is possible but
+ * slows to a stop: each next level's experience requirement grows by this much
+ * per tier, compounding.
+ */
+export const NO_DEGREE_DRAG_BASE = 0.7;
+export function noDegreeXpMultiplier(tier: number): number {
+  return Math.pow(1 + NO_DEGREE_DRAG_BASE, Math.max(0, tier - MAJOR_GATE_TIER));
+}
+
 export const CAREER_SALARY_RANGE = { min: 0.82, max: 1.22 };
 export const CAREER_VARIANTS: CareerVariant[][] = [
   [

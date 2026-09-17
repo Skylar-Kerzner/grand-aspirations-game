@@ -1139,6 +1139,8 @@ function calculateDerived(state: GameState): DerivedState {
   const netPerDay = incomePerDay - livingCosts - trainingCost - operatingCosts - loanPayments - ccPaymentPerDay;
 
   const job = getJob(state);
+  const jobMajor = getTrackMajor(getCareerTrack(job.employer).id);
+  const lacksMajor = !!jobMajor && !state.majors.includes(jobMajor.id);
   return {
     // you owe the principal, not the future interest
     netWorth: state.cash + investmentTotal + assetValue + businessValue - loanTotal - state.ccDebt,
