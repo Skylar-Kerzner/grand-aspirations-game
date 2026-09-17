@@ -14,12 +14,9 @@ export default function WorkButton() {
           whileTap={{ scale: 0.97 }}
           transition={{ duration: 0.1 }}
           onClick={() => dispatch({ type: "WORK" })}
-          disabled={workedToday}
           className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-sm tracking-wide transition-game disabled:opacity-40"
         >
-          {workedToday
-            ? "Extra hour done for today"
-            : `Work one extra hour — ${formatMoney(derived.shiftPay)}`}
+          {`Work one extra hour — ${formatMoney(derived.shiftPay)}`}
         </motion.button>
         <p className="text-center text-[10px] text-muted-foreground mt-1.5">
           Level {state.jobIndex + 1} of {JOBS.length} · {derived.job.title} · {derived.job.employer}
