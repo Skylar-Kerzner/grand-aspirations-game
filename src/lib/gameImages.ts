@@ -14,3 +14,12 @@ for (const [path, url] of Object.entries(pngImages)) {
 export function getImage(name: string): string {
   return allImages[name] || "";
 }
+
+export function hasImage(name: string): boolean {
+  return Boolean(allImages[name]);
+}
+
+/** First artwork key that actually exists, so missing variants fall back gracefully. */
+export function pickImage(...names: string[]): string {
+  return names.find((name) => name && allImages[name]) || "";
+}

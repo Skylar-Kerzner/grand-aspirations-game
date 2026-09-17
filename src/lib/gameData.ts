@@ -4,6 +4,8 @@
 // unless stated otherwise. Yearly figures use 365 days.
 // ============================================================
 
+import { pickImage } from "./gameImages";
+
 export const DAYS_PER_YEAR = 365;
 export const TAX_RATE = 0.22;
 export const WEEK_HOURS = 40;
@@ -221,11 +223,19 @@ export function getCareerTrack(employer: string): CareerTrack {
   return CAREER_TRACKS[EMPLOYER_TRACKS[employer] || "operations"];
 }
 
-/** The room you actually work in: one per industry, at three stages of seniority. */
+/** The room you actually work in: one per industry, at seven stages of seniority. */
+export const WORKPLACE_STAGES = 7;
+
 export function workplaceImage(employer: string, level: number): string {
   const track = getCareerTrack(employer).id;
-  const stage = level <= 4 ? 1 : level <= 9 ? 2 : 3;
-  return `work-${track}-s${stage}`;
+  const stage = Math.max(1, Math.min(WORKPLACE_STAGES, Math.ceil((level + 1) / 2)));
+  // Nearest available stage, so a missing room never leaves a blank frame.
+  const order = [stage];
+  for (let step = 1; step < WORKPLACE_STAGES; step++) {
+    if (stage - step >= 1) order.push(stage - step);
+    if (stage + step <= WORKPLACE_STAGES) order.push(stage + step);
+  }
+  return pickImage(...order.map((s) => `work-${track}-s${s}`));
 }
 
 /** How a track's pay compares with the standard ladder at a given career level. */
@@ -656,6 +666,8 @@ export const ASSETS: AssetDef[] = [
       { name: "Studio Apartment", dailyCost: 72, hoursBonus: 2, image: "house-t2", benefit: "Buys back 2h a week — close in, building handles the basics" },
       { name: "Modern Loft", dailyCost: 165, hoursBonus: 5, image: "house-t3", benefit: "Buys back 5h a week — doorman, cleaning and concierge" },
       { name: "Penthouse", dailyCost: 520, hoursBonus: 9, image: "house-t4", benefit: "Buys back 9h a week — a full household staff runs it all" },
+      { name: "Country Estate", dailyCost: 2100, hoursBonus: 12, image: "house-t5", benefit: "Buys back 12h a week — an estate manager runs the whole household" },
+      { name: "Private Island Compound", dailyCost: 9400, hoursBonus: 15, image: "house-t6", benefit: "Buys back 15h a week — every errand, journey and chore is handled for you" },
     ],
   },
   {
@@ -665,6 +677,8 @@ export const ASSETS: AssetDef[] = [
       { name: "Fresh Home Cooking", dailyCost: 28, hoursBonus: 1, image: "food-t2", benefit: "Buys back 1h a week — deliveries and prepped ingredients" },
       { name: "Restaurant Dining", dailyCost: 82, hoursBonus: 3, image: "food-t3", benefit: "Buys back 3h a week — every meal handled elsewhere" },
       { name: "Private Chef", dailyCost: 320, hoursBonus: 6, image: "food-t4", benefit: "Buys back 6h a week — a chef runs your kitchen" },
+      { name: "Private Dining Brigade", dailyCost: 1250, hoursBonus: 8, image: "food-t5", benefit: "Buys back 8h a week — a kitchen team plans, shops and cooks every meal" },
+      { name: "Estate Culinary Team", dailyCost: 4800, hoursBonus: 10, image: "food-t6", benefit: "Buys back 10h a week — kitchen garden, cellar and chefs on call around the clock" },
     ],
   },
   {
@@ -674,6 +688,8 @@ export const ASSETS: AssetDef[] = [
       { name: "High Street", dailyCost: 12, hoursBonus: 1, image: "wardrobe-t2", benefit: "Buys back 1h a week — easy wardrobe, little upkeep" },
       { name: "Tailored Wardrobe", dailyCost: 55, hoursBonus: 2, image: "wardrobe-t3", benefit: "Buys back 2h a week — a tailor keeps it all ready" },
       { name: "Bespoke Atelier", dailyCost: 180, hoursBonus: 4, image: "wardrobe-t4", benefit: "Buys back 4h a week — a stylist and valet service" },
+      { name: "Couture Fittings", dailyCost: 720, hoursBonus: 5, image: "wardrobe-t5", benefit: "Buys back 5h a week — a house keeps your wardrobe fitted and ready" },
+      { name: "Private Wardrobe Hall", dailyCost: 2600, hoursBonus: 7, image: "wardrobe-t6", benefit: "Buys back 7h a week — a dressing team packs, styles and travels with you" },
     ],
   },
   {
@@ -683,6 +699,8 @@ export const ASSETS: AssetDef[] = [
       { name: "Luxury Sedan", dailyCost: 48, hoursBonus: 2, image: "car-t2", benefit: "Buys back 2h a week — reliable, driver service on tap" },
       { name: "Sports Car", dailyCost: 165, hoursBonus: 5, image: "car-t3", benefit: "Buys back 5h a week — a driver handles the road" },
       { name: "Hypercar", dailyCost: 880, hoursBonus: 9, image: "car-t4", benefit: "Buys back 9h a week — chauffeur and fleet care included" },
+      { name: "Collector's Garage", dailyCost: 3400, hoursBonus: 12, image: "car-t5", benefit: "Buys back 12h a week — a fleet and drivers on standby wherever you are" },
+      { name: "Private Aviation", dailyCost: 14000, hoursBonus: 15, image: "car-t6", benefit: "Buys back 15h a week — jet, helicopter and cars waiting at both ends" },
     ],
   },
   {
@@ -692,6 +710,8 @@ export const ASSETS: AssetDef[] = [
       { name: "Gym Membership", dailyCost: 9, hoursBonus: 1, image: "health-t2", benefit: "Buys back 1h a week — steadier energy through the day" },
       { name: "Personal Trainer", dailyCost: 95, hoursBonus: 4, image: "health-t3", benefit: "Buys back 4h a week — training, physio and check-ups handled" },
       { name: "Full Wellness Team", dailyCost: 420, hoursBonus: 8, image: "health-t4", benefit: "Buys back 8h a week — doctor, chef and recovery team on call" },
+      { name: "Home Recovery Suite", dailyCost: 1600, hoursBonus: 10, image: "health-t5", benefit: "Buys back 10h a week — gym, pool and therapists all under your own roof" },
+      { name: "Longevity Programme", dailyCost: 6200, hoursBonus: 13, image: "health-t6", benefit: "Buys back 13h a week — a medical team keeps you at full energy every day" },
     ],
   },
   {
@@ -701,12 +721,14 @@ export const ASSETS: AssetDef[] = [
       { name: "Automatic Movement", dailyCost: 6, hoursBonus: 1, image: "watch-t2", benefit: "Buys back 1h a week — club and concierge access" },
       { name: "Luxury Chronograph", dailyCost: 28, hoursBonus: 2, image: "watch-t3", benefit: "Buys back 2h a week — a concierge runs your errands" },
       { name: "Haute Horlogerie", dailyCost: 140, hoursBonus: 4, image: "watch-t4", benefit: "Buys back 4h a week — a personal assistant on call" },
+      { name: "Grand Complication", dailyCost: 620, hoursBonus: 5, image: "watch-t5", benefit: "Buys back 5h a week — doors open and an assistant clears your diary" },
+      { name: "Private Collection", dailyCost: 2400, hoursBonus: 7, image: "watch-t6", benefit: "Buys back 7h a week — a chief of staff runs your calendar" },
     ],
   },
 ];
 
-export const WARDROBE_BUSINESS_BONUS = [0, 0.04, 0.09, 0.16];
-export const WATCH_INVEST_BONUS = [0, 0.04, 0.09, 0.16];
+export const WARDROBE_BUSINESS_BONUS = [0, 0.04, 0.09, 0.16, 0.22, 0.3];
+export const WATCH_INVEST_BONUS = [0, 0.04, 0.09, 0.16, 0.22, 0.3];
 
 // ---------- Investments ----------
 /** Who a fund will take money from. */
@@ -976,11 +998,19 @@ export function ventureNameAtTier(businessId: string, tierIdx: number, choices?:
   return location ? `${stage} in ${location.name}` : stage;
 }
 
-/** Artwork key for a venture at a given stage. */
+/** Artwork key for a venture at a given stage, in the city it trades in. */
 export function ventureImageAtTier(businessId: string, tierIdx: number, choices?: Record<string, string>): string {
   const concept = getBusinessConcept(businessId, choices?.concept || "");
   if (!concept) return "";
-  return tierIdx === 1 ? concept.image : `${concept.image}-t${tierIdx + 1}`;
+  const stage = `t${tierIdx + 1}`;
+  const location = getBusinessLocation(businessId, choices?.location || "");
+  const others = (BUSINESS_LOCATIONS[businessId] || []).map((l) => `${concept.image}-${l.id}-${stage}`);
+  return pickImage(
+    location ? `${concept.image}-${location.id}-${stage}` : "",
+    ...others,
+    `${concept.image}-${stage}`,
+    concept.image,
+  );
 }
 
 /** How much of the sale price you actually walk away with. */
