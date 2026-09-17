@@ -9,11 +9,12 @@ import {
   DAYS_PER_YEAR, TAX_RATE, LOBBYIST_TAX_RATE, WEEK_HOURS, TRAINING_REFERENCE, BUSINESS_ATTENTION_FLOOR, BUSINESS_ATTENTION_FULL_HOURS, BUSINESS_ATTENTION_CURVE,
   BUSINESS_VALUATION_MULTIPLE, BUSINESS_CONDITION_REVERSION, BUSINESS_SHOCK_CHANCE, BUSINESS_SHOCK_TEXTS, BUSINESS_NETWORK_MILESTONES, BUSINESS_SALE_DISCOUNT, BUSINESS_UPGRADE_REROLL, businessRerollWeight, rollBusinessFortune, getBusinessTierIndex, LOAN_EQUITY_REQUIREMENT,
   CC_APR, CC_MIN_PAYMENT_RATE, CC_BASE_LIMIT, EVENT_CHANCE_PER_DAY, MGMT_FEE, PERF_FEE,
+  BASE_TIME_BUDGET, STUDENT_LOAN_RATE, STUDENT_LOAN_TERM_DAYS, STUDENT_LOAN_GRACE_DAYS, studentLoanCap,
 } from "./gameData";
 import { formatMoney } from "./formatters";
 
-const SAVE_KEY = "empire-tycoon-save-v4";
-const LEGACY_SAVE_KEY = "empire-tycoon-save-v3";
+const SAVE_KEY = "empire-tycoon-save-v5";
+const LEGACY_SAVE_KEY = "empire-tycoon-save-v4";
 const MAX_OFFLINE_DAYS = 240;
 
 export interface BusinessState {
@@ -24,6 +25,8 @@ export interface BusinessState {
 }
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
 export interface InvestmentState { value: number; basis: number; lockedUntil?: number }
+/** Money borrowed to study. Nothing is due while enrolled or during the grace period. */
+export interface StudentLoanState { balance: number; borrowed: number; repaid: number; dueFrom: number }
 export interface CareerOffer { title: string; employer: string; dailyPay: number }
 
 export interface GameEvent { day: number; title: string; text: string; effect?: string; tone: "good" | "bad" | "neutral" }
@@ -76,6 +79,7 @@ export interface GameState {
   assets: Record<string, number>;
   investments: Record<string, InvestmentState>;
   loans: Record<string, LoanState>;
+  studentLoan: StudentLoanState;
   loansRepaid: string[];
   consultants: string[];
   payMult: number; payUntil: number;
@@ -95,7 +99,8 @@ export type GameAction =
   | { type: "SET_LIFESTYLE"; id: string; tier: number }
   | { type: "GENERATE_JOB_OFFERS" }
   | { type: "ACCEPT_JOB_OFFER"; index: number }
-  | { type: "STUDY"; majorId: string }
+  | { type: "STUDY"; majorId: string; financed?: boolean }
+  | { type: "REPAY_STUDENT_LOAN"; amount?: number }
   | { type: "BUY_BUSINESS"; id: string; choices?: Record<string, string> }
   | { type: "SELL_BUSINESS"; id: string }
   | { type: "INVEST"; id: string; amount: number }
@@ -185,9 +190,16 @@ export function getBusinessAttentionOf(state: GameState, id: string): number {
   return getBusinessAttentionFor(state, id, state.businessHours[id] || 0);
 }
 
-/** Weekly hours available: 40, plus whatever your lifestyle buys back. */
+/** Weekly hours you can direct: a base week, what your lifestyle buys back, and what your field allows. */
 export function getTimeBudget(state: GameState): number {
-  return WEEK_HOURS + ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
+  const lifestyle = ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
+  const career = getCareerTrack(state.currentJob.employer).hoursBonus || 0;
+  return Math.max(10, BASE_TIME_BUDGET + lifestyle + career);
+}
+
+/** Hours a week your lifestyle choices currently buy back (negative when they cost you). */
+export function getLifestyleHours(state: GameState): number {
+  return ASSETS.reduce((sum, asset) => sum + (getLifestyleTier(state, asset.id)?.hoursBonus || 0), 0);
 }
 
 export function getLifestyleTier(state: GameState, id: string) {
@@ -205,6 +217,8 @@ function investMultiplier(state: GameState): number {
   let m = 1;
   if (state.consultants.includes("finance")) m *= 1.1;
   if (state.consultants.includes("quant")) m *= 1.2;
+  // Working in a field that lives off markets helps your own money too.
+  m *= 1 + (getCareerTrack(state.currentJob.employer).investBonus || 0);
   return m;
 }
 
@@ -281,9 +295,13 @@ export function getIndustryKnowledge(state: GameState, id: string) {
   const def = BUSINESSES.find((business) => business.id === id);
   if (!def) return { returnBonus: 0, riskRelief: 0, hasMajor: false, years: 0, track: undefined };
   const track = CAREER_TRACKS[def.track];
-  const studied = credentialLevelFrom(state.majors, def.track);
+  // Some working lives give you a feel for more than their own industry.
+  const helpingTracks = Object.values(CAREER_TRACKS)
+    .filter((t) => t.id === def.track || (t.ventureTracks || []).includes(def.track))
+    .map((t) => t.id);
+  const studied = Math.max(...helpingTracks.map((t) => credentialLevelFrom(state.majors, t)), 0);
   const hasMajor = studied >= 2;
-  const years = getTrackYears(state, def.track);
+  const years = helpingTracks.reduce((sum, t) => sum + getTrackYears(state, t), 0);
   const yearBonus = Math.min(INDUSTRY_YEAR_CAP, years * INDUSTRY_YEAR_STEP);
   const returnBonus = INDUSTRY_MAJOR_BONUS * (studied / 3) + yearBonus;
   const maxBonus = INDUSTRY_MAJOR_BONUS + INDUSTRY_YEAR_CAP;
@@ -394,6 +412,8 @@ export function getBusinessGross(state: GameState): number {
 export function getLivingCosts(state: GameState): number {
   let total = 0;
   for (const def of ASSETS) total += getLifestyleTier(state, def.id)?.dailyCost || 0;
+  // Some lives come partly comped: meals, rooms, clothes, invitations.
+  total *= 1 - (getCareerTrack(state.currentJob.employer).livingDiscount || 0);
   if (state.day < state.livingUntil) total *= state.livingMult;
   return total;
 }
