@@ -533,12 +533,34 @@ export function getBusinessIncomeAt(state: GameState, id: string, attention: num
   return getBusinessSteadyIncomeAt(state, id, attention) * (biz.condition ?? 1) * (biz.takings ?? 1);
 }
 
+/** The size actually trading today: a build-out earns nothing until it opens. */
+export function getBusinessEarningLevel(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz) return 0;
+  if (biz.buildUntil && state.day < biz.buildUntil) return Math.max(0, biz.buildFromLevel ?? biz.level - 1);
+  return biz.level;
+}
+
+/** Days left before a build-out opens, 0 when nothing is under construction. */
+export function getBuildDaysLeft(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz?.buildUntil) return 0;
+  return Math.max(0, Math.ceil(biz.buildUntil - state.day));
+}
+
+/** Days left before a listed business finds its buyer, 0 when not on the market. */
+export function getSaleDaysLeft(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz?.listedUntil) return 0;
+  return Math.max(0, Math.ceil(biz.listedUntil - state.day));
+}
+
 /** Steady income at a given attention level (1 = full hours) — used for valuation and planning. */
 export function getBusinessSteadyIncomeAt(state: GameState, id: string, attention: number): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  return getBusinessIncome(def, biz.level) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
+  return getBusinessIncome(def, getBusinessEarningLevel(state, id)) * (1 + getBusinessNetworkBonus(state, id) + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
     * attention;
 }
 
@@ -547,19 +569,29 @@ export function getBusinessSteadyIncomeOf(state: GameState, id: string): number 
   return getBusinessSteadyIncomeAt(state, id, getBusinessAttentionOf(state, id));
 }
 
-/** What this single venture would fetch if sold today. */
+/** What this single business is worth before the cost of getting out of it. */
 export function getBusinessValueOf(state: GameState, id: string): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  // A venture worth the baseline 30% return on capital sells for exactly what
-  // has been put into it; success above or below scales it in proportion.
-  return getBusinessCapital(def, biz.level) * ((biz.fortune ?? 1) * def.annualROI) / BUSINESS_BASELINE_ROI;
+  // A business performing as expected is worth what has been put into it; luck
+  // and the lower returns that come with size scale it in proportion.
+  return getBusinessCapital(def, biz.level) * (biz.fortune ?? 1) * businessScaleEfficiency(def, biz.level);
+}
+
+/** Fees, diligence and the buyer's discount, steeper right after an expansion. */
+export function getBusinessSaleDiscount(state: GameState, id: string): number {
+  const biz = state.businesses[id];
+  if (!biz || biz.level === 0) return BUSINESS_SALE_DISCOUNT;
+  const since = state.day - (biz.lastExpandedOn ?? 0);
+  const recency = Math.max(0, 1 - since / BUSINESS_SALE_RECENT_DAYS);
+  return BUSINESS_SALE_DISCOUNT + BUSINESS_SALE_RECENT_PENALTY * recency;
 }
 
 export function getBusinessSalePrice(state: GameState, id: string): number {
-  return getBusinessValueOf(state, id);
+  return getBusinessValueOf(state, id) * (1 - getBusinessSaleDiscount(state, id));
 }
+
 
 export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
   const biz = state.businesses[id] || { level: 0, condition: 1 };
