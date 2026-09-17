@@ -362,7 +362,12 @@ export default function BusinessList() {
                       <div className="grid grid-cols-3 gap-2">
                         {(BUSINESS_CONCEPTS[selectedDef.id] || []).map((option) => {
                           const active = choices.concept === option.id;
-                          const img = getImage(option.image);
+                          const img = getImage(
+                            ventureImageAtTier(selectedDef.id, getBusinessTierIndex(selectedBiz.level + 1), {
+                              concept: option.id,
+                              location: choices.location,
+                            }),
+                          );
                           return (
                             <button
                               key={option.id}
@@ -371,9 +376,18 @@ export default function BusinessList() {
                                 active ? "border-primary" : "border-border"
                               }`}
                             >
-                              <div className="aspect-[4/3] bg-secondary">
-                                {img && <img src={img} alt={option.name} loading="lazy" className="w-full h-full object-cover" />}
-                              </div>
+                              {img && (
+                                <div className="aspect-[4/3] overflow-hidden">
+                                  <img
+                                    src={img}
+                                    alt={option.name}
+                                    loading="lazy"
+                                    className={`w-full h-full object-cover transition-game ${
+                                      active ? "" : "opacity-60 saturate-50"
+                                    }`}
+                                  />
+                                </div>
+                              )}
                               <div className="p-1.5">
                                 <p className={`text-[11px] leading-tight ${active ? "text-primary" : ""}`}>{option.name}</p>
                                 <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">{option.description}</p>
