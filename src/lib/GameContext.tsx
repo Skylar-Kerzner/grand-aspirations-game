@@ -650,15 +650,23 @@ export function getBusinessSalePrice(state: GameState, id: string): number {
 
 export function getBusinessUpgradeIncomeGain(state: GameState, id: string): number {
   const biz = state.businesses[id] || { level: 0, condition: 1 };
+  // Compare the two levels as if both were open and trading — quoting against
+  // the build-suppressed earning level would show +$0 whenever a fit-out is
+  // underway, which reads as if the expansion earns nothing.
+  const cleared = { ...biz, buildUntil: undefined, buildFromLevel: undefined };
   const upgraded = {
     ...state,
-    businesses: { ...state.businesses, [id]: { ...biz, level: biz.level + 1 } },
+    businesses: { ...state.businesses, [id]: { ...cleared, level: biz.level + 1 } },
+  };
+  const current = {
+    ...state,
+    businesses: { ...state.businesses, [id]: cleared },
   };
   const portfolioIncome = (snapshot: GameState) => BUSINESSES.reduce(
-    (total, business) => total + businessIncomeOf(snapshot, business.id),
+    (total, business) => total + getBusinessSteadyIncomeOf(snapshot, business.id),
     0,
   );
-  return portfolioIncome(upgraded) - portfolioIncome(state);
+  return portfolioIncome(upgraded) - portfolioIncome(current);
 }
 
 export function getBusinessGross(state: GameState): number {
