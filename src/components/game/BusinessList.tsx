@@ -17,6 +17,7 @@ import {
   getBuildDaysLeft,
   getSaleDaysLeft,
   getBusinessAttentionOf,
+  getBusinessInvestedOf,
 } from "@/lib/GameContext";
 import { formatMoney, formatCompact, formatRate, formatPerDay } from "@/lib/formatters";
 import {
@@ -142,7 +143,7 @@ export default function BusinessList() {
                   <div className="mt-1 space-y-0.5">
                     <p className={`font-mono-nums text-[11px] ${income < 0 ? "text-destructive" : "text-primary"}`}>{formatRate(income)}</p>
                     <p className="font-mono-nums text-[10px] text-muted-foreground">
-                      {formatCompact(getBusinessCapital(def, biz.level))} invested
+                      {formatCompact(getBusinessInvestedOf(state, def.id))} invested
                     </p>
                     <p className="font-mono-nums text-[10px] text-muted-foreground">
                       At {BUSINESS_ATTENTION_FULL_HOURS}h: {(getBusinessROIAt(state, def.id, 1) * 100).toFixed(0)}% a year
@@ -158,7 +159,7 @@ export default function BusinessList() {
                 {biz.level === 0 && (
                   <>
                     <p className="font-mono-nums text-[11px] text-muted-foreground mt-1">
-                      {formatCompact(def.baseCost)}
+                      {formatCompact(upgradeCostFor(state, def.id))}
                     </p>
                     <p className="text-[10px] text-muted-foreground">{riskLabel(def.risk)}</p>
                   </>
@@ -567,7 +568,7 @@ export default function BusinessList() {
                           <p className="text-center text-[11px] text-muted-foreground mt-1 mb-2">
                             {confirmSell
                               ? `It keeps trading for about ${BUSINESS_SALE_DAYS} days while a buyer is found, then you give up every level.`
-                              : `${formatCompact(getBusinessCapital(selectedDef, selectedBiz.level))} invested · worth ${formatCompact(getBusinessValueOf(state, selectedDef.id))} · ${(discount * 100).toFixed(0)}% goes on fees and the buyer's discount`}
+                              : `${formatCompact(getBusinessInvestedOf(state, selectedDef.id))} invested · worth ${formatCompact(getBusinessValueOf(state, selectedDef.id))} · ${(discount * 100).toFixed(0)}% goes on fees and the buyer's discount`}
                           </p>
                         </>
                       )}
