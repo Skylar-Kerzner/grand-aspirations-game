@@ -136,7 +136,7 @@ export default function TimePanel() {
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-1">
-                  {formatMoney(getBusinessCapital(def, state.businesses[def.id]?.level || 0))} invested
+                  {formatMoney(getBusinessInvestedOf(state, def.id))} invested
                   {" · "}today's takings {Math.round((state.businesses[def.id]?.takings ?? 1) * 100)}% of normal
                   {" · "}trading trend {Math.round(condition * 100)}%
                 </p>

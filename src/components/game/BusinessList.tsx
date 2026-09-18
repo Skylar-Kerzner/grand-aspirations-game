@@ -34,7 +34,6 @@ import {
   businessFortuneLabel,
   BUSINESS_ATTENTION_FLOOR,
   BUSINESS_ATTENTION_FULL_HOURS,
-  getBusinessCapital,
   businessBuildDays,
   BUSINESS_MAX_LEVEL,
   BUSINESS_SALE_DAYS,
