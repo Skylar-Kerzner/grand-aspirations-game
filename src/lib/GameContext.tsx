@@ -517,14 +517,18 @@ export function getBusinessROIAt(state: GameState, id: string, attention: number
   const def = BUSINESSES.find((business) => business.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
-  // Rate the return against the capital actually trading — money tied up in a
-  // build-out earns nothing yet, so quoting it would make the rate sag while
-  // the expansion is being built and then jump on opening day.
-  const capital = getBusinessCapital(def, Math.max(1, getBusinessEarningLevel(state, id)));
+  // Rate the return against the capital actually trading — money tied up in an
+  // expansion build-out earns nothing yet, so quoting it would make the rate
+  // sag while it is being built and then jump on opening day. A brand-new
+  // business still being fitted out rates at the level you bought, so the
+  // rolled return shows from day one instead of 0%.
+  const earningLevel = getBusinessEarningLevel(state, id);
+  const ratedLevel = earningLevel === 0 ? biz.level : earningLevel;
+  const capital = getBusinessCapital(def, ratedLevel);
   if (capital <= 0) return 0;
   // The same steady income every other screen quotes, expressed as a yearly
   // return on the money put in, so the two figures can never disagree.
-  return (getBusinessSteadyIncomeAt(state, id, attention) * DAYS_PER_YEAR) / capital;
+  return (getBusinessSteadyIncomeAt(state, id, attention, ratedLevel) * DAYS_PER_YEAR) / capital;
 }
 
 export function getBusinessEffectiveROI(state: GameState, id: string): number {
