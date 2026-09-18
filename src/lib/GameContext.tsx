@@ -1757,6 +1757,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             buildUntil: state.day + build,
             buildFromLevel: 0,
             lastExpandedOn: state.day,
+            invested: cost,
           }
         : (() => {
             // Only a tier step puts part of the business's fortune back on the
@@ -1777,6 +1778,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               buildUntil: state.day + build,
               buildFromLevel: cur.level,
               lastExpandedOn: state.day,
+              invested: (cur.invested ?? getBusinessCapital(def, cur.level)) + cost,
               fortune: Math.min(
                 6,
                 Math.max(
