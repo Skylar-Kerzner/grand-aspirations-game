@@ -1,4 +1,4 @@
-import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getAgeHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessTypicalIncomeAt, trackPerk } from "@/lib/GameContext";
+import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getAgeHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessTypicalIncomeAt, getBusinessInvestedOf, trackPerk } from "@/lib/GameContext";
 import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getCareerTrack, getHoursBonusLabel } from "@/lib/gameData";
 import { formatMoney, periodLabel } from "@/lib/formatters";
 
