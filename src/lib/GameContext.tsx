@@ -38,6 +38,7 @@ export interface BusinessState {
   buildFromLevel?: number;             // size that keeps trading while the build is under way
   lastExpandedOn?: number;             // day of the most recent expansion
   listedUntil?: number;                // day a buyer is expected, when on the market
+  invested?: number;                   // what you actually paid in, after any discounts
 }
 
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
@@ -524,7 +525,7 @@ export function getBusinessROIAt(state: GameState, id: string, attention: number
   // rolled return shows from day one instead of 0%.
   const earningLevel = getBusinessEarningLevel(state, id);
   const ratedLevel = earningLevel === 0 ? biz.level : earningLevel;
-  const capital = getBusinessCapital(def, ratedLevel);
+  const capital = investedAtLevel(def, biz, ratedLevel);
   if (capital <= 0) return 0;
   // The same steady income every other screen quotes, expressed as a yearly
   // return on the money put in, so the two figures can never disagree.
