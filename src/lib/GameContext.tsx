@@ -602,19 +602,20 @@ export function getSaleDaysLeft(state: GameState, id: string): number {
 }
 
 /** Steady income at a given attention level (1 = full hours) — used for valuation and planning. */
-export function getBusinessSteadyIncomeAt(state: GameState, id: string, attention: number): number {
+export function getBusinessSteadyIncomeAt(state: GameState, id: string, attention: number, levelOverride?: number): number {
   const def = BUSINESSES.find((b) => b.id === id);
   const biz = state.businesses[id];
   if (!def || !biz || biz.level === 0) return 0;
+  const level = levelOverride ?? getBusinessEarningLevel(state, id);
   // Attention-scaled trading income: the base rate x trading trend x today's
   // takings, so the income you watch swings with the day's trade.
-  const base = getBusinessIncome(def, getBusinessEarningLevel(state, id)) * (1 + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
+  const base = getBusinessIncome(def, level) * (1 + getIndustryKnowledge(state, id).returnBonus) * businessMultiplier(state) * (biz.fortune ?? 1)
     * attention;
   // The network bonus is a flat add to the return on capital — +2 points per
   // milestone, independent of the hours you give the business.
   const networkPoints = getBusinessNetworkBonus(state, id);
   if (networkPoints === 0) return base;
-  const capital = getBusinessCapital(def, Math.max(1, getBusinessEarningLevel(state, id)));
+  const capital = getBusinessCapital(def, Math.max(1, level));
   return base + (networkPoints * capital) / DAYS_PER_YEAR;
 }
 
