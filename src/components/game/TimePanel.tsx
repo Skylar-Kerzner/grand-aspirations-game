@@ -1,5 +1,5 @@
-import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getAgeHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessTypicalIncomeAt, trackPerk } from "@/lib/GameContext";
-import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getBusinessCapital, getCareerTrack, getHoursBonusLabel } from "@/lib/gameData";
+import { useGame, getWorkHours, getTotalBusinessHours, getBusinessAttentionOf, getTimeBudget, getLifestyleHours, getAgeHours, getBusinessEffectiveROI, getBusinessROIAt, getBusinessTypicalIncomeAt, getBusinessInvestedOf, trackPerk } from "@/lib/GameContext";
+import { BUSINESSES, MAJORS, WEEK_HOURS, BASE_TIME_BUDGET, BUSINESS_ATTENTION_FULL_HOURS, getCareerTrack, getHoursBonusLabel } from "@/lib/gameData";
 import { formatMoney, periodLabel } from "@/lib/formatters";
 
 export default function TimePanel() {
@@ -136,7 +136,7 @@ export default function TimePanel() {
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-1">
-                  {formatMoney(getBusinessCapital(def, state.businesses[def.id]?.level || 0))} invested
+                  {formatMoney(getBusinessInvestedOf(state, def.id))} invested
                   {" · "}today's takings {Math.round((state.businesses[def.id]?.takings ?? 1) * 100)}% of normal
                   {" · "}trading trend {Math.round(condition * 100)}%
                 </p>

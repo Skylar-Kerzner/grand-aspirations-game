@@ -38,6 +38,7 @@ export interface BusinessState {
   buildFromLevel?: number;             // size that keeps trading while the build is under way
   lastExpandedOn?: number;             // day of the most recent expansion
   listedUntil?: number;                // day a buyer is expected, when on the market
+  invested?: number;                   // what you actually paid in, after any discounts
 }
 
 export interface LoanState { drawn: number; remaining: number; dailyPayment: number; timesRepaid: number }
@@ -512,6 +513,25 @@ export function getIndustryKnowledge(state: GameState, id: string) {
   };
 }
 
+/** What you actually paid into a business, after any discounts. Older saves fall
+ *  back to the undiscounted capital maths. */
+export function getBusinessInvestedOf(state: GameState, id: string): number {
+  const def = BUSINESSES.find((b) => b.id === id);
+  const biz = state.businesses[id];
+  if (!def || !biz || biz.level === 0) return 0;
+  return biz.invested ?? getBusinessCapital(def, biz.level);
+}
+
+/** The share of what you paid that is trading at a given size — used while a
+ *  build-out is under way so the return rate is not dragged down by money not
+ *  yet open. */
+function investedAtLevel(def: (typeof BUSINESSES)[number], biz: BusinessState, level: number): number {
+  const full = biz.invested ?? getBusinessCapital(def, biz.level);
+  const fullCapital = getBusinessCapital(def, biz.level);
+  if (fullCapital <= 0) return full;
+  return full * (getBusinessCapital(def, level) / fullCapital);
+}
+
 /** Annual return on capital at a given attention level (1 = full hours). */
 export function getBusinessROIAt(state: GameState, id: string, attention: number): number {
   const def = BUSINESSES.find((business) => business.id === id);
@@ -524,7 +544,7 @@ export function getBusinessROIAt(state: GameState, id: string, attention: number
   // rolled return shows from day one instead of 0%.
   const earningLevel = getBusinessEarningLevel(state, id);
   const ratedLevel = earningLevel === 0 ? biz.level : earningLevel;
-  const capital = getBusinessCapital(def, ratedLevel);
+  const capital = investedAtLevel(def, biz, ratedLevel);
   if (capital <= 0) return 0;
   // The same steady income every other screen quotes, expressed as a yearly
   // return on the money put in, so the two figures can never disagree.
@@ -615,7 +635,7 @@ export function getBusinessSteadyIncomeAt(state: GameState, id: string, attentio
   // milestone, independent of the hours you give the business.
   const networkPoints = getBusinessNetworkBonus(state, id);
   if (networkPoints === 0) return base;
-  const capital = getBusinessCapital(def, Math.max(1, level));
+  const capital = investedAtLevel(def, biz, Math.max(1, level));
   return base + (networkPoints * capital) / DAYS_PER_YEAR;
 }
 
@@ -631,7 +651,7 @@ export function getBusinessValueOf(state: GameState, id: string): number {
   if (!def || !biz || biz.level === 0) return 0;
   // A business performing as expected is worth what has been put into it; luck
   // and the lower returns that come with size scale it in proportion.
-  return getBusinessCapital(def, biz.level) * (biz.fortune ?? 1) * businessScaleEfficiency(def, biz.level);
+  return getBusinessInvestedOf(state, id) * (biz.fortune ?? 1) * businessScaleEfficiency(def, biz.level);
 }
 
 /** Fees, diligence and the buyer's discount, steeper right after an expansion. */
@@ -1737,6 +1757,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             buildUntil: state.day + build,
             buildFromLevel: 0,
             lastExpandedOn: state.day,
+            invested: cost,
           }
         : (() => {
             // Only a tier step puts part of the business's fortune back on the
@@ -1757,6 +1778,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               buildUntil: state.day + build,
               buildFromLevel: cur.level,
               lastExpandedOn: state.day,
+              invested: (cur.invested ?? getBusinessCapital(def, cur.level)) + cost,
               fortune: Math.min(
                 6,
                 Math.max(
@@ -1995,7 +2017,7 @@ function calculateDerived(state: GameState): DerivedState {
   let businessCapital = 0;
   for (const [id, biz] of Object.entries(state.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
-    if (def) businessCapital += getBusinessCapital(def, biz.level);
+    if (def) businessCapital += getBusinessInvestedOf(state, id);
   }
 
   const businessValue = getBusinessValue(state);
