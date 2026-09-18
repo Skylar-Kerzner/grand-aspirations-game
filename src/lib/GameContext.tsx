@@ -513,6 +513,25 @@ export function getIndustryKnowledge(state: GameState, id: string) {
   };
 }
 
+/** What you actually paid into a business, after any discounts. Older saves fall
+ *  back to the undiscounted capital maths. */
+export function getBusinessInvestedOf(state: GameState, id: string): number {
+  const def = BUSINESSES.find((b) => b.id === id);
+  const biz = state.businesses[id];
+  if (!def || !biz || biz.level === 0) return 0;
+  return biz.invested ?? getBusinessCapital(def, biz.level);
+}
+
+/** The share of what you paid that is trading at a given size — used while a
+ *  build-out is under way so the return rate is not dragged down by money not
+ *  yet open. */
+function investedAtLevel(def: (typeof BUSINESSES)[number], biz: BusinessState, level: number): number {
+  const full = biz.invested ?? getBusinessCapital(def, biz.level);
+  const fullCapital = getBusinessCapital(def, biz.level);
+  if (fullCapital <= 0) return full;
+  return full * (getBusinessCapital(def, level) / fullCapital);
+}
+
 /** Annual return on capital at a given attention level (1 = full hours). */
 export function getBusinessROIAt(state: GameState, id: string, attention: number): number {
   const def = BUSINESSES.find((business) => business.id === id);
