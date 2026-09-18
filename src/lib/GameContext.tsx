@@ -635,7 +635,7 @@ export function getBusinessSteadyIncomeAt(state: GameState, id: string, attentio
   // milestone, independent of the hours you give the business.
   const networkPoints = getBusinessNetworkBonus(state, id);
   if (networkPoints === 0) return base;
-  const capital = getBusinessCapital(def, Math.max(1, level));
+  const capital = investedAtLevel(def, biz, Math.max(1, level));
   return base + (networkPoints * capital) / DAYS_PER_YEAR;
 }
 
@@ -651,7 +651,7 @@ export function getBusinessValueOf(state: GameState, id: string): number {
   if (!def || !biz || biz.level === 0) return 0;
   // A business performing as expected is worth what has been put into it; luck
   // and the lower returns that come with size scale it in proportion.
-  return getBusinessCapital(def, biz.level) * (biz.fortune ?? 1) * businessScaleEfficiency(def, biz.level);
+  return getBusinessInvestedOf(state, id) * (biz.fortune ?? 1) * businessScaleEfficiency(def, biz.level);
 }
 
 /** Fees, diligence and the buyer's discount, steeper right after an expansion. */
@@ -2015,7 +2015,7 @@ function calculateDerived(state: GameState): DerivedState {
   let businessCapital = 0;
   for (const [id, biz] of Object.entries(state.businesses)) {
     const def = BUSINESSES.find((b) => b.id === id);
-    if (def) businessCapital += getBusinessCapital(def, biz.level);
+    if (def) businessCapital += getBusinessInvestedOf(state, id);
   }
 
   const businessValue = getBusinessValue(state);
